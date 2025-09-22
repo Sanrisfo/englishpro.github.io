@@ -22,7 +22,7 @@ Se eligió **Dart** como lenguaje de programación por las siguientes razones:
 - Está optimizado para aplicaciones móviles, lo que se traduce en un **alto rendimiento y fluidez** en dispositivos Android e iOS.  
 - Permite **programación reactiva y asincrónica**, clave en aplicaciones modernas con múltiples interacciones en tiempo real.
 
-# Framework Seleccionado: Flutter
+# Framework Seleccionado: Flutter_
 Se seleccionó **Flutter** como framework de desarrollo, con la siguiente justificación:
 
 - Permite crear **aplicaciones multiplataforma** (Android, iOS, Web, Desktop) desde un único código base.  
