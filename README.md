@@ -1,6 +1,8 @@
 # englishpro.github.io
 
-![alt text](<Captura de pantalla 2025-09-26 000009.png>)
+<div align="center">
+<img width="301" height="162" alt="Captura de pantalla 2025-09-26 000009" src="https://github.com/user-attachments/assets/47950f37-eb84-44fb-9e18-e37b9b957cda" />
+</div>
 
 EnglishPro es una app para usuarios intermedios y avanzados que ofrece preguntas tipo IELTS y TOEFL, junto con módulos especializados para mejorar habilidades y prepararse para exámenes internacionales.
 
