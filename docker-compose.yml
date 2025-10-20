@@ -1,0 +1,84 @@
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: englishpro_db
+    environment:
+      POSTGRES_DB: englishpro_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+    networks:
+      - englishpro_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d englishpro_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (Dart)
+  backend:
+    build: ./backend
+    container_name: englishpro_backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: englishpro_db
+      DB_USER: admin
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      JWT_SECRET: ${JWT_SECRET:-englishpro-dev-secret-key-2024}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - englishpro_network
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Flutter App (Web)
+  flutter_web:
+    build: ./app
+    container_name: englishpro_flutter_web
+    ports:
+      - "5000:5000"
+    environment:
+      BACKEND_URL: http://backend:8080
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_API_KEY: ${FIREBASE_API_KEY}
+      FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN}
+      FIREBASE_STORAGE_BUCKET: ${FIREBASE_STORAGE_BUCKET}
+      FIREBASE_MESSAGING_SENDER_ID: ${FIREBASE_MESSAGING_SENDER_ID}
+      FIREBASE_APP_ID: ${FIREBASE_APP_ID}
+    depends_on:
+      - backend
+    networks:
+      - englishpro_network
+    volumes:
+      - ./app:/app
+      - flutter_pub_cache:/root/.pub-cache
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  flutter_pub_cache:
+    driver: local
+
+networks:
+  englishpro_network:
+    driver: bridge

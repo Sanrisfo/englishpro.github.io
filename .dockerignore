@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+LICENSE
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.history
+
+# Node modules
+node_modules/
+
+# Environment files (will be passed as env vars)
+.env
+
+# Database
+postgres_data/
+*.sql.backup
+
+# Flutter/Dart cache
+.dart_tool/
+.pub-cache/
+.packages
+build/
+
+# Test coverage
+coverage/
