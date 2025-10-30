@@ -17,6 +17,10 @@ build/
 *.aab
 *.ipa
 
+# FVM (Flutter Version Manager)
+.fvm/flutter_sdk
+# Pero SÍ commitear .fvm/fvm_config.json para compartir versión
+
 # Android
 **/android/**/gradle-wrapper.jar
 **/android/.gradle

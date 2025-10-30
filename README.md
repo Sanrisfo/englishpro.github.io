@@ -61,68 +61,99 @@ EnglishPro/
 
 ## 🚀 Inicio Rápido
 
-### Requisitos Previos
+### ⚡ Opción 1: Con Docker (Recomendado - Solo necesitas Docker)
 
-**Solo necesitas Docker Desktop:**
+**Requisitos:**
+- [Docker Desktop](https://www.docker.com/get-started)
+- [Git](https://git-scm.com/)
 
-- [Docker Desktop para Windows](https://www.docker.com/products/docker-desktop)
-- [Docker Desktop para macOS](https://www.docker.com/products/docker-desktop)
-- [Docker para Linux](https://docs.docker.com/engine/install/)
+**Pasos:**
 
-**No necesitas instalar Flutter, Dart, PostgreSQL ni Node.js.** Todo corre en contenedores Docker.
+```bash
+# 1. Clonar el repositorio
+git clone <repository-url>
+cd EnglishPro
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+
+# 3. Iniciar todo con un comando
+# Windows (PowerShell)
+.\docker-start.ps1
+
+# Linux/macOS
+./docker-start.sh
+```
+
+**¡Listo!** Todo está corriendo:
+- PostgreSQL → localhost:5432
+- Backend API → http://localhost:8080
+- Flutter Web → http://localhost:8081
+
+**Para desarrollo con hot-reload:**
+```bash
+# Windows
+.\docker-dev.ps1
+
+# Linux/macOS
+./docker-dev.sh
+
+# Luego en otra terminal
+cd app
+flutter run
+```
+
+📖 **Ver guía completa**: [DOCKER_SETUP.md](DOCKER_SETUP.md)
+
+---
+
+### 🔧 Opción 2: Instalación Manual (Requiere todas las dependencias)
+
+**Requisitos:**
+- [Flutter](https://flutter.dev/docs/get-started/install) 3.35.4
+- [Dart](https://dart.dev/get-dart) 3.9.2
+- [Docker](https://www.docker.com/get-started) (solo para PostgreSQL)
+- [Git](https://git-scm.com/)
+
+**Pasos:**
 
 ### 1. Clonar el Repositorio
 
 ```bash
 git clone <repository-url>
-cd EnglishProApp
+cd EnglishPro
 ```
 
-### 2. Configurar Firebase
-
-Debes obtener las credenciales de Firebase del equipo o crear tu propio proyecto:
+### 2. Configurar Variables de Entorno
 
 ```bash
-# Copiar archivo de ejemplo
 cp .env.example .env
-
-# Copiar google-services.json de ejemplo
-cp app/android/app/google-services.json.example app/android/app/google-services.json
+# Editar .env con tus credenciales
 ```
 
-Edita `.env` y `google-services.json` con las credenciales reales de Firebase.
-Ver [SETUP.md](SETUP.md) para instrucciones detalladas.
-
-### 3. Iniciar la Aplicación
+### 3. Iniciar PostgreSQL con Docker
 
 ```bash
-# Windows (PowerShell)
-.\start.ps1
-
-# Linux/macOS
-./start.sh
+docker compose up -d postgres
 ```
 
-Este script automáticamente:
-- ✅ Construye las imágenes Docker
-- ✅ Inicia PostgreSQL con las 16 tablas
-- ✅ Carga datos de prueba (cursos, usuarios, etc)
-- ✅ Inicia el backend API
-- ✅ Inicia Flutter Web
+### 4. Iniciar Backend
 
-### 4. Acceder a la Aplicación
+```bash
+cd backend
+dart pub get
+dart run bin/server.dart
+```
 
-Abre tu navegador en **http://localhost:5000**
+### 5. Ejecutar App Flutter
 
-**Servicios disponibles:**
-- 📱 **Flutter Web:** http://localhost:5000
-- 🔌 **Backend API:** http://localhost:8080
-- 🗄️ **PostgreSQL:** localhost:5432
+```bash
+cd app
+flutter pub get
+flutter run
+```
 
-**Usuarios de prueba:**
-- `student@englishpro.com` / `password` (Plan Freemium)
-- `teacher@englishpro.com` / `password` (Docente)
-- `premium@englishpro.com` / `password` (Plan Premium)
+---
 
 ## 🗄️ Base de Datos
 
@@ -154,24 +185,22 @@ docker exec -it englishpro_db psql -U admin -d englishpro_db
 
 ## 🔥 Configuración de Firebase
 
-Firebase es **OBLIGATORIO** para que la aplicación funcione (autenticación y almacenamiento).
+1. Crear proyecto en [Firebase Console](https://console.firebase.google.com)
+2. Habilitar **Firebase Authentication** (Email/Password)
+3. Habilitar **Firebase Storage**
+4. Descargar `google-services.json` y colocarlo en `app/android/app/`
+5. Actualizar credenciales en `.env`
 
-### Opción A: Usar proyecto Firebase del equipo
-Pide al líder del equipo las credenciales y el archivo `google-services.json`.
+```bash
+# Instalar Firebase CLI
+npm install -g firebase-tools
 
-### Opción B: Crear tu propio proyecto Firebase
+# Login
+firebase login
 
-1. Ve a [Firebase Console](https://console.firebase.google.com)
-2. Crea un nuevo proyecto "EnglishPro-Dev"
-3. Habilita **Firebase Authentication** → Email/Password
-4. Habilita **Firebase Storage** → Modo de prueba
-5. En configuración, agrega una app Android:
-   - Package name: `com.englishpro.app`
-   - Descarga `google-services.json`
-6. Copia el archivo a `app/android/app/google-services.json`
-7. Completa las credenciales en el archivo `.env`
-
-**Ver [SETUP.md](SETUP.md) para instrucciones detalladas paso a paso.**
+# Inicializar
+firebase init
+```
 
 ## 📊 Planes de Suscripción
 
@@ -184,24 +213,16 @@ Pide al líder del equipo las credenciales y el archivo `google-services.json`.
 
 ## 🧪 Testing
 
-### Con Docker
+### Backend
 
 ```bash
-# Tests del backend
-docker-compose exec backend dart test
-
-# Tests de Flutter
-docker-compose exec flutter_web flutter test
-```
-
-### Sin Docker (si tienes Flutter instalado)
-
-```bash
-# Backend
 cd backend
 dart test
+```
 
-# Flutter
+### Flutter
+
+```bash
 cd app
 flutter test
 ```
@@ -245,20 +266,61 @@ Ver documentación completa de todos los endpoints en [TESTING.md](TESTING.md)
 - [x] Sistema de roles (Sprint 5)
 - [x] Notificaciones (Sprint 5 - Día 6-9)
 - [x] Testing completo (Sprint 5 - Día 10-14)
-- [x] Containerización completa con Docker (Sprint 6 - Día 1-3)
+- [ ] Optimización y documentación (Sprint 6 - Día 1-3)
 - [ ] Build de producción (Sprint 6 - Día 4-7)
 - [ ] Publicación en Play Store (Sprint 6 - Día 8-14)
+
+## 🐳 Desarrollo con Docker
+
+EnglishPro está completamente dockerizado para facilitar la colaboración y eliminar problemas de dependencias.
+
+### Ventajas de usar Docker:
+
+✅ **Solo necesitas Docker** - No instalar Flutter, Dart, PostgreSQL, etc.
+✅ **Entorno idéntico** - Todos usan las mismas versiones
+✅ **Inicio rápido** - Nuevos colaboradores listos en minutos
+✅ **Sin conflictos** - Aislado de tu sistema operativo
+✅ **Multiplataforma** - Funciona igual en Windows, Mac y Linux
+
+### Modos de ejecución:
+
+**Modo Completo** (Todo en Docker):
+```bash
+./docker-start.sh    # Linux/macOS
+.\docker-start.ps1   # Windows
+```
+
+**Modo Desarrollo** (Backend en Docker, Flutter local con hot-reload):
+```bash
+./docker-dev.sh      # Linux/macOS
+.\docker-dev.ps1     # Windows
+```
+
+📖 **Guía completa**: [DOCKER_SETUP.md](DOCKER_SETUP.md)
+
+---
 
 ## 📄 Licencia
 
 Este proyecto es privado y está desarrollado como proyecto académico para la Universidad Nacional Mayor de San Marcos (UNMSM) - FISI.
 
-## 🔗 Recursos
+## 📚 Documentación
+
+- [README.md](README.md) - Este archivo
+- [QUICKSTART.md](QUICKSTART.md) - Inicio rápido para nuevos colaboradores
+- [DOCKER_SETUP.md](DOCKER_SETUP.md) - Guía completa de Docker
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Arquitectura del sistema
+- [TESTING.md](TESTING.md) - Guía de testing y endpoints API
+- [FIREBASE_SETUP.md](FIREBASE_SETUP.md) - Configuración de Firebase
+- [programacion_de_trabajo.md](programacion_de_trabajo.md) - Roadmap del proyecto
+
+## 🔗 Recursos Externos
 
 - [Flutter Docs](https://docs.flutter.dev/)
 - [Dart Docs](https://dart.dev/guides)
 - [PostgreSQL Docs](https://www.postgresql.org/docs/)
 - [Firebase Docs](https://firebase.google.com/docs)
+- [Docker Docs](https://docs.docker.com/)
 
 ---
 

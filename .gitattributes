@@ -1,0 +1,39 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Dart/Flutter
+*.dart text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+pubspec.lock text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+*.ps1 text eol=crlf
+
+# Gradle
+*.gradle text eol=lf
+gradlew text eol=lf
+
+# iOS
+Podfile text eol=lf
+*.pbxproj text eol=lf
+
+# Docker
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+
+# Prevent binary files from being modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.gz binary
