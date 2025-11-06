@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/api_service.dart';
+import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
 import 'teacher_materials_screen.dart';
 
@@ -49,28 +49,28 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         return;
       }
 
-      // Get teacher info
-      final teacherResponse = await ApiService.getTeacherByUserId(userId);
+      // Get teacher info from Supabase
+      final teacherData = await SupabaseTeacherService.getTeacherByUserId(userId);
 
-      if (teacherResponse['success'] == true && teacherResponse['teacher'] != null) {
-        _teacherData = teacherResponse['teacher'] as Map<String, dynamic>;
+      if (teacherData != null) {
+        _teacherData = teacherData;
         final teacherId = _teacherData!['id_docente'] as int;
 
+        print('DEBUG TeacherDashboard: Found teacher with ID $teacherId');
+
         // Get teacher stats
-        final statsResponse = await ApiService.getTeacherStats(teacherId);
-        if (statsResponse['success'] == true) {
-          _teacherStats = statsResponse['stats'] as Map<String, dynamic>;
-        }
+        _teacherStats = await SupabaseTeacherService.getTeacherStats(teacherId);
+        print('DEBUG TeacherDashboard: Stats = $_teacherStats');
 
         // Get pending feedbacks
-        final pendingResponse = await ApiService.getPendingFeedbacks();
-        if (pendingResponse['success'] == true) {
-          _pendingFeedbacks = pendingResponse['feedbacks'] as List<dynamic>;
-        }
+        _pendingFeedbacks = await SupabaseTeacherService.getPendingFeedbacks();
+        print('DEBUG TeacherDashboard: Pending feedbacks count = ${_pendingFeedbacks.length}');
       } else {
-        _errorMessage = 'No se encontró información de docente para este usuario';
+        _errorMessage = 'No se encontró información de docente para este usuario. '
+            'Por favor contacte al administrador para que lo registre como docente.';
       }
     } catch (e) {
+      print('ERROR TeacherDashboard: $e');
       _errorMessage = 'Error al cargar datos: $e';
     } finally {
       setState(() {

@@ -1,0 +1,39 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║              📚 CARPETA CONTEXTO - ENGLISHPRO                   ║
+║                                                                  ║
+║         Documentación completa para trabajo rápido              ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🎯 EMPIEZA AQUÍ: README.md
+   └─ Índice completo y orden de lectura
+
+📖 ARCHIVOS PRINCIPALES (leer en orden):
+
+   1️⃣  00_INICIO_RAPIDO.md          (321 líneas)
+       └─ Resumen ejecutivo, setup en 5 min
+
+   2️⃣  01_ARQUITECTURA.md           (708 líneas)
+       └─ Arquitectura, flujos, decisiones técnicas
+
+   3️⃣  02_BASE_DE_DATOS.md          (976 líneas)
+       └─ 16 tablas, relaciones, queries
+
+   4️⃣  03_APP_FLUTTER.md            (1389 líneas)
+       └─ Código Flutter, pantallas, servicios
+
+   5️⃣  04_ESTADO_Y_PROXIMOS_PASOS.md (783 líneas)
+       └─ Qué funciona, qué falta, roadmap
+
+📦 EXTRA:
+
+   📋 SOBRE_NO_NECESARIOS.md        (314 líneas)
+      └─ Guía de la carpeta No_Necesarios/
+
+
+═══════════════════════════════════════════════════════════════════
+
+✅ SIGUIENTE PASO: Abre README.md
+
+═══════════════════════════════════════════════════════════════════
