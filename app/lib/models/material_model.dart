@@ -26,17 +26,56 @@ class MaterialModel {
 
   /// Crear MaterialModel desde JSON
   factory MaterialModel.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic v, {int defaultValue = 0}) {
+      if (v == null) return defaultValue;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      if (v is String) return int.tryParse(v) ?? defaultValue;
+      return defaultValue;
+    }
+
+    bool toBool(dynamic v, {bool defaultValue = false}) {
+      if (v == null) return defaultValue;
+      if (v is bool) return v;
+      if (v is int) return v != 0;
+      if (v is String) return v.toLowerCase() == 'true' || v == '1';
+      return defaultValue;
+    }
+
+    String? toStringOrNull(dynamic v) => v?.toString();
+
+    DateTime toDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      if (v is String) {
+        return DateTime.tryParse(v) ?? DateTime.now();
+      }
+      return DateTime.now();
+    }
+
+    final id = toInt(json['id'] ?? json['ID_Material']);
+    final habilidadId = toInt(json['habilidad_id'] ?? json['ID_Habilidad']);
+    final titulo = (json['titulo'] ?? json['Titulo'] ?? '').toString();
+    final descripcion = (json['descripcion'] ?? json['Descripcion'] ?? '').toString();
+    final tipoMaterial = (json['tipo_material'] ?? json['Tipo_Material'] ?? '').toString();
+    final contenidoTexto = toStringOrNull(json['contenido_texto'] ?? json['Contenido_Texto']);
+    final archivoUrl = toStringOrNull(json['archivo_url'] ?? json['URL_Recurso']);
+    final orden = toInt(json['orden'] ?? json['Orden'], defaultValue: 1);
+    final esPremium = toBool(json['es_premium'] ?? json['Es_Premium']);
+    final fechaCreacion = toDate(
+      json['fecha_creacion'] ?? json['Fecha_Creacion'] ?? json['created_at'] ?? json['Created_At'],
+    );
+
     return MaterialModel(
-      id: json['id'] as int,
-      habilidadId: json['habilidad_id'] as int,
-      titulo: json['titulo'] as String,
-      descripcion: json['descripcion'] as String,
-      tipoMaterial: json['tipo_material'] as String,
-      contenidoTexto: json['contenido_texto'] as String?,
-      archivoUrl: json['archivo_url'] as String?,
-      orden: json['orden'] as int,
-      esPremium: json['es_premium'] as bool,
-      fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
+      id: id,
+      habilidadId: habilidadId,
+      titulo: titulo,
+      descripcion: descripcion,
+      tipoMaterial: tipoMaterial,
+      contenidoTexto: contenidoTexto,
+      archivoUrl: archivoUrl,
+      orden: orden,
+      esPremium: esPremium,
+      fechaCreacion: fechaCreacion,
     );
   }
 

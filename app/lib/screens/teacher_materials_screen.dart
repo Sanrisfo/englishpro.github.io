@@ -68,6 +68,40 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
       return;
     }
 
+    // Asegurar que existan habilidades disponibles antes de abrir el diálogo
+    if (_skills.isEmpty) {
+      // Cargar SOLO habilidades para no depender del endpoint de materiales
+      setState(() => _isLoading = true);
+      try {
+        final skillsResponse = await ApiService.getSkills();
+        if (skillsResponse['success'] == true) {
+          setState(() {
+            _skills = skillsResponse['skills'] as List<SkillModel>;
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(skillsResponse['message'] ?? 'No se pudieron cargar las habilidades')),
+          );
+          return;
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error cargando habilidades: $e')),
+        );
+        return;
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+      if (_skills.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay habilidades disponibles aún. Intenta nuevamente en unos segundos.'),
+          ),
+        );
+        return;
+      }
+    }
+
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final urlController = TextEditingController();
@@ -75,7 +109,7 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
     final durationController = TextEditingController();
     int? selectedSkillId;
     String selectedType = 'pdf';
-    String selectedLevel = 'freemium';
+    String selectedLevel = 'Freemium';
     bool isPremium = false;
 
     await showDialog(
@@ -92,18 +126,23 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                     // Skill dropdown
                     DropdownButtonFormField<int>(
                       value: selectedSkillId,
+                      isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Habilidad'),
+                      hint: const Text('Selecciona una habilidad'),
+                      disabledHint: const Text('Cargando habilidades...'),
                       items: _skills.map((skill) {
                         return DropdownMenuItem<int>(
                           value: skill.id,
                           child: Text(skill.nombre),
                         );
                       }).toList(),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          selectedSkillId = value;
-                        });
-                      },
+                      onChanged: _skills.isEmpty
+                          ? null
+                          : (value) {
+                            setDialogState(() {
+                              selectedSkillId = value;
+                            });
+                          },
                     ),
                     const SizedBox(height: 12),
                     // Title
@@ -189,11 +228,13 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                       habilidadId: selectedSkillId!,
                       titulo: titleController.text,
                       tipoMaterial: selectedType,
-                      urlRecurso: urlController.text.isNotEmpty ? urlController.text : null,
+                      descripcion: descriptionController.text.isNotEmpty ? descriptionController.text : null,
+                      archivoUrl: urlController.text.isNotEmpty ? urlController.text : null,
                       contenidoTexto: contentController.text.isNotEmpty ? contentController.text : null,
+                      esPremium: isPremium,
                       duracionMinutos: int.tryParse(durationController.text),
-                      nivelAcceso: selectedLevel,
-                      creadoPor: teacherId,
+                      // nivelAcceso: selectedLevel, // opcional; omitir para evitar constraint si no existe
+                      // creadoPor: teacherId, // opcional; puede requerir id_docente, se omite
                     );
 
                     Navigator.pop(context);
@@ -269,7 +310,7 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
         backgroundColor: Colors.deepPurple,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateMaterialDialog,
+        onPressed: _isLoading ? null : _showCreateMaterialDialog,
         backgroundColor: Colors.deepPurple,
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Material'),

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../config/supabase_config.dart';
 import '../models/user.dart';
 import '../models/course_model.dart';
 import '../models/skill_model.dart';
@@ -190,97 +192,52 @@ class ApiService {
   /// Get all skills
   static Future<Map<String, dynamic>> getSkills() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/skills'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await supabase
+          .from('habilidades')
+          .select('*')
+          .order('orden', ascending: true);
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final skills = (response as List<dynamic>)
+          .map((row) => SkillModel.fromJson(row as Map<String, dynamic>))
+          .toList();
 
-      if (response.statusCode == 200 && data['success'] == true) {
-        final skillsData = data['data'] as List<dynamic>;
-        final skills = skillsData
-            .map((json) => SkillModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        return {
-          'success': true,
-          'skills': skills,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get skills',
-        };
-      }
+      return {'success': true, 'skills': skills};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase getSkills): $e'};
     }
   }
 
   /// Get skills by course ID
   static Future<Map<String, dynamic>> getSkillsByCourse(int courseId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/skills/course/$courseId'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await supabase
+          .from('habilidades')
+          .select('*')
+          .eq('curso_id', courseId)
+          .order('orden', ascending: true);
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final skills = (response as List<dynamic>)
+          .map((row) => SkillModel.fromJson(row as Map<String, dynamic>))
+          .toList();
 
-      if (response.statusCode == 200 && data['success'] == true) {
-        final skillsData = data['data'] as List<dynamic>;
-        final skills = skillsData
-            .map((json) => SkillModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        return {
-          'success': true,
-          'skills': skills,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get skills',
-        };
-      }
+      return {'success': true, 'skills': skills};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase getSkillsByCourse): $e'};
     }
   }
 
   /// Get skill by ID
   static Future<Map<String, dynamic>> getSkillById(int id) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/skills/$id'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final row = await supabase
+          .from('habilidades')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'skill': SkillModel.fromJson(data['data'] as Map<String, dynamic>),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get skill',
-        };
-      }
+      return {'success': true, 'skill': SkillModel.fromJson(row as Map<String, dynamic>)};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase getSkillById): $e'};
     }
   }
 
@@ -289,97 +246,51 @@ class ApiService {
   /// Get all materials
   static Future<Map<String, dynamic>> getMaterials() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/materials'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await supabase
+          .from('materiales_estudio')
+          .select('*')
+          .order('orden', ascending: true);
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final materials = (response as List<dynamic>)
+          .map((row) => MaterialModel.fromJson(row as Map<String, dynamic>))
+          .toList();
 
-      if (response.statusCode == 200 && data['success'] == true) {
-        final materialsData = data['data'] as List<dynamic>;
-        final materials = materialsData
-            .map((json) => MaterialModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        return {
-          'success': true,
-          'materials': materials,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get materials',
-        };
-      }
+      return {'success': true, 'materials': materials};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase getMaterials): $e'};
     }
   }
 
   /// Get materials by skill ID
   static Future<Map<String, dynamic>> getMaterialsBySkill(int skillId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/materials/skill/$skillId'),
-        headers: {'Content-Type': 'application/json'},
-      );
+      final response = await supabase
+          .from('materiales_estudio')
+          .select('*')
+          .eq('habilidad_id', skillId)
+          .order('orden', ascending: true);
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final materials = (response as List<dynamic>)
+          .map((row) => MaterialModel.fromJson(row as Map<String, dynamic>))
+          .toList();
 
-      if (response.statusCode == 200 && data['success'] == true) {
-        final materialsData = data['data'] as List<dynamic>;
-        final materials = materialsData
-            .map((json) => MaterialModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        return {
-          'success': true,
-          'materials': materials,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get materials',
-        };
-      }
+      return {'success': true, 'materials': materials};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase getMaterialsBySkill): $e'};
     }
   }
 
   /// Get material by ID
   static Future<Map<String, dynamic>> getMaterialById(int id) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/materials/$id'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'material': MaterialModel.fromJson(data['data'] as Map<String, dynamic>),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to get material',
-        };
-      }
+      final row = await supabase
+          .from('materiales_estudio')
+          .select('*')
+          .eq('id', id)
+          .single();
+      return {'success': true, 'material': MaterialModel.fromJson(row as Map<String, dynamic>)};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase getMaterialById): $e'};
     }
   }
 
@@ -388,49 +299,43 @@ class ApiService {
     required int habilidadId,
     required String titulo,
     required String tipoMaterial,
-    String? urlRecurso,
+    String? descripcion,
+    String? archivoUrl,
     String? contenidoTexto,
+    bool esPremium = false,
     int? duracionMinutos,
     int orden = 1,
-    String nivelAcceso = 'Freemium',
-    int? creadoPor,
+    String? nivelAcceso, // opcional
+    int? creadoPor, // opcional, puede ser id_docente en tu esquema
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/materials'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'habilidad_id': habilidadId,
-          'titulo': titulo,
-          'tipo_material': tipoMaterial,
-          if (urlRecurso != null) 'url_recurso': urlRecurso,
-          if (contenidoTexto != null) 'contenido_texto': contenidoTexto,
-          if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
-          'orden': orden,
-          'nivel_acceso': nivelAcceso,
-          if (creadoPor != null) 'creado_por': creadoPor,
-        }),
-      );
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'material': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['error'] ?? 'Failed to create material',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
+      final payload = <String, dynamic>{
+        'habilidad_id': habilidadId,
+        'titulo': titulo,
+        'tipo_material': tipoMaterial,
+        if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
+        if (archivoUrl != null && archivoUrl.isNotEmpty) 'archivo_url': archivoUrl,
+        if (contenidoTexto != null && contenidoTexto.isNotEmpty) 'contenido_texto': contenidoTexto,
+        'es_premium': esPremium,
+        if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
+        'orden': orden,
+        if (nivelAcceso != null) 'nivel_acceso': nivelAcceso,
+        if (creadoPor != null) 'creado_por': creadoPor,
       };
+
+      final inserted = await supabase
+          .from('materiales_estudio')
+          .insert(payload)
+          .select()
+          .single();
+
+      return {
+        'success': true,
+        'material': inserted,
+        'message': 'Material creado en Supabase',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase createMaterial): $e'};
     }
   }
 
@@ -440,60 +345,29 @@ class ApiService {
     required Map<String, dynamic> updates,
   }) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/api/materials/$materialId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(updates),
-      );
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'material': data['data'],
-          'message': data['message'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['error'] ?? 'Failed to update material',
-        };
-      }
-    } catch (e) {
+      final updated = await supabase
+          .from('materiales_estudio')
+          .update(updates)
+          .eq('id', materialId)
+          .select()
+          .single();
       return {
-        'success': false,
-        'message': 'Error: $e',
+        'success': true,
+        'material': updated,
+        'message': 'Material actualizado en Supabase',
       };
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase updateMaterial): $e'};
     }
   }
 
   /// Delete material (for teachers)
   static Future<Map<String, dynamic>> deleteMaterial(int materialId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/api/materials/$materialId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['error'] ?? 'Failed to delete material',
-        };
-      }
+      await supabase.from('materiales_estudio').delete().eq('id', materialId);
+      return {'success': true, 'message': 'Material eliminado en Supabase'};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error (Supabase deleteMaterial): $e'};
     }
   }
 

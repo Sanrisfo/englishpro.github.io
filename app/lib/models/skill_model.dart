@@ -18,13 +18,21 @@ class SkillModel {
 
   /// Crear SkillModel desde JSON
   factory SkillModel.fromJson(Map<String, dynamic> json) {
+    int toInt(dynamic v, {int defaultValue = 0}) {
+      if (v == null) return defaultValue;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      if (v is String) return int.tryParse(v) ?? defaultValue;
+      return defaultValue;
+    }
+
     return SkillModel(
-      id: json['id'] as int,
-      cursoId: json['curso_id'] as int,
-      nombre: json['nombre'] as String,
-      descripcion: json['descripcion'] as String,
-      iconUrl: json['icon_url'] as String?,
-      orden: json['orden'] as int,
+      id: toInt(json['id'] ?? json['ID_Habilidad']),
+      cursoId: toInt(json['curso_id'] ?? json['ID_Curso']),
+      nombre: (json['nombre'] ?? json['Nombre_Habilidad'] ?? '').toString(),
+      descripcion: (json['descripcion'] ?? json['Descripcion'] ?? '').toString(),
+      iconUrl: (json['icon_url'] ?? json['Icon_Url']) as String?,
+      orden: toInt(json['orden'] ?? json['Orden'], defaultValue: 1),
     );
   }
 
