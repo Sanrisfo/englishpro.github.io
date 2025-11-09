@@ -4,15 +4,6 @@
 
 ---
 
-## ✅ Estado Actual (Octubre 2024)
-
-### Sprint 6 - COMPLETADO
-
-**Fecha:** 29 de Octubre 2024
-**Estado:** ✅ Proyecto funcional con Supabase
-
----
-
 ## 🎯 Funcionalidades Completadas
 
 ### ✅ 1. Autenticación (COMPLETO)

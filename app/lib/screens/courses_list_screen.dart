@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/course_model.dart';
 import '../services/api_service.dart';
+import 'skill_materials_screen.dart';
 
 class CoursesListScreen extends StatefulWidget {
   const CoursesListScreen({Key? key}) : super(key: key);
@@ -404,11 +405,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // Navigate to skill materials or exercises
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Opening ${skill.nombre}...'),
-              duration: const Duration(seconds: 1),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SkillMaterialsScreen(
+                skillId: skill.id,
+                skillName: skill.nombre,
+                courseName: widget.course.nombre,
+              ),
             ),
           );
         },

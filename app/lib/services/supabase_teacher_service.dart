@@ -53,13 +53,30 @@ class SupabaseTeacherService {
           .eq('id_docente', teacherId)
           .count();
 
-      // Get pending feedbacks (responses that need review)
-      final pendingCountResult = await supabase
+      // Get pending feedbacks (responses that need review and have no feedback yet)
+      final pendingResponses = await supabase
           .from('respuestas_usuario')
           .select('id_respuesta')
-          .eq('requiere_revision', true)
-          .isFilter('calificacion', null)
-          .count();
+          .eq('requiere_revision', true);
+
+      int pendingCount = 0;
+      if (pendingResponses is List && pendingResponses.isNotEmpty) {
+        final ids = pendingResponses
+            .map((e) => e['id_respuesta'])
+            .where((e) => e != null)
+            .toList();
+
+        final existingFeedback = await supabase
+            .from('retroalimentacion_docente')
+            .select('id_respuesta')
+            .inFilter('id_respuesta', ids);
+
+        final feedbackIds = existingFeedback is List
+            ? existingFeedback.map((e) => e['id_respuesta']).toSet()
+            : <dynamic>{};
+
+        pendingCount = ids.where((id) => !feedbackIds.contains(id)).length;
+      }
 
       // Get graded feedbacks count
       final gradedCount = feedbackCountResult.count ?? 0;
@@ -70,7 +87,7 @@ class SupabaseTeacherService {
       return {
         'total_calificaciones': totalFeedbacks,
         'calificadas': gradedCount,
-        'pendientes': pendingCountResult.count ?? 0,
+        'pendientes': pendingCount,
         'promedio_puntuacion': averageRating,
       };
     } catch (e) {
@@ -95,10 +112,33 @@ class SupabaseTeacherService {
             usuarios:id_usuario(nombre_completo, email)
           ''')
           .eq('requiere_revision', true)
-          .isFilter('calificacion', null)
           .order('fecha_respuesta', ascending: true);
 
-      return List<Map<String, dynamic>>.from(response);
+      final list = List<Map<String, dynamic>>.from(response as List);
+
+      if (list.isEmpty) return [];
+
+      final ids = list
+          .map((e) => e['id_respuesta'])
+          .where((e) => e != null)
+          .toList();
+
+      if (ids.isEmpty) return list;
+
+      final existingFeedback = await supabase
+          .from('retroalimentacion_docente')
+          .select('id_respuesta')
+          .inFilter('id_respuesta', ids);
+
+      final feedbackIds = existingFeedback is List
+          ? existingFeedback.map((e) => e['id_respuesta']).toSet()
+          : <dynamic>{};
+
+      final filtered = list
+          .where((row) => !feedbackIds.contains(row['id_respuesta']))
+          .toList();
+
+      return filtered;
     } catch (e) {
       print('Error getting pending feedbacks: $e');
       return [];
@@ -149,13 +189,14 @@ class SupabaseTeacherService {
           .select()
           .single();
 
-      // Update the response with the grade
+      // Update response to mark as reviewed and optionally assign points
+      final updatePayload = <String, dynamic>{'requiere_revision': false};
+      if (pointsAssigned != null) {
+        updatePayload['puntos_obtenidos'] = pointsAssigned;
+      }
       await supabase
           .from('respuestas_usuario')
-          .update({
-            'calificacion': grade,
-            'puntos_obtenidos': pointsAssigned,
-          })
+          .update(updatePayload)
           .eq('id_respuesta', responseId);
 
       return {

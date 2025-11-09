@@ -4,6 +4,9 @@ import '../providers/auth_provider.dart';
 import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
 import 'teacher_materials_screen.dart';
+import 'pending_reviews_screen.dart';
+import 'student_roster_screen.dart';
+import 'teacher_courses_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({Key? key}) : super(key: key);
@@ -127,6 +130,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       children: [
                         _buildWelcomeCard(user?.nombreCompleto ?? 'Docente'),
                         const SizedBox(height: 20),
+                        _buildModulesGrid(context),
+                        const SizedBox(height: 20),
                         _buildStatsCards(),
                         const SizedBox(height: 20),
                         _buildQuickActionsCard(),
@@ -136,6 +141,109 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     ),
                   ),
                 ),
+    );
+  }
+
+  Widget _buildModulesGrid(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Módulos',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _buildModuleTile(
+              context,
+              title: 'Módulos',
+              icon: Icons.dashboard_customize,
+              color: Colors.deepPurple,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TeacherCoursesScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildModuleTile(
+              context,
+              title: 'Revisión',
+              icon: Icons.rate_review,
+              color: Colors.orange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PendingReviewsScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildModuleTile(
+              context,
+              title: 'Control de Estudiantes',
+              icon: Icons.group,
+              color: Colors.teal,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StudentRosterScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModuleTile(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

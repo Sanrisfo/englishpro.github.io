@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../config/supabase_config.dart';
+import '../services/supabase_storage_service.dart';
 import '../models/material_model.dart';
 import '../models/skill_model.dart';
 
@@ -107,7 +111,7 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
     final urlController = TextEditingController();
     final contentController = TextEditingController();
     final durationController = TextEditingController();
-    int? selectedSkillId;
+    int? selectedSkillId = _skills.isNotEmpty ? _skills.first.id : null;
     String selectedType = 'pdf';
     String selectedLevel = 'Freemium';
     bool isPremium = false;
@@ -127,22 +131,35 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                     DropdownButtonFormField<int>(
                       value: selectedSkillId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Habilidad'),
+                      decoration: const InputDecoration(labelText: 'Habilidad *'),
                       hint: const Text('Selecciona una habilidad'),
                       disabledHint: const Text('Cargando habilidades...'),
-                      items: _skills.map((skill) {
-                        return DropdownMenuItem<int>(
-                          value: skill.id,
-                          child: Text(skill.nombre),
-                        );
-                      }).toList(),
-                      onChanged: _skills.isEmpty
-                          ? null
-                          : (value) {
-                            setDialogState(() {
-                              selectedSkillId = value;
-                            });
-                          },
+                      items: () {
+                        // Eliminar duplicados por ID usando Map
+                        final Map<int, SkillModel> uniqueSkills = {};
+                        for (var skill in _skills) {
+                          if (skill.id > 0 && !uniqueSkills.containsKey(skill.id)) {
+                            uniqueSkills[skill.id] = skill;
+                          }
+                        }
+                        return uniqueSkills.values.map((skill) {
+                          return DropdownMenuItem<int>(
+                            value: skill.id,
+                            child: Text(skill.nombre),
+                          );
+                        }).toList();
+                      }(),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          selectedSkillId = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Seleccione una habilidad';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
                     // Title
@@ -176,13 +193,95 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    // URL
-                    TextField(
-                      controller: urlController,
-                      decoration: const InputDecoration(
-                        labelText: 'URL del Archivo (opcional)',
-                        hintText: 'https://...',
-                      ),
+                    // URL + Subida directa
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: urlController,
+                            decoration: const InputDecoration(
+                              labelText: 'URL del Archivo (opcional)',
+                              hintText: 'https://...',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            // Seleccionar archivo según tipo
+                            List<String> exts;
+                            String bucket;
+                            String folder;
+                            if (selectedType == 'pdf') {
+                              exts = ['pdf'];
+                              bucket = 'pdfs';
+                              folder = 'materials';
+                            } else if (selectedType == 'image' || selectedType == 'imagen') {
+                              exts = ['png', 'jpg', 'jpeg'];
+                              bucket = 'images';
+                              folder = '';
+                            } else if (selectedType == 'audio') {
+                              exts = ['mp3', 'm4a', 'wav'];
+                              bucket = 'audios';
+                              folder = 'materials';
+                            } else if (selectedType == 'video') {
+                              exts = ['mp4', 'mov'];
+                              bucket = 'videos';
+                              folder = '';
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Tipo no soportado para subida directa')),
+                              );
+                              return;
+                            }
+
+                            final result = await FilePicker.platform.pickFiles(
+                              type: FileType.custom,
+                              allowedExtensions: exts,
+                            );
+                            if (result == null || result.files.single.path == null) return;
+                            final file = File(result.files.single.path!);
+                            final fileName = '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
+
+                            String? publicUrl;
+                            try {
+                              final storage = SupabaseStorageService();
+                              if (selectedType == 'pdf') {
+                                final r = await storage.uploadPDF(pdfFile: file, fileName: fileName);
+                                if (r['success'] == true) publicUrl = r['url'] as String;
+                              } else if (selectedType == 'image' || selectedType == 'imagen') {
+                                final r = await storage.uploadImage(imageFile: file, fileName: fileName);
+                                if (r['success'] == true) publicUrl = r['url'] as String;
+                              } else if (selectedType == 'audio') {
+                                // Subir a bucket audios/materials/
+                                final path = folder.isNotEmpty ? '$folder/$fileName' : fileName;
+                                await supabase.storage.from(bucket).upload(path, file);
+                                publicUrl = supabase.storage.from(bucket).getPublicUrl(path);
+                              } else if (selectedType == 'video') {
+                                final r = await storage.uploadVideo(videoFile: file, fileName: fileName);
+                                if (r['success'] == true) publicUrl = r['url'] as String;
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error subiendo archivo: $e')),
+                              );
+                              return;
+                            }
+
+                            if (publicUrl != null) {
+                              setDialogState(() {
+                                urlController.text = publicUrl!;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Archivo subido')),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.cloud_upload),
+                          label: const Text('Subir'),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     // Content

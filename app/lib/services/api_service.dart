@@ -7,6 +7,7 @@ import '../models/user.dart';
 import '../models/course_model.dart';
 import '../models/skill_model.dart';
 import '../models/material_model.dart';
+import '../models/module_model.dart';
 import '../models/question_model.dart';
 
 class ApiService {
@@ -267,7 +268,7 @@ class ApiService {
       final response = await supabase
           .from('materiales_estudio')
           .select('*')
-          .eq('habilidad_id', skillId)
+          .eq('id_habilidad', skillId)
           .order('orden', ascending: true);
 
       final materials = (response as List<dynamic>)
@@ -286,7 +287,7 @@ class ApiService {
       final row = await supabase
           .from('materiales_estudio')
           .select('*')
-          .eq('id', id)
+          .eq('id_material', id)
           .single();
       return {'success': true, 'material': MaterialModel.fromJson(row as Map<String, dynamic>)};
     } catch (e) {
@@ -309,14 +310,36 @@ class ApiService {
     int? creadoPor, // opcional, puede ser id_docente en tu esquema
   }) async {
     try {
+      // Mapear tipo a valores aceptados por CHECK (PDF, Video, Audio, Texto, Imagen)
+      String tipoDb;
+      switch (tipoMaterial.toLowerCase()) {
+        case 'pdf':
+          tipoDb = 'PDF';
+          break;
+        case 'video':
+          tipoDb = 'Video';
+          break;
+        case 'audio':
+          tipoDb = 'Audio';
+          break;
+        case 'text':
+        case 'texto':
+          tipoDb = 'Texto';
+          break;
+        case 'image':
+        case 'imagen':
+          tipoDb = 'Imagen';
+          break;
+        default:
+          tipoDb = 'PDF';
+      }
+
       final payload = <String, dynamic>{
-        'habilidad_id': habilidadId,
+        'id_habilidad': habilidadId,
         'titulo': titulo,
-        'tipo_material': tipoMaterial,
-        if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
-        if (archivoUrl != null && archivoUrl.isNotEmpty) 'archivo_url': archivoUrl,
+        'tipo_material': tipoDb,
+        if (archivoUrl != null && archivoUrl.isNotEmpty) 'url_recurso': archivoUrl,
         if (contenidoTexto != null && contenidoTexto.isNotEmpty) 'contenido_texto': contenidoTexto,
-        'es_premium': esPremium,
         if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
         'orden': orden,
         if (nivelAcceso != null) 'nivel_acceso': nivelAcceso,
@@ -348,7 +371,7 @@ class ApiService {
       final updated = await supabase
           .from('materiales_estudio')
           .update(updates)
-          .eq('id', materialId)
+          .eq('id_material', materialId)
           .select()
           .single();
       return {
@@ -364,10 +387,77 @@ class ApiService {
   /// Delete material (for teachers)
   static Future<Map<String, dynamic>> deleteMaterial(int materialId) async {
     try {
-      await supabase.from('materiales_estudio').delete().eq('id', materialId);
+      await supabase.from('materiales_estudio').delete().eq('id_material', materialId);
       return {'success': true, 'message': 'Material eliminado en Supabase'};
     } catch (e) {
       return {'success': false, 'message': 'Error (Supabase deleteMaterial): $e'};
+    }
+  }
+
+  // ==================== MODULES ====================
+
+  /// Get modules by skill
+  static Future<Map<String, dynamic>> getModulesBySkill(int skillId) async {
+    try {
+      final response = await supabase
+          .from('modulos')
+          .select('*')
+          .eq('id_habilidad', skillId)
+          .order('orden', ascending: true);
+
+      final modules = (response as List<dynamic>)
+          .map((row) => ModuleModel.fromJson(row as Map<String, dynamic>))
+          .toList();
+
+      return {'success': true, 'modules': modules};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase getModulesBySkill): $e'};
+    }
+  }
+
+  /// Create module
+  static Future<Map<String, dynamic>> createModule({
+    required int habilidadId,
+    required String nombre,
+    String? descripcion,
+    int orden = 1,
+    bool activo = true,
+  }) async {
+    try {
+      final inserted = await supabase
+          .from('modulos')
+          .insert({
+            'id_habilidad': habilidadId,
+            'nombre_modulo': nombre,
+            if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
+            'orden': orden,
+            'activo': activo,
+          })
+          .select()
+          .single();
+      return {'success': true, 'module': inserted};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase createModule): $e'};
+    }
+  }
+
+  /// Update activity to assign module
+  static Future<Map<String, dynamic>> updateActivityModule({
+    required int cuestionarioId,
+    int? moduloId,
+  }) async {
+    try {
+      final updated = await supabase
+          .from('cuestionarios')
+          .update({
+            'id_modulo': moduloId,
+          })
+          .eq('id_cuestionario', cuestionarioId)
+          .select()
+          .single();
+      return {'success': true, 'quiz': updated};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase updateActivityModule): $e'};
     }
   }
 

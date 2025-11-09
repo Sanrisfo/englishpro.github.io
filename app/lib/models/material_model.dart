@@ -52,13 +52,13 @@ class MaterialModel {
       return DateTime.now();
     }
 
-    final id = toInt(json['id'] ?? json['ID_Material']);
-    final habilidadId = toInt(json['habilidad_id'] ?? json['ID_Habilidad']);
+    final id = toInt(json['id'] ?? json['id_material'] ?? json['ID_Material']);
+    final habilidadId = toInt(json['habilidad_id'] ?? json['id_habilidad'] ?? json['ID_Habilidad']);
     final titulo = (json['titulo'] ?? json['Titulo'] ?? '').toString();
     final descripcion = (json['descripcion'] ?? json['Descripcion'] ?? '').toString();
     final tipoMaterial = (json['tipo_material'] ?? json['Tipo_Material'] ?? '').toString();
     final contenidoTexto = toStringOrNull(json['contenido_texto'] ?? json['Contenido_Texto']);
-    final archivoUrl = toStringOrNull(json['archivo_url'] ?? json['URL_Recurso']);
+    final archivoUrl = toStringOrNull(json['url_recurso'] ?? json['archivo_url'] ?? json['URL_Recurso']);
     final orden = toInt(json['orden'] ?? json['Orden'], defaultValue: 1);
     final esPremium = toBool(json['es_premium'] ?? json['Es_Premium']);
     final fechaCreacion = toDate(
@@ -82,13 +82,13 @@ class MaterialModel {
   /// Convertir MaterialModel a JSON
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'habilidad_id': habilidadId,
+      'id_material': id,
+      'id_habilidad': habilidadId,
       'titulo': titulo,
       'descripcion': descripcion,
       'tipo_material': tipoMaterial,
       'contenido_texto': contenidoTexto,
-      'archivo_url': archivoUrl,
+      'url_recurso': archivoUrl,
       'orden': orden,
       'es_premium': esPremium,
       'fecha_creacion': fechaCreacion.toIso8601String(),
@@ -96,19 +96,19 @@ class MaterialModel {
   }
 
   /// Verificar si es material PDF
-  bool get isPdf => tipoMaterial == 'pdf';
+  bool get isPdf => tipoMaterial.toLowerCase() == 'pdf';
 
   /// Verificar si es material de video
-  bool get isVideo => tipoMaterial == 'video';
+  bool get isVideo => tipoMaterial.toLowerCase() == 'video';
 
   /// Verificar si es material de audio
-  bool get isAudio => tipoMaterial == 'audio';
+  bool get isAudio => tipoMaterial.toLowerCase() == 'audio';
 
   /// Verificar si es material de texto
-  bool get isText => tipoMaterial == 'text';
+  bool get isText => tipoMaterial.toLowerCase() == 'text' || tipoMaterial.toLowerCase() == 'texto';
 
   /// Verificar si es enlace externo
-  bool get isLink => tipoMaterial == 'link';
+  bool get isLink => tipoMaterial.toLowerCase() == 'link';
 
   /// Verificar si requiere descarga
   bool get requiresDownload => isPdf || isVideo || isAudio;

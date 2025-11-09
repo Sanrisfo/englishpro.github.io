@@ -27,9 +27,9 @@ class SkillModel {
     }
 
     return SkillModel(
-      id: toInt(json['id'] ?? json['ID_Habilidad']),
+      id: toInt(json['id'] ?? json['id_habilidad'] ?? json['ID_Habilidad']),
       cursoId: toInt(json['curso_id'] ?? json['ID_Curso']),
-      nombre: (json['nombre'] ?? json['Nombre_Habilidad'] ?? '').toString(),
+      nombre: (json['nombre'] ?? json['nombre_habilidad'] ?? json['Nombre_Habilidad'] ?? '').toString(),
       descripcion: (json['descripcion'] ?? json['Descripcion'] ?? '').toString(),
       iconUrl: (json['icon_url'] ?? json['Icon_Url']) as String?,
       orden: toInt(json['orden'] ?? json['Orden'], defaultValue: 1),

@@ -30,7 +30,7 @@ class QuestionModel {
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
     return QuestionModel(
       id: json['id'] as int,
-      habilidadId: json['habilidad_id'] as int,
+      habilidadId: (json['id_habilidad'] ?? json['habilidad_id']) as int,
       textoPregunta: json['texto_pregunta'] as String,
       tipoPregunta: json['tipo_pregunta'] as String,
       audioUrl: json['audio_url'] as String?,
@@ -51,7 +51,7 @@ class QuestionModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'habilidad_id': habilidadId,
+      'id_habilidad': habilidadId,
       'texto_pregunta': textoPregunta,
       'tipo_pregunta': tipoPregunta,
       'audio_url': audioUrl,
