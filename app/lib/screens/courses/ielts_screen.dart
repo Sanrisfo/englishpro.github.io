@@ -93,7 +93,7 @@ class _IeltsScreenState extends State<IeltsScreen> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Colors.green, Colors.lightGreen],
+            colors: [Colors.lightGreen, Colors.green],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

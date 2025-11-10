@@ -6,6 +6,7 @@ import 'courses/ielts_screen.dart';
 import 'courses/business_english_screen.dart';
 import 'courses/english_in_action_screen.dart';
 import 'courses_list_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,98 +25,177 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('EnglishPro'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CoursesListScreen()),
-              );
-            },
-            tooltip: 'View All Courses',
+      body:
+
+      //Todo esto era el appbar (encabezado) Ahora tiene Hello, nombre, icono
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 50),
+
+          // Este es el nuevo encabezado
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Saludo y nombre del usuario
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      "👋 Welcome!",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "Matthew", // <-- luego se puede hacer dinámico
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF23408E),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Logito con el avatar
+                PopupMenuButton(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'logout') {
+                      _logout(context);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Text("Cerrar sesión"),
+                    ),
+                  ],
+                  child: const CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Color(0xFFD9D9D9),
+                      child: const CircleAvatar(
+                        radius: 22,
+                        backgroundImage: AssetImage('assets/images/avatar.png'),
+                      ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-            tooltip: 'Logout',
+
+          const SizedBox(height: 10),
+
+          // CONTENIDO PRINCIPAL
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+
+                Image.asset(
+                  'assets/images/logo_completo.png',
+                  height: 120,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Your fluency starts here.',
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Course Cards. Todo lo que son los cursos
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _buildCourseCard(
+                        'TOEFL',
+                        'assets/images/icono_toefl.png',
+                        const Color(0xFFD9232A),
+                      ),
+                      _buildCourseCard(
+                        'IELTS',
+                        'assets/images/icono_ielts.png',
+                        const Color(0xFF23408E),
+                      ),
+                      _buildCourseCard(
+                        'Business En.',
+                        'assets/images/icono_business.png',
+                        const Color(0xFFB02224),
+                      ),
+                      _buildCourseCard(
+                        'En. in Action',
+                        'assets/images/icono_conversational.png',
+                        const Color(0xFF1F3A89),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.school,
-              size: 100,
-              color: Color(0xFF1E3A8A),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Welcome to EnglishPro!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E3A8A),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Start your English learning journey',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 48),
-            // Course Cards (placeholder)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  _buildCourseCard('TOEFL', Icons.book, Colors.blue),
-                  const SizedBox(height: 16),
-                  _buildCourseCard('IELTS', Icons.library_books, Colors.green),
-                  const SizedBox(height: 16),
-                  _buildCourseCard(
-                      'Business English', Icons.business, Colors.orange),
-                  const SizedBox(height: 16),
-                  _buildCourseCard(
-                      'English in Action', Icons.chat, Colors.purple),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildCourseCard(String title, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Builder(
-        builder: (context) => ListTile(
-          leading: Icon(icon, size: 40, color: color),
-          title: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+  Widget _buildCourseCard(String title, String imagePath, Color color) {
+    return Builder(
+      builder: (context) {
+        return InkWell(
+          onTap: () => _navigateToCourse(context, title),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      title,
+                      style: GoogleFonts.ptSans(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                Center(
+                  child: Image.asset(
+                    imagePath,
+                    height: 70,
+                    color: Colors.white.withOpacity(0.4),
+                  ),
+                ),
+              ],
             ),
           ),
-          subtitle: const Text('Tap to start learning'),
-          trailing: const Icon(Icons.arrow_forward_ios),
-          onTap: () => _navigateToCourse(context, title),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -129,10 +209,10 @@ class HomeScreen extends StatelessWidget {
       case 'IELTS':
         screen = const IeltsScreen();
         break;
-      case 'Business English':
+      case 'Business En.':
         screen = const BusinessEnglishScreen();
         break;
-      case 'English in Action':
+      case 'En. in Action':
         screen = const EnglishInActionScreen();
         break;
       default:

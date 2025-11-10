@@ -5,6 +5,7 @@ import 'config/supabase_config.dart'; // 🆕 Supabase
 // import 'config/firebase_config.dart'; // ❌ DEPRECATED - Commented for migration
 import 'screens/splash_screen.dart';
 import 'providers/auth_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,12 +32,18 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'EnglishPro',
         debugShowCheckedModeBanner: false,
+
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF1E3A8A),
             brightness: Brightness.light,
           ),
           useMaterial3: true,
+          textTheme: GoogleFonts.ptSansTextTheme(
+            Theme
+                .of(context)
+                .textTheme,
+          ),
         ),
         home: const SplashScreen(),
       ),
