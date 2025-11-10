@@ -7,6 +7,8 @@ import 'courses/business_english_screen.dart';
 import 'courses/english_in_action_screen.dart';
 import 'courses_list_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../config/supabase_config.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -20,6 +22,16 @@ class HomeScreen extends StatelessWidget {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
+  }
+
+  Future<void> _load() async{
+    try {
+      final userName = await supabase
+          .from('usuarios')
+          .select('id_usuario');
+      } catch (e) {
+    }
+
   }
 
   @override
