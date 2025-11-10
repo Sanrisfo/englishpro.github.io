@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
@@ -7,6 +9,7 @@ import 'teacher_materials_screen.dart';
 import 'pending_reviews_screen.dart';
 import 'student_roster_screen.dart';
 import 'teacher_courses_screen.dart';
+import 'login_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({Key? key}) : super(key: key);
@@ -38,12 +41,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final userId = authProvider.user?.idUsuario;
 
-      // Debug: check what we have in provider
-      print('DEBUG TeacherDashboard: user = ${authProvider.user}, userId = $userId');
-      if (authProvider.user != null) {
-        print('DEBUG TeacherDashboard: user.idUsuario = ${authProvider.user!.idUsuario}, user.rol = ${authProvider.user!.rol}');
-      }
-
       if (userId == null) {
         setState(() {
           _errorMessage = 'Usuario no autenticado';
@@ -52,28 +49,19 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         return;
       }
 
-      // Get teacher info from Supabase
       final teacherData = await SupabaseTeacherService.getTeacherByUserId(userId);
 
       if (teacherData != null) {
         _teacherData = teacherData;
         final teacherId = _teacherData!['id_docente'] as int;
 
-        print('DEBUG TeacherDashboard: Found teacher with ID $teacherId');
-
-        // Get teacher stats
         _teacherStats = await SupabaseTeacherService.getTeacherStats(teacherId);
-        print('DEBUG TeacherDashboard: Stats = $_teacherStats');
-
-        // Get pending feedbacks
         _pendingFeedbacks = await SupabaseTeacherService.getPendingFeedbacks();
-        print('DEBUG TeacherDashboard: Pending feedbacks count = ${_pendingFeedbacks.length}');
       } else {
         _errorMessage = 'No se encontró información de docente para este usuario. '
             'Por favor contacte al administrador para que lo registre como docente.';
       }
     } catch (e) {
-      print('ERROR TeacherDashboard: $e');
       _errorMessage = 'Error al cargar datos: $e';
     } finally {
       setState(() {
@@ -82,480 +70,592 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+    );
+  }
+
+  //Frontend
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final user = authProvider.user;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Panel Docente'),
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadTeacherData,
+      backgroundColor: Colors.white,
+      // SIN APPBAR
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+          child: CircularProgressIndicator(
+            color: const Color(0xFFD9232A),
+            strokeWidth: 5.0,
           ),
-        ],
+        )
+            : _errorMessage != null
+            ? _buildErrorView() // UI de Error
+            : RefreshIndicator(
+          onRefresh: _loadTeacherData,
+          color: const Color(0xFFD9232A),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24.0),
+
+            // Esta parte imprime lo que se muestra segun el orden de aparicion
+
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Encabezado (saludo y burbuja)
+                _buildTeacherHeader(context, textTheme),
+                const SizedBox(height: 32),
+
+                // Tareas pendientes
+                _buildPendingFeedbacksSection(textTheme),
+
+                // Modulos
+                _buildModulesSection(context, textTheme),
+                const SizedBox(height: 32),
+
+                // Acciones rapidas
+                _buildQuickActionsSection(context, textTheme),
+                const SizedBox(height: 32),
+
+                // Estadisticas
+                _buildStatsSection(textTheme),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadTeacherData,
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadTeacherData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildWelcomeCard(user?.nombreCompleto ?? 'Docente'),
-                        const SizedBox(height: 20),
-                        _buildModulesGrid(context),
-                        const SizedBox(height: 20),
-                        _buildStatsCards(),
-                        const SizedBox(height: 20),
-                        _buildQuickActionsCard(),
-                        const SizedBox(height: 20),
-                        _buildPendingFeedbacksSection(),
-                      ],
-                    ),
-                  ),
-                ),
     );
   }
 
-  Widget _buildModulesGrid(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Módulos',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            _buildModuleTile(
-              context,
-              title: 'Módulos',
-              icon: Icons.dashboard_customize,
-              color: Colors.deepPurple,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TeacherCoursesScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildModuleTile(
-              context,
-              title: 'Revisión',
-              icon: Icons.rate_review,
-              color: Colors.orange,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PendingReviewsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildModuleTile(
-              context,
-              title: 'Control de Estudiantes',
-              icon: Icons.group,
-              color: Colors.teal,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const StudentRosterScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildModuleTile(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+  // Encabezado (saludo y burbuja)
+  Widget _buildTeacherHeader(BuildContext context, TextTheme textTheme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(height: 10),
               Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                "👋 ¡Welcome!",
+                style: textTheme.titleMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Teacher",
+                style: GoogleFonts.ptSans(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFD9232A),
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard(String name) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.deepPurple.shade300],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.school, size: 48, color: Colors.white),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bienvenido, $name',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _teacherData?['especialidad'] ?? 'Docente',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
+          PopupMenuButton(
+            onSelected: (value) {
+              if (value == 'logout') {
+                _logout();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: const [
+                    Icon(Icons.logout, color: Color(0xFFD9232A)),
+                    SizedBox(width: 8),
+                    Text("Sign Out", style: TextStyle(color: Color(0xFFD9232A))),
+                  ],
+                ),
+              ),
+            ],
+            child: const CircleAvatar(
+              radius: 22,
+              child: const CircleAvatar(
+                radius: 22,
+                backgroundImage: AssetImage('assets/images/avatar_teacher.png'),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatsCards() {
-    if (_teacherStats == null) {
-      return const SizedBox.shrink();
-    }
-
-    final totalCalificaciones = _teacherStats!['total_calificaciones'] ?? 0;
-    final calificadas = _teacherStats!['calificadas'] ?? 0;
-    final pendientes = _teacherStats!['pendientes'] ?? 0;
-    final promedioPuntuacion = (_teacherStats!['promedio_puntuacion'] ?? 0.0).toDouble();
-
+  // Modulos
+  Widget _buildModulesSection(BuildContext context, TextTheme textTheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Estadísticas',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        const SizedBox(height: 16),
+        // Barra
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 40.0,
+              vertical: 0.0,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD9232A),
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: Text(
+              'Control measures',
+              style: GoogleFonts.ptSans(
+                color: Colors.white,
+                fontSize: 20,
+                //fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+
+        //Tarjetas
+        const SizedBox(height: 16),
+        _skillTile(
+          title: 'My courses',
+          subtitle: 'Manage modules and materials',
+          icon: Icons.dashboard_customize,
+          color: const Color(0xFFD9232A),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherCoursesScreen()));
+          },
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'Total',
-                totalCalificaciones.toString(),
-                Icons.assignment,
-                Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'Calificadas',
-                calificadas.toString(),
-                Icons.check_circle,
-                Colors.green,
-              ),
-            ),
-          ],
+        _skillTile(
+          title: 'Manual review',
+          subtitle: 'View pending submissions',
+          icon: Icons.remove_red_eye_rounded,
+          color: const Color(0xFFD9232A),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const PendingReviewsScreen()));
+          },
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'Pendientes',
-                pendientes.toString(),
-                Icons.pending,
-                Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'Promedio',
-                promedioPuntuacion.toStringAsFixed(1),
-                Icons.star,
-                Colors.purple,
-              ),
-            ),
-          ],
+        _skillTile(
+          title: 'Student roster',
+          subtitle: 'View student list and progress',
+          icon: Icons.group,
+          color: const Color(0xFFD9232A),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentRosterScreen()));
+          },
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
+  // Acciones rapidas
+  Widget _buildQuickActionsSection(BuildContext context, TextTheme textTheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        //Barra
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 50.0,
+              vertical: 0.0,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFA60F12),
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: Text(
+              'Quick actions',
+              style: GoogleFonts.ptSans(
+                color: Colors.white,
+                fontSize: 20,
+                //fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+
+        // Pestaña
+        const SizedBox(height: 16),
+        _skillTile(
+          title: 'My materials',
+          subtitle: 'Manage files and resources',
+          icon: Icons.folder_copy,
+          color: const Color(0xFFA60F12),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherMaterialsScreen()));
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildQuickActionsCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Acciones Rápidas',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TeacherMaterialsScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.folder),
-                    label: const Text('Mis Materiales'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPendingFeedbacksSection() {
+  // Tareas pendientes
+  Widget _buildPendingFeedbacksSection(TextTheme textTheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Respuestas Pendientes',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
             if (_pendingFeedbacks.isNotEmpty)
               Chip(
                 label: Text('${_pendingFeedbacks.length}'),
-                backgroundColor: Colors.orange,
-                labelStyle: const TextStyle(color: Colors.white),
+                backgroundColor: const Color(0xFFD9232A),
+                labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
           ],
         ),
-        const SizedBox(height: 12),
         _pendingFeedbacks.isEmpty
-            ? Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.check_circle_outline,
-                          size: 64,
-                          color: Colors.green[300],
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No hay respuestas pendientes',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      ],
-                    ),
+        // cuando esta vacia las tareas
+            ? Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!, width: 1.5),
+          ),
+          child: Row(
+            children: [
+              // Icono de completado
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.check_circle, color: Colors.indigo, size: 28),
+              ),
+              const SizedBox(width: 16),
+              // Texto
+              Expanded(
+                child: Text(
+                  'No pending submissions',
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey[600],
                   ),
                 ),
-              )
-            : ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _pendingFeedbacks.length,
-                itemBuilder: (context, index) {
-                  final feedback = _pendingFeedbacks[index] as Map<String, dynamic>;
-                  return _buildFeedbackCard(feedback);
-                },
               ),
+            ],
+          ),
+        )
+        // Estado con items
+            : ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _pendingFeedbacks.length,
+          itemBuilder: (context, index) {
+            final feedback = _pendingFeedbacks[index] as Map<String, dynamic>;
+            return _buildFeedbackCard(feedback, textTheme);
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildFeedbackCard(Map<String, dynamic> feedback) {
-    final tipoRespuesta = feedback['tipo_respuesta'] as String?;
-    final fechaRespuesta = feedback['fecha_respuesta'] as String?;
-    final usuarioId = feedback['id_usuario'] as int?;
-    final preguntaId = feedback['id_pregunta'] as int?;
+// stats
+  Widget _buildStatsSection(TextTheme textTheme) {
+    if (_teacherStats == null) return const SizedBox.shrink();
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _navigateToGrading(feedback),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: tipoRespuesta == 'Writing'
-                      ? Colors.blue.shade100
-                      : Colors.purple.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  tipoRespuesta == 'Writing' ? Icons.edit : Icons.mic,
-                  color: tipoRespuesta == 'Writing' ? Colors.blue : Colors.purple,
-                  size: 28,
-                ),
+    // Obtenemos los valores de las estadísticas
+    final int total = _teacherStats!['total_calificaciones'] ?? 0;
+    final int calificadas = _teacherStats!['calificadas'] ?? 0;
+    final int pendientes = _teacherStats!['pendientes'] ?? 0;
+    final double promedio = (_teacherStats!['promedio_puntuacion'] ?? 0.0).toDouble();
+
+    // Calculamos los porcentajes (manejando división por cero)
+    final double calificadasPct = (total == 0) ? 0.0 : calificadas / total;
+    final double pendientesPct = (total == 0) ? 0.0 : pendientes / total;
+    // Asumimos que el promedio es sobre 10.0
+    final double promedioPct = (promedio == 0) ? 0.0 : promedio / 10.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 85.0,
+              vertical: 0.0,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD9232A),
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: Text(
+              'Stats',
+              style: GoogleFonts.ptSans(
+                color: Colors.white,
+                fontSize: 20,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pregunta #$preguntaId',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Tipo: $tipoRespuesta',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    if (fechaRespuesta != null)
-                      Text(
-                        'Enviado: ${_formatDate(fechaRespuesta)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Barras de progreso
+        _buildStatProgressBar(
+          label: 'Pending',
+          value: pendientes.toString(),
+          percentage: pendientesPct,
+          color: const Color(0xFFD9232A),
+          textTheme: textTheme,
+        ),
+        const SizedBox(height: 16),
+        _buildStatProgressBar(
+          label: 'Graded',
+          value: calificadas.toString(),
+          percentage: calificadasPct,
+          color: const Color(0xFF23408E),
+          textTheme: textTheme,
+        ),
+        const SizedBox(height: 16),
+        _buildStatProgressBar(
+          label: 'Average',
+          value: promedio.toStringAsFixed(1), // Muestra "8.5"
+          percentage: promedioPct, // El % (ej. 8.5 / 10.0 = 0.85)
+          color: const Color(0xFFD9232A),
+          textTheme: textTheme,
+        ),
+        const SizedBox(height: 16),
+        _buildStatProgressBar(
+          label: 'Total',
+          value: total.toString(),
+          percentage: 1.0, // El total es siempre 100%
+          color: const Color(0xFF23408E),
+          textTheme: textTheme,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatProgressBar({
+    required String label,
+    required String value,
+    required double percentage,
+    required Color color,
+    required TextTheme textTheme,
+  }) {
+    // Usamos TweenAnimationBuilder para animar la barra
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: percentage.isNaN ? 0.0 : percentage),
+      duration: const Duration(milliseconds: 1000), // 1 segundo de animación
+      curve: Curves.easeOutCubic, // Curva de animación suave
+      builder: (context, animatedPercentage, child) {
+        return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Fila para el Título y el Valor
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      // Punto de color
+                      Container(
+                        width: 20,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                  ],
+                      const SizedBox(width: 8),
+                      // Label
+                      Text(
+                        label,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Valor (número)
+                  Text(
+                    value,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Barra de Progreso
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: animatedPercentage, // El valor animado
+                  minHeight: 10, // Grosor de la barra
+                  backgroundColor: Colors.grey[200], // Color de fondo de la barra
+                  color: color, // Color de la barra (rojo o azul)
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _skillTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeedbackCard(Map<String, dynamic> feedback, TextTheme textTheme) {
+    final tipoRespuesta = feedback['tipo_respuesta'] as String?;
+    final preguntaId = feedback['id_pregunta'] as int?;
+    final fechaRespuesta = feedback['fecha_respuesta'] as String?;
+    final bool isWriting = tipoRespuesta == 'Writing';
+
+    final color = isWriting ? const Color(0xFF23408E) : const Color(0xFFD9232A);
+    final icon = isWriting ? Icons.edit : Icons.mic;
+    final subtitle = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
+
+    return InkWell(
+      onTap: () => _navigateToGrading(feedback),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Revisión $tipoRespuesta (Pregunta #$preguntaId)',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(fontSize: 16, color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadTeacherData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD9232A),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Reintentar'),
+            ),
+          ],
         ),
       ),
     );
@@ -587,6 +687,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       MaterialPageRoute(
         builder: (context) => ManualGradingScreen(feedback: feedback),
       ),
-    ).then((_) => _loadTeacherData()); // Reload data after grading
+    ).then((_) => _loadTeacherData());
   }
 }

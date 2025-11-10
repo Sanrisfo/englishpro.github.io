@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // 🆕 Usar SupabaseAuthService en lugar de ApiService
+    // Usar SupabaseAuthService en lugar de ApiService
     final authService = SupabaseAuthService();
     final result = await authService.login(
       email: _emailController.text.trim(),
@@ -95,14 +95,9 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 60),
                 // Logo/Title
-                const Text(
-                  'EnglishPro',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E3A8A),
-                  ),
+                Image.asset(
+                  'assets/images/logo_completo.png',
+                  height: 120,
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -199,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account? "),
+                    const Text("¿Don't have an account? "),
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
@@ -209,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        'Sign Up',
+                        'Sign up',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E3A8A),

@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                   itemBuilder: (context) => [
                     const PopupMenuItem(
                       value: 'logout',
-                      child: Text("Cerrar sesión"),
+                      child: Text("Sign Out"),
                     ),
                   ],
                   child: const CircleAvatar(
@@ -114,7 +114,7 @@ class HomeScreen extends StatelessWidget {
 
                 Image.asset(
                   'assets/images/logo_completo.png',
-                  height: 120,
+                  height: 100,
                 ),
                 const SizedBox(height: 16),
                 const Text(

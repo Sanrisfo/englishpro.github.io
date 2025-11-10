@@ -59,9 +59,7 @@ class _IeltsScreenState extends State<IeltsScreen> {
     }
   }
 
-  // --- FIN DE LA LÓGICA ---
-
-  // --- A PARTIR DE AQUÍ COMIENZA EL NUEVO FRONT-END ---
+  // Frontend
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +121,7 @@ class _IeltsScreenState extends State<IeltsScreen> {
               Align(
                 alignment: Alignment.bottomRight,
                 child: Image.asset(
-                  'assets/images/icono_ielts.png', // <-- IMAGEN
+                  'assets/images/icono_ielts.png',
                   height: 100,
                   color: Colors.white.withOpacity(0.2),
                 ),
