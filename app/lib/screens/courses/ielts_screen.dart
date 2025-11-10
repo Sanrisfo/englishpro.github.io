@@ -3,6 +3,7 @@ import '../../services/api_service.dart';
 import '../../models/skill_model.dart';
 import '../../config/supabase_config.dart';
 import '../skill_materials_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class IeltsScreen extends StatefulWidget {
   const IeltsScreen({super.key});
@@ -14,7 +15,7 @@ class IeltsScreen extends StatefulWidget {
 class _IeltsScreenState extends State<IeltsScreen> {
   bool _loading = true;
   String? _error;
-  int? _courseId; // IELTS course id
+  int? _courseId;
   List<SkillModel> _skills = [];
 
   @override
@@ -58,88 +59,224 @@ class _IeltsScreenState extends State<IeltsScreen> {
     }
   }
 
+  // --- FIN DE LA LÓGICA ---
+
+  // --- A PARTIR DE AQUÍ COMIENZA EL NUEVO FRONT-END ---
+
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('IELTS Preparation'),
-        backgroundColor: Colors.green,
+      backgroundColor: Colors.white,
+      // Botón flotante
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).pop(),
+        backgroundColor: const Color(0xFF1A3075),
         foregroundColor: Colors.white,
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+        child: const Icon(Icons.arrow_back_ios_new),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text(_error!))
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _headerCard(),
-                    const SizedBox(height: 24),
-                    const Text('Practice Skills', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    ..._skills.map((s) => _skillTile(s)).toList(),
-                  ],
-                ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      body: Stack(
+        children: [
+          _buildHeaderBackground(textTheme),
+          _buildContentPanel(textTheme),
+        ],
+      ),
     );
   }
 
-  Widget _headerCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Colors.lightGreen, Colors.green],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+  // Fondo azul de arriba
+  Widget _buildHeaderBackground(TextTheme textTheme) {
+    return Container(
+      height: 250,
+      width: double.infinity,
+      color: const Color(0xFF23408E),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'IELTS',
+                    style: GoogleFonts.ptSans(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'The IELTS is a global standard for work or study. '
+                        'This section has all the materials you need—practice '
+                        'questions, audio, and writing tasks—to master the test.',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Image.asset(
+                  'assets/images/icono_ielts.png', // <-- IMAGEN
+                  height: 100,
+                  color: Colors.white.withOpacity(0.2),
+                ),
+              ),
+            ],
           ),
-          borderRadius: BorderRadius.circular(16),
         ),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+    );
+  }
+
+  //Contenido
+  Widget _buildContentPanel(TextTheme textTheme) {
+    return Container(
+      margin: const EdgeInsets.only(top: 220),
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(32),
+        ),
+      ),
+
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(Icons.library_books, size: 60, color: Colors.white),
-            SizedBox(height: 16),
-            Text('IELTS', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
-            SizedBox(height: 8),
-            Text('International English Language Testing System', style: TextStyle(fontSize: 16, color: Colors.white70)),
+            _loading
+                ? Padding(
+              padding: const EdgeInsets.only(top: 48.0),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: const Color(0xFF23408E),
+                  strokeWidth: 5.0,
+                ),
+              ),
+            )
+                : _error != null
+                ? Center(child: Text(_error!))
+                : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 100.0,
+                      vertical: 0.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF23408E),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      'Practice skills',
+                      style: GoogleFonts.ptSans(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _skills.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final skill = _skills[index];
+                    return _skillTile(skill, textTheme, index);
+                  },
+                ),
+                const SizedBox(height: 80),
+              ],
+            )
           ],
         ),
       ),
     );
   }
 
-  Widget _skillTile(SkillModel skill) {
+  Widget _skillTile(SkillModel skill, TextTheme textTheme, int index) {
+    final color = (index % 2 == 0) ? const Color(0xFF23408E) : const Color(0xFF1F3A89);
     final icon = _skillIcon(skill.nombre);
-    final color = _skillColor(skill.nombre);
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, color: color, size: 28),
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SkillMaterialsScreen(
+              skillId: skill.id,
+              skillName: skill.nombre,
+              courseName: 'IELTS',
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
         ),
-        title: Text(skill.nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        subtitle: Text(skill.descripcion, maxLines: 2, overflow: TextOverflow.ellipsis),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => SkillMaterialsScreen(
-                skillId: skill.id,
-                skillName: skill.nombre,
-                courseName: 'IELTS',
+        child: Row(
+          children: [
+            // Ícono
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+
+            // Textos
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    skill.nombre,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    skill.descripcion,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+
+            // Flecha
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
       ),
     );
   }
@@ -156,21 +293,6 @@ class _IeltsScreenState extends State<IeltsScreen> {
         return Icons.edit;
       default:
         return Icons.extension;
-    }
-  }
-
-  Color _skillColor(String name) {
-    switch (name.toLowerCase()) {
-      case 'reading':
-        return Colors.blue;
-      case 'listening':
-        return Colors.green;
-      case 'speaking':
-        return Colors.orange;
-      case 'writing':
-        return Colors.purple;
-      default:
-        return Colors.grey;
     }
   }
 }
