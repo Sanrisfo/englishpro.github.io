@@ -50,7 +50,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       // 2) fetch questions and embed options
       final qs = await supabase
           .from('preguntas')
-          .select('id_pregunta, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos')
+          .select('id_pregunta, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos, explicacion')
           .inFilter('id_pregunta', ids);
       final qList = List<Map<String, dynamic>>.from(qs as List);
 
@@ -90,6 +90,8 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
     String nivel = 'Basico';
     // Multiple Choice fijo según UX
     final optCtrls = List.generate(4, (_) => TextEditingController());
+    // Explicación general
+    final explanationCtrl = TextEditingController();
     int correctIndex = 0;
 
     await showDialog(
@@ -105,6 +107,15 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                   TextField(
                     controller: textCtrl,
                     decoration: const InputDecoration(labelText: 'Texto de la pregunta'),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: explanationCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Explicación general (opcional)',
+                      hintText: 'Retroalimentación que verá el alumno tras responder',
+                    ),
                     maxLines: 3,
                   ),
                   const SizedBox(height: 8),
@@ -130,7 +141,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                     child: Text('Opciones (elige la correcta)', style: TextStyle(fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(height: 8),
-                  for (int i = 0; i < 4; i++)
+                  for (int i = 0; i < 4; i++) ...[
                     Row(
                       children: [
                         Radio<int>(
@@ -146,6 +157,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                         ),
                       ],
                     ),
+                  ],
                 ],
               ),
             ),
@@ -174,13 +186,15 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                           'tipo_pregunta': 'Multiple Choice',
                           'puntos': puntos,
                           'nivel_dificultad': nivel,
+                          if (explanationCtrl.text.trim().isNotEmpty)
+                            'explicacion': explanationCtrl.text.trim(),
                         })
                         .select()
                         .single();
 
                     final qid = insertedQ['id_pregunta'] as int;
 
-                    // 2) insert 4 options
+                    // 2) insert 4 options (sin explicación por opción)
                     final optionsPayload = <Map<String, dynamic>>[];
                     for (int i = 0; i < 4; i++) {
                       optionsPayload.add({
@@ -292,6 +306,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
     final nivel = q['nivel_dificultad'] as String? ?? '';
     final puntos = q['puntos'] as int? ?? 1;
     final opciones = (q['opciones'] as List?) ?? const [];
+    final expGeneral = (q['explicacion'] as String?)?.trim();
     final qid = q['id_pregunta'] as int;
 
     return Card(
@@ -322,6 +337,13 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
             const SizedBox(height: 6),
             Text('Nivel: $nivel • Puntos: $puntos', style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 10),
+            if (expGeneral != null && expGeneral.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              const Text('Explicación general:', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text(expGeneral, style: const TextStyle(color: Colors.black87)),
+              const SizedBox(height: 10),
+            ],
             const Text('Opciones:', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             ...opciones.map((o) {
@@ -330,8 +352,11 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 2.0),
                 child: Row(
                   children: [
-                    Icon(correct ? Icons.check_circle : Icons.radio_button_unchecked,
-                        size: 16, color: correct ? Colors.green : Colors.grey),
+                    Icon(
+                      correct ? Icons.check_circle : Icons.radio_button_unchecked,
+                      size: 16,
+                      color: correct ? Colors.green : Colors.grey,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(o['texto_opcion'] as String? ?? '')),
                   ],

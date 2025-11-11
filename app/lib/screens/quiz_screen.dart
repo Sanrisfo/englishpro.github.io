@@ -118,12 +118,7 @@ class _QuizScreenState extends State<QuizScreen> {
       setState(() => _isLoading = false);
     }
 
-    // Auto advance after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        _nextQuestion();
-      }
-    });
+    // Nota: ya no auto-avanzamos para permitir leer la retroalimentación
   }
 
   void _nextQuestion() {
@@ -395,6 +390,32 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                       );
                     }).toList(),
+
+                  // Feedback text after answer submission (general)
+                  if (_isAnswerSubmitted &&
+                      (question.explicacionGeneral != null && question.explicacionGeneral!.trim().isNotEmpty))
+                    Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade700),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.amber.shade700),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              question.explicacionGeneral!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   // Open text answer
                   if (question.isOpenText)

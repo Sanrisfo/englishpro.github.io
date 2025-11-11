@@ -207,14 +207,19 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   }
                   final tiempo = int.tryParse(timeCtrl.text.trim());
 
-                  await supabase.from('cuestionarios').insert({
-                    'id_habilidad': widget.skillId,
-                    'titulo': titulo,
-                    if (descCtrl.text.trim().isNotEmpty) 'descripcion': descCtrl.text.trim(),
-                    if (tiempo != null) 'tiempo_limite_minutos': tiempo,
-                    'tipo_evaluacion': tipo,
-                    'activo': true,
-                  });
+                  final insertedQuiz = await supabase
+                      .from('cuestionarios')
+                      .insert({
+                        'id_habilidad': widget.skillId,
+                        'titulo': titulo,
+                        if (descCtrl.text.trim().isNotEmpty) 'descripcion': descCtrl.text.trim(),
+                        if (tiempo != null) 'tiempo_limite_minutos': tiempo,
+                        'tipo_evaluacion': tipo,
+                        'activo': true,
+                      })
+                      .select('id_cuestionario')
+                      .single();
+                  final insertedQuizId = insertedQuiz['id_cuestionario'] as int;
 
                   // Crear material si corresponde
                   if (addMaterial) {
@@ -231,6 +236,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                           titulo: mTitle,
                           tipoMaterial: 'text',
                           contenidoTexto: contenidoTexto,
+                          cuestionarioId: insertedQuizId,
                           esPremium: false,
                           orden: 1,
                         );
@@ -262,6 +268,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                             titulo: mTitle,
                             tipoMaterial: materialType,
                             archivoUrl: publicUrl,
+                            cuestionarioId: insertedQuizId,
                             esPremium: false,
                             orden: 1,
                           );

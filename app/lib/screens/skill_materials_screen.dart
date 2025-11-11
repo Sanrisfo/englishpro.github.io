@@ -3,6 +3,9 @@ import '../services/api_service.dart';
 import '../config/supabase_config.dart';
 import '../models/material_model.dart';
 import '../widgets/pdf_viewer_widget.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'activity_player_screen.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class SkillMaterialsScreen extends StatefulWidget {
@@ -183,6 +186,7 @@ class _SkillMaterialsScreenState extends State<SkillMaterialsScreen> {
                           final title = q['titulo'] as String? ?? 'Actividad';
                           final tipo = q['tipo_evaluacion'] as String? ?? '';
                           final minutos = q['tiempo_limite_minutos'] as int?;
+                          final quizId = q['id_cuestionario'] as int;
                           return Card(
                             elevation: 2,
                             margin: const EdgeInsets.only(bottom: 12),
@@ -192,8 +196,24 @@ class _SkillMaterialsScreenState extends State<SkillMaterialsScreen> {
                               title: Text(title),
                               subtitle: Text(minutos != null ? 'Tipo: $tipo • Tiempo: $minutos min' : 'Tipo: $tipo'),
                               onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Navegación a actividad no implementada aún')),
+                                final user = context.read<AuthProvider>().user;
+                                final userId = user?.idUsuario;
+                                if (userId == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Debes iniciar sesión para realizar la actividad')),
+                                  );
+                                  return;
+                                }
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ActivityPlayerScreen(
+                                      quizId: quizId,
+                                      skillId: widget.skillId,
+                                      skillName: widget.skillName,
+                                      quizTitle: title,
+                                    ),
+                                  ),
                                 );
                               },
                             ),

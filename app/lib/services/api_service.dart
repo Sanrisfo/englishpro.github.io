@@ -303,6 +303,7 @@ class ApiService {
     String? descripcion,
     String? archivoUrl,
     String? contenidoTexto,
+    int? cuestionarioId,
     bool esPremium = false,
     int? duracionMinutos,
     int orden = 1,
@@ -340,6 +341,7 @@ class ApiService {
         'tipo_material': tipoDb,
         if (archivoUrl != null && archivoUrl.isNotEmpty) 'url_recurso': archivoUrl,
         if (contenidoTexto != null && contenidoTexto.isNotEmpty) 'contenido_texto': contenidoTexto,
+        if (cuestionarioId != null) 'id_cuestionario': cuestionarioId,
         if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
         'orden': orden,
         if (nivelAcceso != null) 'nivel_acceso': nivelAcceso,
@@ -526,45 +528,37 @@ class ApiService {
     }
   }
 
-  /// Submit user answer
+  /// Submit user answer (Supabase direct insert)
   static Future<Map<String, dynamic>> submitAnswer({
     required int userId,
     required int preguntaId,
     int? opcionSeleccionadaId,
     String? respuestaTexto,
     String? audioUrl,
+    int? quizId,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/answers'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'usuario_id': userId,
-          'pregunta_id': preguntaId,
-          'opcion_seleccionada_id': opcionSeleccionadaId,
-          'respuesta_texto': respuestaTexto,
-          'audio_url': audioUrl,
-        }),
-      );
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'answer': data['data'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Failed to submit answer',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
+      final payload = <String, dynamic>{
+        'id_usuario': userId,
+        'id_pregunta': preguntaId,
+        if (opcionSeleccionadaId != null) 'id_opcion_seleccionada': opcionSeleccionadaId,
+        if (respuestaTexto != null) 'respuesta_texto': respuestaTexto,
+        if (audioUrl != null) 'respuesta_audio_url': audioUrl,
+        if (quizId != null) 'id_cuestionario': quizId,
       };
+
+      final inserted = await supabase
+          .from('respuestas_usuario')
+          .insert(payload)
+          .select()
+          .single();
+
+      return {
+        'success': true,
+        'answer': inserted,
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase submitAnswer): $e'};
     }
   }
 

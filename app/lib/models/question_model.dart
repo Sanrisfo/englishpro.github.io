@@ -11,6 +11,7 @@ class QuestionModel {
   final int puntaje;
   final int? tiempoLimiteSegundos;
   final List<AnswerOptionModel>? opciones; // Solo para multiple_choice
+  final String? explicacionGeneral; // Retroalimentación general para la pregunta
 
   QuestionModel({
     required this.id,
@@ -24,6 +25,7 @@ class QuestionModel {
     required this.puntaje,
     this.tiempoLimiteSegundos,
     this.opciones,
+    this.explicacionGeneral,
   });
 
   /// Crear QuestionModel desde JSON
@@ -44,6 +46,7 @@ class QuestionModel {
               .map((e) => AnswerOptionModel.fromJson(e as Map<String, dynamic>))
               .toList()
           : null,
+      explicacionGeneral: (json['explicacion'] ?? json['explicacion_general']) as String?,
     );
   }
 
@@ -61,6 +64,8 @@ class QuestionModel {
       'puntaje': puntaje,
       'tiempo_limite_segundos': tiempoLimiteSegundos,
       'opciones': opciones?.map((e) => e.toJson()).toList(),
+      // Persistimos usando la columna existente 'explicacion'
+      'explicacion': explicacionGeneral,
     };
   }
 
@@ -93,6 +98,7 @@ class QuestionModel {
     int? puntaje,
     int? tiempoLimiteSegundos,
     List<AnswerOptionModel>? opciones,
+    String? explicacionGeneral,
   }) {
     return QuestionModel(
       id: id ?? this.id,
@@ -106,6 +112,7 @@ class QuestionModel {
       puntaje: puntaje ?? this.puntaje,
       tiempoLimiteSegundos: tiempoLimiteSegundos ?? this.tiempoLimiteSegundos,
       opciones: opciones ?? this.opciones,
+      explicacionGeneral: explicacionGeneral ?? this.explicacionGeneral,
     );
   }
 
