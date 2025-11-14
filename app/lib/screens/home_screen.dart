@@ -56,7 +56,7 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
-                      "👋 Welcome!",
+                      "¡Welcome!",
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -76,18 +76,30 @@ class HomeScreen extends StatelessWidget {
 
                 // Logito con el avatar
                 PopupMenuButton(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                  ),
                   onSelected: (value) {
                     if (value == 'logout') {
                       _logout(context);
                     }
                   },
+
+                  //esto cambia el boton de sign out
+                  offset: const Offset(0, 60),
+                  color: Color(0xFFFBFBFB),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.0),
+                  ),
+
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'logout',
-                      child: Text("Sign Out"),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.logout, color: Color(0xFFD9232A)),
+                          SizedBox(width: 8),
+                          Text("Sign Out", style: TextStyle(color: Color(0xFFD9232A))),
+                        ],
+                      ),
                     ),
                   ],
                   child: const CircleAvatar(
@@ -139,7 +151,7 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       _buildCourseCard(
                         'TOEFL',
-                        'assets/images/icono_toefl.png',
+                        'assets/images/icono_toefl_new.png',
                         const Color(0xFFD9232A),
                       ),
                       _buildCourseCard(

@@ -87,7 +87,7 @@ class SupabaseAuthService {
       if (response.user == null) {
         return {
           'success': false,
-          'message': 'Credenciales inválidas',
+          'message': 'Invalid credentials',
         };
       }
 
@@ -195,7 +195,7 @@ class SupabaseAuthService {
   /// Translate error messages to Spanish
   String _getErrorMessage(String error) {
     if (error.contains('Invalid login credentials')) {
-      return 'Credenciales inválidas';
+      return 'Invalid credentials';
     } else if (error.contains('Email not confirmed')) {
       return 'Email no confirmado. Revisa tu bandeja de entrada.';
     } else if (error.contains('User already registered')) {

@@ -113,7 +113,7 @@ class _ToeflScreenState extends State<ToeflScreen> {
               Align(
                 alignment: Alignment.bottomRight,
                 child: Image.asset(
-                  'assets/images/icono_toefl.png',
+                  'assets/images/icono_toefl_new.png',
                   height: 100,
                   color: Colors.white.withOpacity(0.2),
                 ),

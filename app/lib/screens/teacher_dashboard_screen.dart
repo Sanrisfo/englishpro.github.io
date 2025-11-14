@@ -149,7 +149,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "👋 ¡Welcome!",
+                "¡Welcome!",
                 style: textTheme.titleMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -171,6 +171,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 _logout();
               }
             },
+
+            //esto cambia el boton de sign out
+            offset: const Offset(0, 60),
+            color: Color(0xFFFBFBFB),
+            elevation: 3,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'logout',
@@ -183,10 +192,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 ),
               ),
             ],
+
             child: const CircleAvatar(
               radius: 22,
               child: const CircleAvatar(
                 radius: 22,
+                backgroundColor: Color(0xFFF9E8E8),
                 backgroundImage: AssetImage('assets/images/avatar_teacher.png'),
               ),
             ),
@@ -211,7 +222,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
             decoration: BoxDecoration(
               color: const Color(0xFFD9232A),
-              borderRadius: BorderRadius.circular(20.0),
+              borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
               'Control measures',
@@ -273,8 +284,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               vertical: 0.0,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFFA60F12),
-              borderRadius: BorderRadius.circular(20.0),
+              color: const Color(0xFFD9232A),
+              borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
               'Quick actions',
@@ -293,7 +304,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           title: 'My materials',
           subtitle: 'Manage files and resources',
           icon: Icons.folder_copy,
-          color: const Color(0xFFA60F12),
+          color: const Color(0xFFD9232A),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherMaterialsScreen()));
           },
@@ -392,7 +403,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
             decoration: BoxDecoration(
               color: const Color(0xFFD9232A),
-              borderRadius: BorderRadius.circular(20.0),
+              borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
               'Stats',
