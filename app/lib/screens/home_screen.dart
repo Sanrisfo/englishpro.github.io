@@ -160,12 +160,12 @@ class HomeScreen extends StatelessWidget {
                         const Color(0xFF23408E),
                       ),
                       _buildCourseCard(
-                        'Business En.',
+                        'Business en.',
                         'assets/images/icono_business.png',
                         const Color(0xFFB02224),
                       ),
                       _buildCourseCard(
-                        'En. in Action',
+                        'En. in action',
                         'assets/images/icono_conversational.png',
                         const Color(0xFF1F3A89),
                       ),

@@ -33,14 +33,14 @@ class _ToeflScreenState extends State<ToeflScreen> {
           .eq('nombre_curso', 'TOEFL')
           .maybeSingle();
       if (courseRow == null || (courseRow['id'] == null && courseRow['id_curso'] == null)) {
-        setState(() { _error = 'Curso TOEFL no encontrado'; });
+        setState(() { _error = 'TOEFL Course not found'; });
         return;
       }
       _courseId = (courseRow['id'] ?? courseRow['id_curso'] as num).toInt();
 
       final skillsRes = await ApiService.getSkillsByCourse(_courseId!);
       if (skillsRes['success'] != true) {
-        setState(() { _error = skillsRes['message'] ?? 'No se pudieron cargar habilidades'; });
+        setState(() { _error = skillsRes['message'] ?? 'Could not load skills'; });
         return;
       }
       setState(() { _skills = skillsRes['skills'] as List<SkillModel>; });
@@ -51,7 +51,7 @@ class _ToeflScreenState extends State<ToeflScreen> {
     }
   }
 
-  // A partir de aqui comienza todo el front
+  // A partir de aqui comienza tod el front
 
   @override
   Widget build(BuildContext context) {
@@ -104,8 +104,9 @@ class _ToeflScreenState extends State<ToeflScreen> {
                         ' for university. Here you ll find everything you need '
                         'to prepare—practice questions, audio drills, and writing '
                         'guides—for all four sections.',
-                    style: textTheme.titleMedium?.copyWith(
+                    style: GoogleFonts.ptSans(
                       color: Colors.white.withOpacity(0.8),
+                      fontSize: 15,
                     ),
                   ),
                 ],
@@ -149,12 +150,12 @@ class _ToeflScreenState extends State<ToeflScreen> {
               child: Center(
                 child: CircularProgressIndicator(
                   color: const Color(0xFFD9232A),
-                  strokeWidth: 5.0, // El default es 4.0
+                  strokeWidth: 5.0,
                 ),
               ),
             )
                 : _error != null
-                ? Center(child: Text(_error!))
+                ? _buildErrorView()
                 : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -167,14 +168,13 @@ class _ToeflScreenState extends State<ToeflScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFD9232A),
-                      borderRadius: BorderRadius.circular(20.0),
+                      borderRadius: BorderRadius.circular(10.0),
                     ),
                     child: Text(
                       'Practice skills',
                       style: GoogleFonts.ptSans(
                         color: Colors.white,
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -200,8 +200,10 @@ class _ToeflScreenState extends State<ToeflScreen> {
     );
   }
 
+
   Widget _skillTile(SkillModel skill, TextTheme textTheme, int index) {
-    final color = (index % 2 == 0) ? const Color(0xFFD9232A) : const Color(0xFFB02224);
+    final color = (index % 2 == 0) ? const Color(0xFFD9232A) : const Color(
+        0xFFD9232A);
     final icon = _skillIcon(skill.nombre);
 
     return InkWell(
@@ -238,14 +240,14 @@ class _ToeflScreenState extends State<ToeflScreen> {
             ),
             const SizedBox(width: 16),
 
-            // Textos
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     skill.nombre,
-                    style: textTheme.titleLarge?.copyWith(
+                    style: const TextStyle(
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
@@ -255,8 +257,9 @@ class _ToeflScreenState extends State<ToeflScreen> {
                     skill.descripcion,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
+                    style: TextStyle(
                       color: Colors.grey[600],
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -274,15 +277,44 @@ class _ToeflScreenState extends State<ToeflScreen> {
   IconData _skillIcon(String name) {
     switch (name.toLowerCase()) {
       case 'reading':
-        return Icons.menu_book;
+        return Icons.chrome_reader_mode;
       case 'listening':
-        return Icons.headphones;
+        return Icons.headphones_rounded;
       case 'speaking':
-        return Icons.mic;
+        return Icons.mic_rounded;
       case 'writing':
-        return Icons.edit;
+        return Icons.text_fields;
       default:
         return Icons.extension;
     }
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: const TextStyle(fontSize: 16, color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _load,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD9232A),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
