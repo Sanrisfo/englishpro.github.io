@@ -88,21 +88,35 @@ class _IeltsScreenState extends State<IeltsScreen> {
   // Fondo azul de arriba
   Widget _buildHeaderBackground(TextTheme textTheme) {
     return Container(
-      height: 250,
       width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 40),
+      constraints: const BoxConstraints(minHeight: 250),
       color: const Color(0xFF23408E),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
+
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Image.asset(
+                  'assets/images/icono_ielts.png',
+                  height: 120,
+                  color: Colors.white.withOpacity(0.15),
+                ),
+              ),
+
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'IELTS',
                     style: GoogleFonts.ptSans(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withOpacity(0.9),
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
                     ),
@@ -113,19 +127,12 @@ class _IeltsScreenState extends State<IeltsScreen> {
                         'This section has all the materials you need—practice '
                         'questions, audio, and writing tasks—to master the test.',
                     style: GoogleFonts.ptSans(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withOpacity(0.85),
                       fontSize: 15,
+                      height: 1.3,
                     ),
                   ),
                 ],
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Image.asset(
-                  'assets/images/icono_ielts.png',
-                  height: 100,
-                  color: Colors.white.withOpacity(0.2),
-                ),
               ),
             ],
           ),
@@ -139,7 +146,6 @@ class _IeltsScreenState extends State<IeltsScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 220),
       width: double.infinity,
-      height: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'config/supabase_config.dart'; // 🆕 Supabase
@@ -9,6 +10,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  //by santiago: Esto es para que la barra de navegación del celular se oculte
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: [SystemUiOverlay.top], // solo mostramos la status bar
+  );
 
   // Load environment variables
   await dotenv.load(fileName: '.env');

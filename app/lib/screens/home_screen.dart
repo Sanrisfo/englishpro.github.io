@@ -233,10 +233,10 @@ class HomeScreen extends StatelessWidget {
       case 'IELTS':
         screen = const IeltsScreen();
         break;
-      case 'Business En.':
+      case 'Business en.':
         screen = const BusinessEnglishScreen();
         break;
-      case 'En. in Action':
+      case 'En. in action':
         screen = const EnglishInActionScreen();
         break;
       default:
