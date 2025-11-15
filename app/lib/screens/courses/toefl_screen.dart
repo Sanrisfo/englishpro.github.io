@@ -79,16 +79,31 @@ class _ToeflScreenState extends State<ToeflScreen> {
   // Fondo rojo de arriba
   Widget _buildHeaderBackground(TextTheme textTheme) {
     return Container(
-      height: 250,
       width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 40),
+      constraints: const BoxConstraints(minHeight: 250),
       color: const Color(0xFFD9232A),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
+
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Image.asset(
+                  'assets/images/icono_toefl_new.png',
+                  height: 120,
+                  color: Colors.white.withOpacity(0.15),
+                ),
+              ),
+
+              // CONTENIDO DEL TEXTO
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'TOEFL',
@@ -100,8 +115,8 @@ class _ToeflScreenState extends State<ToeflScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'The TOEFL test measures your academic English skills'
-                        ' for university. Here you ll find everything you need '
+                    'The TOEFL test measures your academic English skills '
+                        'for university. Here you ll find everything you need '
                         'to prepare—practice questions, audio drills, and writing '
                         'guides—for all four sections.',
                     style: GoogleFonts.ptSans(
@@ -111,20 +126,13 @@ class _ToeflScreenState extends State<ToeflScreen> {
                   ),
                 ],
               ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Image.asset(
-                  'assets/images/icono_toefl_new.png',
-                  height: 100,
-                  color: Colors.white.withOpacity(0.2),
-                ),
-              ),
             ],
           ),
         ),
       ),
     );
   }
+
 
   //Contenido
   Widget _buildContentPanel(TextTheme textTheme) {
