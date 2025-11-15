@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../config/supabase_config.dart';
 import '../models/material_model.dart';
@@ -12,16 +12,12 @@ class SkillMaterialsScreen extends StatefulWidget {
   final int skillId;
   final String skillName;
   final String courseName;
-  final int? activityTypeId;
-  final String? activityTypeName;
 
   const SkillMaterialsScreen({
     Key? key,
     required this.skillId,
     required this.skillName,
     required this.courseName,
-    this.activityTypeId,
-    this.activityTypeName,
   }) : super(key: key);
 
   @override
@@ -54,24 +50,15 @@ class _SkillMaterialsScreenState extends State<SkillMaterialsScreen> {
         _errorMessage = materialsRes['message'] ?? 'No se pudieron cargar los materiales';
       }
 
-      // Cargar actividades (cuestionarios) filtradas por tipo si aplica
+      // Cargar actividades (cuestionarios) por habilidad
       try {
-        final base = supabase
+        final qs = await supabase
             .from('cuestionarios')
-            .select('id_cuestionario, titulo, tiempo_limite_minutos, tipo_evaluacion, activo');
-        dynamic result;
-        if (widget.activityTypeId != null) {
-          result = await base
-              .eq('id_tipo_actividad', widget.activityTypeId!)
-              .eq('activo', true)
-              .order('id_cuestionario');
-        } else {
-          result = await base
-              .eq('id_habilidad', widget.skillId)
-              .eq('activo', true)
-              .order('id_cuestionario');
-        }
-        _quizzes = List<Map<String, dynamic>>.from(result as List);
+            .select('id_cuestionario, titulo, tiempo_limite_minutos, tipo_evaluacion, activo')
+            .eq('id_habilidad', widget.skillId)
+            .eq('activo', true)
+            .order('id_cuestionario');
+        _quizzes = List<Map<String, dynamic>>.from(qs as List);
       } catch (e) {
         // no bloquea la carga si falla solo actividades
       }
@@ -156,9 +143,7 @@ class _SkillMaterialsScreenState extends State<SkillMaterialsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.activityTypeName != null
-            ? '${widget.courseName} > ${widget.skillName} > ${widget.activityTypeName}'
-            : '${widget.courseName} > ${widget.skillName}'),
+        title: Text('${widget.courseName} â€¢ ${widget.skillName}'),
         backgroundColor: Colors.blueGrey,
         actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
       ),
@@ -176,7 +161,7 @@ class _SkillMaterialsScreenState extends State<SkillMaterialsScreen> {
                       if (_materials.isEmpty)
                         const Padding(
                           padding: EdgeInsets.only(bottom: 16),
-                          child: Text('Aún no hay materiales para esta habilidad'),
+                          child: Text('AÃºn no hay materiales para esta habilidad'),
                         )
                       else
                         ..._materials.map((m) => Card(
@@ -195,7 +180,7 @@ class _SkillMaterialsScreenState extends State<SkillMaterialsScreen> {
                       const Text('Actividades', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       if (_quizzes.isEmpty)
-                        const Text('Aún no hay actividades para esta habilidad')
+                        const Text('AÃºn no hay actividades para esta habilidad')
                       else
                         ..._quizzes.map((q) {
                           final title = q['titulo'] as String? ?? 'Actividad';

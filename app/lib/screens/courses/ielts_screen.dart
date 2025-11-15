@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../models/skill_model.dart';
 import '../../config/supabase_config.dart';
-import '../skill_materials_screen.dart';
+import '../activity_types_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class IeltsScreen extends StatefulWidget {
@@ -223,7 +223,7 @@ class _IeltsScreenState extends State<IeltsScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SkillMaterialsScreen(
+            builder: (context) => ActivityTypesScreen(
               skillId: skill.id,
               skillName: skill.nombre,
               courseName: 'IELTS',

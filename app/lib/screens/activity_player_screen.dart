@@ -68,7 +68,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
         _quizTimeMinutes = quizRow['tiempo_limite_minutos'] as int?;
       } catch (_) {}
 
-      // Load material linked to this quiz (if any), fallback to first material of skill
+      // Load material linked to this quiz (si existe). No fallback a nivel habilidad
       try {
         final mats = await supabase
             .from('materiales_estudio')
@@ -78,15 +78,6 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
         final list = List<Map<String, dynamic>>.from(mats as List);
         if (list.isNotEmpty) {
           _material = MaterialModel.fromJson(list.first);
-        } else {
-          final mats2 = await supabase
-              .from('materiales_estudio')
-              .select('*')
-              .eq('id_habilidad', widget.skillId)
-              .order('orden', ascending: true)
-              .limit(1);
-          final list2 = List<Map<String, dynamic>>.from(mats2 as List);
-          if (list2.isNotEmpty) _material = MaterialModel.fromJson(list2.first);
         }
       } catch (_) {}
 

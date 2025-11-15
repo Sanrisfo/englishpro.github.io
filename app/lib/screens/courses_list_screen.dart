@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/course_model.dart';
 import '../services/api_service.dart';
-import 'skill_materials_screen.dart';
+import 'activity_types_screen.dart';
 
 class CoursesListScreen extends StatefulWidget {
   const CoursesListScreen({Key? key}) : super(key: key);
@@ -408,7 +408,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => SkillMaterialsScreen(
+              builder: (context) => ActivityTypesScreen(
                 skillId: skill.id,
                 skillName: skill.nombre,
                 courseName: widget.course.nombre,

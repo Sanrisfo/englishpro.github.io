@@ -6,6 +6,7 @@ import '../config/supabase_config.dart';
 import '../models/user.dart';
 import '../models/course_model.dart';
 import '../models/skill_model.dart';
+import '../models/activity_type_model.dart';
 import '../models/material_model.dart';
 import '../models/module_model.dart';
 import '../models/question_model.dart';
@@ -224,6 +225,91 @@ class ApiService {
       return {'success': true, 'skills': skills};
     } catch (e) {
       return {'success': false, 'message': 'Error (Supabase getSkillsByCourse): $e'};
+    }
+  }
+
+  // ==================== ACTIVITY TYPES ====================
+
+  /// List activity types for a skill
+  static Future<Map<String, dynamic>> getActivityTypesBySkill(int skillId) async {
+    try {
+      final response = await supabase
+          .from('tipos_actividad')
+          .select('*')
+          .eq('id_habilidad', skillId)
+          .eq('activo', true)
+          .order('orden', ascending: true);
+
+      final items = (response as List<dynamic>)
+          .map((row) => ActivityTypeModel.fromJson(row as Map<String, dynamic>))
+          .toList();
+
+      return {'success': true, 'types': items};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase getActivityTypesBySkill): $e'};
+    }
+  }
+
+  /// Create activity type
+  static Future<Map<String, dynamic>> createActivityType({
+    required int skillId,
+    required String nombre,
+    String? descripcion,
+    int orden = 1,
+    bool activo = true,
+  }) async {
+    try {
+      final inserted = await supabase
+          .from('tipos_actividad')
+          .insert({
+            'id_habilidad': skillId,
+            'nombre': nombre,
+            if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
+            'orden': orden,
+            'activo': activo,
+          })
+          .select()
+          .single();
+      return {'success': true, 'type': ActivityTypeModel.fromJson(inserted as Map<String, dynamic>)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase createActivityType): $e'};
+    }
+  }
+
+  /// Update activity type
+  static Future<Map<String, dynamic>> updateActivityType({
+    required int id,
+    String? nombre,
+    String? descripcion,
+    int? orden,
+    bool? activo,
+  }) async {
+    try {
+      final payload = <String, dynamic>{};
+      if (nombre != null) payload['nombre'] = nombre;
+      if (descripcion != null) payload['descripcion'] = descripcion;
+      if (orden != null) payload['orden'] = orden;
+      if (activo != null) payload['activo'] = activo;
+
+      final updated = await supabase
+          .from('tipos_actividad')
+          .update(payload)
+          .eq('id', id)
+          .select()
+          .single();
+      return {'success': true, 'type': ActivityTypeModel.fromJson(updated as Map<String, dynamic>)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase updateActivityType): $e'};
+    }
+  }
+
+  /// Delete activity type
+  static Future<Map<String, dynamic>> deleteActivityType(int id) async {
+    try {
+      await supabase.from('tipos_actividad').delete().eq('id', id);
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase deleteActivityType): $e'};
     }
   }
 

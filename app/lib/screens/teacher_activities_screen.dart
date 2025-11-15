@@ -11,12 +11,16 @@ class TeacherActivitiesScreen extends StatefulWidget {
   final int skillId;
   final String skillName;
   final String courseName;
+  final int? activityTypeId;
+  final String? activityTypeName;
 
   const TeacherActivitiesScreen({
     Key? key,
     required this.skillId,
     required this.skillName,
     required this.courseName,
+    this.activityTypeId,
+    this.activityTypeName,
   }) : super(key: key);
 
   @override
@@ -41,12 +45,15 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       _errorMessage = null;
     });
     try {
-      final response = await supabase
+      var query = supabase
           .from('cuestionarios')
-          .select('id_cuestionario, titulo, descripcion, tiempo_limite_minutos, tipo_evaluacion, activo')
-          .eq('id_habilidad', widget.skillId)
-          .eq('activo', true)
-          .order('id_cuestionario');
+          .select('id_cuestionario, titulo, descripcion, tiempo_limite_minutos, tipo_evaluacion, activo');
+      if (widget.activityTypeId != null) {
+        query = query.eq('id_tipo_actividad', widget.activityTypeId!);
+      } else {
+        query = query.eq('id_habilidad', widget.skillId);
+      }
+      final response = await query.eq('activo', true).order('id_cuestionario');
       setState(() => _quizzes = List<Map<String, dynamic>>.from(response as List));
       // Load modules for this skill
       try {
@@ -121,7 +128,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   value: selectedModuleId,
                   decoration: const InputDecoration(labelText: 'Módulo (opcional)'),
                   items: [
-                    const DropdownMenuItem<int>(value: null, child: Text('Sin módulo')),
+                    const DropdownMenuItem<int>(value: null, child: Text('Sin Módulo')),
                     ..._modules.map((m) => DropdownMenuItem<int>(
                           value: m['id_modulo'] as int,
                           child: Text(m['nombre_modulo'] as String? ?? 'Módulo'),
@@ -207,16 +214,21 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   }
                   final tiempo = int.tryParse(timeCtrl.text.trim());
 
+                  final payload = <String, dynamic>{
+                    'titulo': titulo,
+                    if (descCtrl.text.trim().isNotEmpty) 'descripcion': descCtrl.text.trim(),
+                    if (tiempo != null) 'tiempo_limite_minutos': tiempo,
+                    'tipo_evaluacion': tipo,
+                    'activo': true,
+                  };
+                  if (widget.activityTypeId != null) {
+                    payload['id_tipo_actividad'] = widget.activityTypeId;
+                  } else {
+                    payload['id_habilidad'] = widget.skillId;
+                  }
                   final insertedQuiz = await supabase
                       .from('cuestionarios')
-                      .insert({
-                        'id_habilidad': widget.skillId,
-                        'titulo': titulo,
-                        if (descCtrl.text.trim().isNotEmpty) 'descripcion': descCtrl.text.trim(),
-                        if (tiempo != null) 'tiempo_limite_minutos': tiempo,
-                        'tipo_evaluacion': tipo,
-                        'activo': true,
-                      })
+                      .insert(payload)
                       .select('id_cuestionario')
                       .single();
                   final insertedQuizId = insertedQuiz['id_cuestionario'] as int;
@@ -298,7 +310,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar Eliminación'),
-        content: Text('¿Eliminar "$title"?'),
+        content: Text('Â¿Eliminar "$title"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           ElevatedButton(
@@ -328,7 +340,9 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.courseName} • ${widget.skillName}'),
+        title: Text(widget.activityTypeName != null
+            ? '${widget.courseName} > ${widget.skillName} > ${widget.activityTypeName}'
+            : '${widget.courseName} > ${widget.skillName}'),
         backgroundColor: Colors.deepPurple,
         actions: [
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
@@ -361,7 +375,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
           : _errorMessage != null
               ? Center(child: Text(_errorMessage!))
               : _quizzes.isEmpty
-                  ? const Center(child: Text('No hay actividades aún'))
+                  ? const Center(child: Text('No hay actividades Aún'))
                   : RefreshIndicator(
                       onRefresh: _load,
                       child: ListView.builder(
@@ -378,7 +392,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
 
   Widget _buildQuizCard(Map<String, dynamic> q) {
     final title = q['titulo'] as String? ?? 'Actividad';
-    final tipo = q['tipo_evaluacion'] as String? ?? '—';
+    final tipo = q['tipo_evaluacion'] as String? ?? 'â€”';
     final minutos = q['tiempo_limite_minutos'] as int?;
     final id = q['id_cuestionario'] as int;
     return Card(

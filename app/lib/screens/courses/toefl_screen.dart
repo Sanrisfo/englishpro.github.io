@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../../models/skill_model.dart';
-import '../skill_materials_screen.dart';
+import '../activity_types_screen.dart';
 import '../../config/supabase_config.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -219,7 +219,7 @@ class _ToeflScreenState extends State<ToeflScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => SkillMaterialsScreen(
+            builder: (context) => ActivityTypesScreen(
               skillId: skill.id,
               skillName: skill.nombre,
               courseName: 'TOEFL',

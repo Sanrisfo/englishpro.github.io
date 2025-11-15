@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/supabase_config.dart';
 import 'teacher_activities_screen.dart';
+import 'teacher_activity_types_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TeacherSkillsScreen extends StatefulWidget {
@@ -148,7 +149,11 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TeacherActivitiesScreen(skillId: id, skillName: name, courseName: widget.courseName),
+            builder: (context) => TeacherActivityTypesScreen(
+              skillId: id,
+              skillName: name,
+              courseName: widget.courseName,
+            ),
           ),
         );
       },
