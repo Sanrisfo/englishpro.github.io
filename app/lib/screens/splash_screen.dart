@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'teacher_dashboard_screen.dart';
+import '../config/supabase_config.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -43,13 +45,43 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    String? role = prefs.getString('user_role');
+    bool? isTeacher = prefs.getBool('user_is_teacher');
 
     if (!mounted) return;
 
     if (token != null && token.isNotEmpty) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      // Backfill role from Supabase if not persisted (handles old sessions)
+      if (isTeacher == null && (role == null || role.isEmpty)) {
+        try {
+          final current = supabase.auth.currentUser;
+          if (current != null) {
+            final data = await supabase
+                .from('usuarios')
+                .select('rol, es_docente')
+                .eq('supabase_uid', current.id)
+                .single();
+            role = (data['rol'] as String?) ?? '';
+            isTeacher = (data['es_docente'] as bool?) ?? (role == 'Docente');
+            // Persist for next launches
+            await prefs.setString('user_role', role!);
+            await prefs.setBool('user_is_teacher', isTeacher!);
+          }
+        } catch (_) {
+          // Silently continue; default to student if unknown
+        }
+      }
+
+      // Route based on final role
+      if (isTeacher == true) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const TeacherDashboardScreen()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
     } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginScreen()),

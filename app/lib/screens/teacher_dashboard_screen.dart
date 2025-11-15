@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../services/supabase_teacher_service.dart';
+import '../config/supabase_config.dart';
 import 'manual_grading_screen.dart';
 import 'teacher_materials_screen.dart';
 import 'pending_reviews_screen.dart';
@@ -39,8 +40,41 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userId = authProvider.user?.idUsuario;
+      int? userId = authProvider.user?.idUsuario;
 
+      // Fallback: recover userId from Supabase session if provider is empty
+      if (userId == null) {
+        try {
+          final current = supabase.auth.currentUser;
+          if (current != null) {
+            final data = await supabase
+                .from('usuarios')
+                .select('id_usuario, es_docente, rol')
+                .eq('supabase_uid', current.id)
+                .single();
+            userId = data['id_usuario'] as int?;
+
+            // Optional: if not a teacher, show a more specific message
+            final isTeacher = (data['es_docente'] as bool?) ?? false;
+            if (userId == null) {
+              setState(() {
+                _errorMessage = 'Usuario no autenticado';
+                _isLoading = false;
+              });
+              return;
+            }
+            if (!isTeacher) {
+              setState(() {
+                _errorMessage = 'Este usuario no es docente';
+                _isLoading = false;
+              });
+              return;
+            }
+          }
+        } catch (_) {
+          // ignore and fall through to error handling below
+        }
+      }
       if (userId == null) {
         setState(() {
           _errorMessage = 'Usuario no autenticado';
@@ -73,6 +107,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+    await prefs.remove('user_role');
+    await prefs.remove('user_is_teacher');
 
     if (!mounted) return;
 

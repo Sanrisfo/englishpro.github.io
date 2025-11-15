@@ -54,6 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // Save session token (Supabase access token)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', session?.accessToken ?? '');
+      // Persist role information for startup routing
+      await prefs.setString('user_role', user.rol);
+      await prefs.setBool('user_is_teacher', user.rol == 'Docente' || user.esDocente);
 
       // Save user in provider
       Provider.of<AuthProvider>(context, listen: false).setUser(user, session?.accessToken ?? '');
