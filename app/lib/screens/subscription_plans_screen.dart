@@ -66,10 +66,12 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
 
   int? selectedPlanIndex;
 
+  get authProvider => null;
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final currentUserPlan = authProvider.user?.plan;
+    final currentUserPlan = authProvider.user?.idPlan;
 
     return Scaffold(
       appBar: AppBar(
@@ -413,7 +415,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
 
   void _selectPlan(PlanModel plan) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
+    final userId = authProvider.user?.idUsuario;
 
     if (userId == null) {
       _showErrorDialog('Debes iniciar sesión para suscribirte a un plan');
@@ -614,4 +616,8 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
       ),
     );
   }
+}
+
+extension on int? {
+  toLowerCase() {}
 }

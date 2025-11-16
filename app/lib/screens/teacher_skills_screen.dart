@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../config/supabase_config.dart';
-import 'teacher_activities_screen.dart';
 import 'teacher_activity_types_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -43,7 +42,6 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
           .order('orden', ascending: true);
       setState(() => _skills = List<Map<String, dynamic>>.from(response as List));
     } catch (e) {
-      // --- CORRECCIÓN: Mensaje estándar ---
       setState(() => _errorMessage = 'Error loading skills: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -54,7 +52,8 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // --- CORRECCIÓN: Botón flotante estándar ---
+
+      // Boton de atras flotante
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context).pop(),
         backgroundColor: const Color(0xFFD9232A), // Rojo
@@ -63,24 +62,19 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
-      // --- CORRECCIÓN: Sin AppBar, usamos SafeArea ---
       body: SafeArea(
         child: _isLoading
-        // --- CORRECCIÓN: Indicador de carga estándar ---
             ? Center(
           child: CircularProgressIndicator(
-            color: _courseColor, // Color del curso
+            color: _courseColor,
             strokeWidth: 5.0,
           ),
         )
-        // --- CORRECCIÓN: Manejo de error estándar ---
             : _errorMessage != null
             ? Center(child: Text(_errorMessage!))
-        // --- CORRECCIÓN: Layout con cabecera y lista ---
             : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Cabecera personalizada
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
               child: Column(
@@ -119,14 +113,12 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
               ),
             ),
 
-            // 2. Lista de skills
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 itemCount: _skills.length,
                 itemBuilder: (context, index) {
                   final s = _skills[index];
-                  // Llamamos a nuestro _buildSkillTile estándar
                   return _buildSkillTile(s);
                 },
               ),
@@ -142,7 +134,7 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
     final id = s['id_habilidad'] as int;
     final name = s['nombre_habilidad'] as String? ?? 'Skill';
     final desc = s['descripcion'] as String? ?? '';
-    final icon = _skillIcon(name); // Icono basado en nombre
+    final icon = _skillIcon(name);
 
     return InkWell(
       onTap: () {
@@ -237,13 +229,13 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
   Color _getCourseColor(String courseName) {
     String lower = courseName.toLowerCase();
     if (lower.contains('toefl')) {
-      return const Color(0xFFD9232A); // Rojo
+      return const Color(0xFFD9232A);
     } else if (lower.contains('ielts')) {
-      return const Color(0xFF23408E); // Azul
+      return const Color(0xFF23408E);
     } else if (lower.contains('business')) {
-      return const Color(0xFFB02224); // Rojo Oscuro
+      return const Color(0xFFB02224);
     } else {
-      return const Color(0xFF1F3A89); // Azul Oscuro
+      return const Color(0xFF1F3A89);
     }
   }
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../config/supabase_config.dart';
 import 'teacher_skills_screen.dart';
-import 'login_screen.dart';
 
 class TeacherCoursesScreen extends StatefulWidget {
   const TeacherCoursesScreen({Key? key}) : super(key: key);
@@ -60,7 +58,6 @@ class _TeacherCoursesScreenState extends State<TeacherCoursesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       //Boton flotante para atras
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context).pop(),

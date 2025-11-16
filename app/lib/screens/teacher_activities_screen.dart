@@ -5,7 +5,7 @@ import '../config/supabase_config.dart';
 import '../services/supabase_storage_service.dart';
 import '../services/api_service.dart';
 import 'teacher_questions_screen.dart';
-import 'teacher_modules_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TeacherActivitiesScreen extends StatefulWidget {
   final int skillId;
@@ -31,11 +31,13 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<Map<String, dynamic>> _quizzes = [];
-  List<Map<String, dynamic>> _modules = [];
+  // List<Map<String, dynamic>> _modules = []; // Eliminado
+  late final Color _courseColor; // Color del tema
 
   @override
   void initState() {
     super.initState();
+    _courseColor = _getCourseColor(widget.courseName);
     _load();
   }
 
@@ -55,21 +57,34 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       }
       final response = await query.eq('activo', true).order('id_cuestionario');
       setState(() => _quizzes = List<Map<String, dynamic>>.from(response as List));
-      // Load modules for this skill
-      try {
-        final ms = await supabase
-            .from('modulos')
-            .select('id_modulo, nombre_modulo, orden, activo')
-            .eq('id_habilidad', widget.skillId)
-            .eq('activo', true)
-            .order('orden', ascending: true);
-        _modules = List<Map<String, dynamic>>.from(ms as List);
-      } catch (_) {}
+
     } catch (e) {
-      setState(() => _errorMessage = 'Error cargando actividades: $e');
+      setState(() => _errorMessage = 'Error loading activities: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  InputDecoration _dialogTextFieldDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: const Color(0xFF23408E).withOpacity(0.1),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  ButtonStyle _dialogButtonStyle({bool isDestructive = false}) {
+    return ElevatedButton.styleFrom(
+      backgroundColor: isDestructive ? const Color(0xFFD9232A) : _courseColor.withOpacity(0.1),
+      foregroundColor: isDestructive ? Colors.white : _courseColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+
+    );
   }
 
   Future<void> _createQuizDialog() async {
@@ -77,7 +92,6 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
     final descCtrl = TextEditingController();
     final timeCtrl = TextEditingController();
     String tipo = 'Practica';
-    int? selectedModuleId = _modules.isNotEmpty ? _modules.first['id_modulo'] as int : null;
 
     // Material opcional
     bool addMaterial = false;
@@ -90,73 +104,67 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Crear Actividad'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Create Activity',
+            style: GoogleFonts.ptSans(color: _courseColor, fontSize: 20),
+            textAlign: TextAlign.center,
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Título'),
+                  decoration: _dialogTextFieldDecoration('Title'),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Descripción'),
+                  decoration: _dialogTextFieldDecoration('Description'),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: timeCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Tiempo límite (minutos)'),
+                  decoration: _dialogTextFieldDecoration('Time limit (minutes)'),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: tipo,
-                  decoration: const InputDecoration(labelText: 'Tipo de evaluación'),
+                  decoration: _dialogTextFieldDecoration('Evaluation type'),
                   items: const [
-                    DropdownMenuItem(value: 'Practica', child: Text('Práctica')),
-                    DropdownMenuItem(value: 'Simulacro', child: Text('Simulacro')),
-                    DropdownMenuItem(value: 'Examen', child: Text('Examen')),
+                    DropdownMenuItem(value: 'Practica', child: Text('Practice')),
+                    DropdownMenuItem(value: 'Simulacro', child: Text('Mock Test')),
+                    DropdownMenuItem(value: 'Examen', child: Text('Exam')),
                   ],
                   onChanged: (v) => tipo = v ?? 'Practica',
                 ),
-                const SizedBox(height: 8),
-                // Módulo (opcional)
-                DropdownButtonFormField<int>(
-                  value: selectedModuleId,
-                  decoration: const InputDecoration(labelText: 'Módulo (opcional)'),
-                  items: [
-                    const DropdownMenuItem<int>(value: null, child: Text('Sin Módulo')),
-                    ..._modules.map((m) => DropdownMenuItem<int>(
-                          value: m['id_modulo'] as int,
-                          child: Text(m['nombre_modulo'] as String? ?? 'Módulo'),
-                        )),
-                  ],
-                  onChanged: (v) => selectedModuleId = v,
-                ),
+                // --- Dropdown de Módulo Eliminado ---
+
                 const SizedBox(height: 12),
                 const Divider(),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Agregar material (opcional)'),
+                  title: const Text('Add material (optional)'),
                   value: addMaterial,
                   onChanged: (val) => setDialogState(() => addMaterial = val),
+                  activeColor: _courseColor,
                 ),
                 if (addMaterial) ...[
                   TextField(
                     controller: materialTitleCtrl,
-                    decoration: const InputDecoration(labelText: 'Título del material'),
+                    decoration: _dialogTextFieldDecoration('Material title'),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: materialType,
-                    decoration: const InputDecoration(labelText: 'Tipo de material'),
+                    decoration: _dialogTextFieldDecoration('Material type'),
                     items: const [
                       DropdownMenuItem(value: 'pdf', child: Text('PDF')),
-                      DropdownMenuItem(value: 'text', child: Text('Texto')),
-                      DropdownMenuItem(value: 'image', child: Text('Imagen')),
+                      DropdownMenuItem(value: 'text', child: Text('Text')),
+                      DropdownMenuItem(value: 'image', child: Text('Image')),
                       DropdownMenuItem(value: 'audio', child: Text('Audio')),
                     ],
                     onChanged: (v) => setDialogState(() => materialType = v ?? 'pdf'),
@@ -165,7 +173,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   if (materialType == 'text')
                     TextField(
                       controller: materialTextCtrl,
-                      decoration: const InputDecoration(labelText: 'Contenido de texto'),
+                      decoration: _dialogTextFieldDecoration('Text content'),
                       maxLines: 4,
                     )
                   else
@@ -173,18 +181,20 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            selectedFile?.path.split('\\').last ?? 'Ningún archivo seleccionado',
+                            selectedFile?.path.split(Platform.pathSeparator).last ?? 'No file selected',
                             overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.grey[600]),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton.icon(
+                        ElevatedButton(
+                          style: _dialogButtonStyle(),
                           onPressed: () async {
                             final extensions = materialType == 'pdf'
                                 ? ['pdf']
                                 : materialType == 'image'
-                                    ? ['png', 'jpg', 'jpeg']
-                                    : ['mp3', 'm4a', 'wav'];
+                                ? ['png', 'jpg', 'jpeg']
+                                : ['mp3', 'm4a', 'wav'];
                             final result = await FilePicker.platform.pickFiles(
                               type: FileType.custom,
                               allowedExtensions: extensions,
@@ -193,8 +203,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                               setDialogState(() => selectedFile = File(result.files.single.path!));
                             }
                           },
-                          icon: const Icon(Icons.attach_file),
-                          label: const Text('Seleccionar archivo'),
+                          child: const Icon(Icons.attach_file),
                         ),
                       ],
                     ),
@@ -203,13 +212,14 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
+              style: _dialogButtonStyle(),
               onPressed: () async {
                 try {
                   final titulo = titleCtrl.text.trim();
                   if (titulo.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Título requerido')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Title is required')));
                     return;
                   }
                   final tiempo = int.tryParse(timeCtrl.text.trim());
@@ -233,7 +243,6 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                       .single();
                   final insertedQuizId = insertedQuiz['id_cuestionario'] as int;
 
-                  // Crear material si corresponde
                   if (addMaterial) {
                     final mTitle = (materialTitleCtrl.text.trim().isEmpty) ? titulo : materialTitleCtrl.text.trim();
                     String? publicUrl;
@@ -241,7 +250,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                     if (materialType == 'text') {
                       contenidoTexto = materialTextCtrl.text.trim();
                       if (contenidoTexto.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contenido de texto requerido')));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text content is required')));
                       } else {
                         await ApiService.createMaterial(
                           habilidadId: widget.skillId,
@@ -255,10 +264,10 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                       }
                     } else {
                       if (selectedFile == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Seleccione un archivo para el material')));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a file for the material')));
                       } else {
                         final storage = SupabaseStorageService();
-                        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split('\\').last}';
+                        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split(Platform.pathSeparator).last}';
                         try {
                           if (materialType == 'pdf') {
                             final r = await storage.uploadPDF(pdfFile: selectedFile!, fileName: fileName);
@@ -272,7 +281,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                             publicUrl = supabase.storage.from('audios').getPublicUrl(path);
                           }
                         } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error subiendo material: $e')));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error uploading material: $e')));
                         }
                         if (publicUrl != null) {
                           await ApiService.createMaterial(
@@ -292,12 +301,12 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   if (!mounted) return;
                   Navigator.pop(context);
                   await _load();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Actividad creada')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity created')));
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
-              child: const Text('Crear'),
+              child: const Text('Create'),
             ),
           ],
         ),
@@ -309,14 +318,15 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmar Eliminación'),
-        content: Text('Â¿Eliminar "$title"?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Confirm Deletion'),
+        content: Text('Delete "$title"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Eliminar'),
+            style: _dialogButtonStyle(isDestructive: true),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -326,7 +336,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
         await supabase.from('cuestionarios').delete().eq('id_cuestionario', id);
         await _load();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Actividad eliminada')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity deleted')));
         }
       } catch (e) {
         if (mounted) {
@@ -336,116 +346,237 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    // Títulos dinámicos para el encabezado
+    final String headerTitle = widget.activityTypeName ?? widget.skillName;
+    final String breadcrumb = widget.activityTypeName != null
+        ? '... > ${widget.skillName} > ${widget.activityTypeName} > Activities'
+        : '... > ${widget.courseName} > ${widget.skillName} > Activities';
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.activityTypeName != null
-            ? '${widget.courseName} > ${widget.skillName} > ${widget.activityTypeName}'
-            : '${widget.courseName} > ${widget.skillName}'),
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
-          IconButton(
-            tooltip: 'Módulos',
-            icon: const Icon(Icons.folder),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TeacherModulesScreen(
-                    skillId: widget.skillId,
-                    skillName: widget.skillName,
-                    courseName: widget.courseName,
-                  ),
-                ),
-              ).then((_) => _load());
-            },
+      backgroundColor: Colors.white,
+
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            onPressed: _isLoading ? null : _createQuizDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('New Activity'),
+            heroTag: null,
+            backgroundColor: _courseColor.withOpacity(0.1),
+            foregroundColor: _courseColor,
+            elevation: 0,
+            focusElevation: 0,
+            hoverElevation: 0,
+            highlightElevation: 0,
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () => Navigator.of(context).pop(),
+            backgroundColor: const Color(0xFFD9232A), // Rojo
+            foregroundColor: Colors.white,
+            heroTag: null,
+            child: const Icon(Icons.arrow_back_ios_new),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isLoading ? null : _createQuizDialog,
-        backgroundColor: Colors.deepPurple,
-        icon: const Icon(Icons.add),
-        label: const Text('Crear Actividad'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : _quizzes.isEmpty
-                  ? const Center(child: Text('No hay actividades Aún'))
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: _quizzes.length,
-                        itemBuilder: (context, index) {
-                          final q = _quizzes[index];
-                          return _buildQuizCard(q);
-                        },
-                      ),
-                    ),
-    );
-  }
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
-  Widget _buildQuizCard(Map<String, dynamic> q) {
-    final title = q['titulo'] as String? ?? 'Actividad';
-    final tipo = q['tipo_evaluacion'] as String? ?? 'â€”';
-    final minutos = q['tiempo_limite_minutos'] as int?;
-    final id = q['id_cuestionario'] as int;
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: ListTile(
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.deepPurple.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.assignment, color: Colors.deepPurple),
-          ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              Text('Tipo: $tipo'),
-              if (minutos != null) Text('Tiempo límite: $minutos min'),
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'Administrar preguntas',
-                icon: const Icon(Icons.quiz, color: Colors.blueGrey),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TeacherQuestionsScreen(
-                        quizId: id,
-                        skillId: widget.skillId,
-                        quizTitle: title,
+      // --- Body Rediseñado ---
+      body: SafeArea(
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            : _errorMessage != null
+            ? Center(child: Text(_errorMessage!))
+            : _quizzes.isEmpty
+            ? const Center(child: Text('No activities found yet'))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Encabezado Estándar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
+                      decoration: BoxDecoration(
+                        color: _courseColor,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Text(
+                        headerTitle, // Título dinámico
+                        style: GoogleFonts.ptSans(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  ).then((_) => _load());
-                },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    breadcrumb, // Migas de pan dinámicas
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _deleteQuiz(id, title),
+            ),
+            // 2. Lista Estándar (envuelta en Expanded)
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                color: _courseColor,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  itemCount: _quizzes.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final q = _quizzes[index];
+                    return _buildActivityTile(q);
+                  },
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildActivityTile(Map<String, dynamic> q) {
+    final title = q['titulo'] as String? ?? 'Activity';
+    final tipo = q['tipo_evaluacion'] as String? ?? '—';
+    final minutos = q['tiempo_limite_minutos'] as int?;
+    final id = q['id_cuestionario'] as int;
+    final desc = q['descripcion'] as String? ?? '';
+
+    return InkWell(
+      onTap: () {
+        // Al tocar la tarjeta, va a la pantalla de preguntas
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TeacherQuestionsScreen(
+              quizId: id,
+              skillId: widget.skillId,
+              quizTitle: title,
+            ),
+          ),
+        ).then((_) => _load());
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            // Ícono
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _courseColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.assignment_outlined, color: _courseColor, size: 28),
+            ),
+            const SizedBox(width: 16),
+
+            // Textos
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Subtítulos (Tipo y Tiempo)
+                  Text(
+                    "Type: $tipo" + (minutos != null ? "  •  $minutos min" : ""),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (desc.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        desc,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Botones de Acción
+            IconButton(
+              tooltip: 'Manage questions',
+              icon: Icon(Icons.quiz_outlined, color: Colors.grey[600]),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TeacherQuestionsScreen(
+                      quizId: id,
+                      skillId: widget.skillId,
+                      quizTitle: title,
+                    ),
+                  ),
+                ).then((_) => _load());
+              },
+            ),
+            IconButton(
+              tooltip: 'Delete activity',
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
+              onPressed: () => _deleteQuiz(id, title),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Color _getCourseColor(String courseName) {
+    String lower = courseName.toLowerCase();
+    if (lower.contains('toefl')) {
+      return const Color(0xFFD9232A); // Rojo
+    } else if (lower.contains('ielts')) {
+      return const Color(0xFF23408E); // Azul
+    } else if (lower.contains('business')) {
+      return const Color(0xFFB02224); // Rojo Oscuro
+    } else {
+      return const Color(0xFF1F3A89); // Azul Oscuro
+    }
   }
 }
