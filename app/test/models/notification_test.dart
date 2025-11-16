@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:englishpro/models/notification.dart';
+import 'package:englishpro_app/models/notification.dart';
 
 void main() {
   group('Notification Model Tests', () {

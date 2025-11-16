@@ -25,7 +25,7 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
 
   Future<void> _loadDashboardData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
+    final userId = authProvider.user?.idUsuario;
 
     if (userId == null) {
       setState(() {
