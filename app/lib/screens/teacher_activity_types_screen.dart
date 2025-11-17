@@ -376,8 +376,12 @@ class _TeacherActivityTypesScreenState
                 onRefresh: _load,
                 color: _courseColor,
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16),
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                    top: 0,
+                    bottom: 150.0, //espacio para los botones
+                  ),
                   itemCount: _types.length,
                   separatorBuilder: (_, __) =>
                   const SizedBox(height: 12),

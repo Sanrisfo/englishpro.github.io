@@ -72,8 +72,13 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Plan actualizado')),
+          const SnackBar(content: Text('Plan updated',
+            style: TextStyle(color: Color(0xFFFFFFFF)),
+          ),
+            backgroundColor: const Color(0xFF23408E),
+          )
       );
+
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;

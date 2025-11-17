@@ -37,93 +37,200 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Revisión - Pendientes'),
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
-        ],
+      backgroundColor: Colors.white,
+
+      // Boton flotante rojo (Estándar)
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).pop(),
+        backgroundColor: const Color(0xFFD9232A),
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.arrow_back_ios_new),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                        const SizedBox(height: 12),
-                        Text(_errorMessage!, textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _load,
-                          child: const Text('Reintentar'),
-                        )
-                      ],
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      body: SafeArea(
+        child: _isLoading
+            ? Center(
+          child: CircularProgressIndicator(
+            color: const Color(0xFFD9232A),
+            strokeWidth: 5.0,
+          ),
+        )
+            : _errorMessage != null
+            ? Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                const SizedBox(height: 12),
+                Text(_errorMessage!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _load,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD9232A),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Reintentar'),
+                )
+              ],
+            ),
+          ),
+        )
+            : RefreshIndicator(
+          onRefresh: _load,
+          color: const Color(0xFFD9232A),
+          child: _pending.isEmpty
+              ? _buildEmptyState(textTheme) // Nuevo estado vacío
+              : ListView.builder(
+            padding: const EdgeInsets.all(24.0), // Padding consistente
+            itemCount: _pending.length,
+            itemBuilder: (context, index) {
+              final f = _pending[index];
+              return _buildFeedbackCard(f, textTheme); // Nueva tarjeta
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- WIDGET: Estado Vacío Estilizado ---
+  Widget _buildEmptyState(TextTheme textTheme) {
+    return ListView(
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!, width: 1.5),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.check_circle, color: Colors.indigo, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Flexible(
+                  child: Text(
+                    'No pending submissions',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
                     ),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: _pending.isEmpty
-                      ? ListView(
-                          children: const [
-                            SizedBox(height: 120),
-                            Center(child: Text('No hay respuestas pendientes')),
-                          ],
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(12.0),
-                          itemCount: _pending.length,
-                          itemBuilder: (context, index) {
-                            final f = _pending[index];
-                            return _buildItem(f);
-                          },
-                        ),
                 ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildItem(Map<String, dynamic> feedback) {
+  // --- WIDGET: Tarjeta de Feedback Estilizada (Estándar Dashboard) ---
+  Widget _buildFeedbackCard(Map<String, dynamic> feedback, TextTheme textTheme) {
     final tipoRespuesta = feedback['tipo_respuesta'] as String?;
-    final fechaRespuesta = feedback['fecha_respuesta'] as String?;
     final preguntaId = feedback['id_pregunta'] as int?;
+    final fechaRespuesta = feedback['fecha_respuesta'] as String?;
+    final bool isWriting = tipoRespuesta == 'Writing';
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        onTap: () => _openGrading(feedback),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: (tipoRespuesta == 'Writing' ? Colors.blue : Colors.purple).withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            tipoRespuesta == 'Writing' ? Icons.edit : Icons.mic,
-            color: tipoRespuesta == 'Writing' ? Colors.blue : Colors.purple,
-          ),
+    // Colores estándar: Writing = Azul, Speaking = Rojo
+    final color = isWriting ? const Color(0xFF23408E) : const Color(0xFFD9232A);
+    final icon = isWriting ? Icons.edit : Icons.mic;
+    final subtitle = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
+
+    return InkWell(
+      onTap: () => _navigateToGrading(feedback),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
         ),
-        title: Text('Pregunta #$preguntaId', style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            const SizedBox(height: 4),
-            Text('Tipo: ${tipoRespuesta ?? 'N/A'}'),
-            if (fechaRespuesta != null) Text('Enviado: $fechaRespuesta'),
+            // Icono con fondo de color
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+
+            // Textos
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Revisión $tipoRespuesta (#$preguntaId)',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       ),
     );
   }
 
-  void _openGrading(Map<String, dynamic> feedback) {
+  // --- Helper para formatear fecha ---
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Ahora';
+      }
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  void _navigateToGrading(Map<String, dynamic> feedback) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -132,4 +239,3 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     ).then((_) => _load());
   }
 }
-

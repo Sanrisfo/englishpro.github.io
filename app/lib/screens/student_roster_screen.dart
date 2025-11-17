@@ -334,7 +334,11 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
                 await Clipboard.setData(ClipboardData(text: email));
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Email copied to clipboard')),
+                  const SnackBar(content: Text('Email copied to clipboard',
+                  style: TextStyle(color: Color(0xFFFFFFFF)),
+                  ),
+                    backgroundColor: const Color(0xFF23408E),
+                  ),
                 );
               },
             ),
