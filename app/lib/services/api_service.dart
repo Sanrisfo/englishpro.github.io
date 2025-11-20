@@ -313,6 +313,52 @@ class ApiService {
     }
   }
 
+  // ==================== ACTIVITY TYPE RULES (ALLOWED QUESTION TYPES) ====================
+
+  /// Get allowed question types for an activity type
+  static Future<List<String>> getAllowedQuestionTypes(int activityTypeId) async {
+    try {
+      final rows = await supabase
+          .from('tipo_actividad_pregunta_permitida')
+          .select('tipo_pregunta')
+          .eq('id_tipo_actividad', activityTypeId);
+      return List<Map<String, dynamic>>.from(rows as List)
+          .map((e) => (e['tipo_pregunta'] as String).toLowerCase())
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Set allowed question types for an activity type (replaces current set)
+  static Future<Map<String, dynamic>> setAllowedQuestionTypes({
+    required int activityTypeId,
+    required List<String> allowed,
+  }) async {
+    try {
+      // Replace strategy: delete all, then insert new set
+      await supabase
+          .from('tipo_actividad_pregunta_permitida')
+          .delete()
+          .eq('id_tipo_actividad', activityTypeId);
+
+      if (allowed.isNotEmpty) {
+        final payload = allowed
+            .map((t) => {
+                  'id_tipo_actividad': activityTypeId,
+                  'tipo_pregunta': t,
+                })
+            .toList();
+        await supabase
+            .from('tipo_actividad_pregunta_permitida')
+            .insert(payload);
+      }
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': 'Error setAllowedQuestionTypes: $e'};
+    }
+  }
+
   /// Get skill by ID
   static Future<Map<String, dynamic>> getSkillById(int id) async {
     try {
@@ -645,6 +691,136 @@ class ApiService {
       };
     } catch (e) {
       return {'success': false, 'message': 'Error (Supabase submitAnswer): $e'};
+    }
+  }
+
+  /// Create base respuesta row and return id_respuesta
+  static Future<int> _createRespuestaBase({
+    required int userId,
+    required int preguntaId,
+    int? quizId,
+    Map<String, dynamic>? extra,
+  }) async {
+    final base = <String, dynamic>{
+      'id_usuario': userId,
+      'id_pregunta': preguntaId,
+      if (quizId != null) 'id_cuestionario': quizId,
+      ...?extra,
+    };
+    final row = await supabase
+        .from('respuestas_usuario')
+        .insert(base)
+        .select('id_respuesta')
+        .single();
+    return (row['id_respuesta'] as num).toInt();
+  }
+
+  /// Submit Multiple Choice (multi-select): inserts base + respuestas_usuario_opciones
+  static Future<Map<String, dynamic>> submitAnswerMultipleChoice({
+    required int userId,
+    required int preguntaId,
+    required List<int> optionIds,
+    int? quizId,
+  }) async {
+    try {
+      final rid = await _createRespuestaBase(userId: userId, preguntaId: preguntaId, quizId: quizId);
+      if (optionIds.isNotEmpty) {
+        final list = optionIds.map((oid) => {'id_respuesta': rid, 'id_opcion': oid}).toList();
+        await supabase.from('respuestas_usuario_opciones').insert(list);
+      }
+      return {'success': true, 'id_respuesta': rid};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (submitAnswerMultipleChoice): $e'};
+    }
+  }
+
+  /// Submit Matching: statement -> answer pairs
+  static Future<Map<String, dynamic>> submitAnswerMatching({
+    required int userId,
+    required int preguntaId,
+    required Map<int, int> statementToAnswer, // statementId -> answerId
+    int? quizId,
+  }) async {
+    try {
+      final rid = await _createRespuestaBase(userId: userId, preguntaId: preguntaId, quizId: quizId);
+      if (statementToAnswer.isNotEmpty) {
+        final list = statementToAnswer.entries
+            .map((e) => {
+                  'id_respuesta': rid,
+                  'statement_id': e.key,
+                  'selected_answer_id': e.value,
+                })
+            .toList();
+        await supabase.from('respuestas_usuario_matching').insert(list);
+      }
+      return {'success': true, 'id_respuesta': rid};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (submitAnswerMatching): $e'};
+    }
+  }
+
+  /// Submit Completion: gap -> text
+  static Future<Map<String, dynamic>> submitAnswerCompletion({
+    required int userId,
+    required int preguntaId,
+    required Map<int, String> gapToText, // gapId -> value
+    int? quizId,
+  }) async {
+    try {
+      final rid = await _createRespuestaBase(userId: userId, preguntaId: preguntaId, quizId: quizId);
+      if (gapToText.isNotEmpty) {
+        final list = gapToText.entries
+            .map((e) => {
+                  'id_respuesta': rid,
+                  'gap_id': e.key,
+                  'text_value': e.value,
+                })
+            .toList();
+        await supabase.from('respuestas_usuario_completion').insert(list);
+      }
+      return {'success': true, 'id_respuesta': rid};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (submitAnswerCompletion): $e'};
+    }
+  }
+
+  /// Submit Write Text using base column (texto_ensayo)
+  static Future<Map<String, dynamic>> submitAnswerWriteText({
+    required int userId,
+    required int preguntaId,
+    required String text,
+    int? quizId,
+  }) async {
+    try {
+      final rid = await _createRespuestaBase(
+        userId: userId,
+        preguntaId: preguntaId,
+        quizId: quizId,
+        extra: {'texto_ensayo': text},
+      );
+      return {'success': true, 'id_respuesta': rid};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (submitAnswerWriteText): $e'};
+    }
+  }
+
+  /// Submit Record Audio using base column (url_grabacion)
+  static Future<Map<String, dynamic>> submitAnswerRecordAudio({
+    required int userId,
+    required int preguntaId,
+    required String audioUrl,
+    int? quizId,
+  }) async {
+    try {
+      final rid = await _createRespuestaBase(
+        userId: userId,
+        preguntaId: preguntaId,
+        quizId: quizId,
+        extra: {'url_grabacion': audioUrl},
+      );
+      return {'success': true, 'id_respuesta': rid};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (submitAnswerRecordAudio): $e'};
     }
   }
 

@@ -94,6 +94,211 @@
 
 ---
 
+## Tablas de base de datos (Schema actualizado):
+
+### 1. USUARIOS, ROLES Y PLANES
+
+Tabla: planes
+id_plan: integer, PK (Auto-increment)
+nombre_plan: varchar, UNIQUE
+precio: numeric
+limite_preguntas_por_habilidad: integer
+acceso_sesiones_vivo: boolean (Default: false)
+cantidad_sesiones_vivo: integer (Default: 0)
+acceso_simulacros: boolean (Default: false)
+cantidad_simulacros: integer (Default: 0)
+descripcion: text
+fecha_creacion: timestamp (Default: now)
+
+Tabla: usuarios
+id_usuario: integer, PK (Auto-increment)
+nombre_completo: varchar
+email: varchar, UNIQUE
+password_hash: varchar
+profesion: varchar
+id_plan: integer (FK -> planes.id_plan, Default: 1)
+es_docente: boolean (Default: false)
+rol: varchar (Check: 'Estudiante', 'Docente', 'Admin', Default: 'Estudiante')
+fecha_registro: timestamp (Default: now)
+ultimo_acceso: timestamp
+supabase_uid: uuid, UNIQUE
+email_verificado: boolean (Default: false)
+
+Tabla: docentes
+id_docente: integer, PK (Auto-increment)
+id_usuario: integer, UNIQUE (FK -> usuarios.id_usuario)
+especialidad: varchar
+certificaciones: text
+anos_experiencia: integer
+calificacion_promedio: numeric (Default: 0.00)
+total_retroalimentaciones: integer (Default: 0)
+fecha_registro_docente: timestamp (Default: now)
+
+Tabla: beneficios_usuario
+id_beneficio: integer, PK (Auto-increment)
+id_usuario: integer, UNIQUE (FK -> usuarios.id_usuario)
+sesiones_vivo_restantes: integer (Default: 0)
+simulacros_restantes: integer (Default: 0)
+fecha_actualizacion: timestamp (Default: now)
+
+### 2. ESTRUCTURA ACADÉMICA (CURSOS)
+
+Tabla: cursos
+id: integer, PK (Auto-increment)
+nombre_curso: varchar, UNIQUE
+descripcion: text
+tipo_curso: varchar (Check: 'Examen', 'Inmersivo')
+estilo_progreso: varchar (Check: 'Porcentaje', 'Modular')
+url_imagen: varchar
+fecha_creacion: timestamp (Default: now)
+activo: boolean (Default: true)
+
+Tabla: habilidades
+id_habilidad: integer, PK (Auto-increment)
+curso_id: integer (FK -> cursos.id)
+nombre_habilidad: varchar (Check: 'Writing', 'Speaking', 'Listening', 'Reading')
+descripcion: text
+orden: integer (Default: 1)
+
+Tabla: modulos
+id_modulo: integer, PK (Auto-increment)
+id_habilidad: integer (FK -> habilidades.id_habilidad)
+nombre_modulo: varchar
+descripcion: text
+orden: integer (Default: 1)
+activo: boolean (Default: true)
+fecha_creacion: timestamp (Default: now)
+
+Tabla: tipos_actividad
+id: integer, PK (Auto-increment)
+id_habilidad: integer (FK -> habilidades.id_habilidad)
+nombre: varchar
+descripcion: text
+orden: integer (Default: 1)
+activo: boolean (Default: true)
+
+### 3. CONTENIDO Y MATERIALES
+
+Tabla: materiales_estudio
+id_material: integer, PK (Auto-increment)
+id_habilidad: integer (FK -> habilidades.id_habilidad)
+id_modulo: integer (FK -> modulos.id_modulo)
+id_cuestionario: integer (FK -> cuestionarios.id_cuestionario)
+titulo: varchar
+tipo_material: varchar (Check: 'PDF', 'Video', 'Audio', 'Texto', 'Imagen')
+url_recurso: varchar
+contenido_texto: text
+duracion_minutos: integer
+orden: integer (Default: 1)
+nivel_acceso: varchar (Check: 'Freemium', 'Basico', 'Pro', 'Premium', Default: 'Freemium')
+fecha_creacion: timestamp (Default: now)
+creado_por: integer (FK -> docentes.id_docente)
+
+### 4. EVALUACIONES Y CUESTIONARIOS
+
+Tabla: preguntas
+id_pregunta: integer, PK (Auto-increment)
+id_habilidad: integer (FK -> habilidades.id_habilidad)
+texto_pregunta: text
+tipo_pregunta: varchar (Check: 'Multiple Choice', 'Texto Abierto', 'Audio Grabacion')
+url_audio: varchar
+url_video: varchar
+url_imagen: varchar
+puntos: integer (Default: 1)
+nivel_dificultad: varchar (Check: 'Basico', 'Intermedio', 'Avanzado')
+nivel_acceso: varchar (Check: 'Freemium', 'Basico', 'Pro', 'Premium', Default: 'Freemium')
+fecha_creacion: timestamp (Default: now)
+creado_por: integer (FK -> docentes.id_docente)
+explicacion: text
+
+Tabla: opciones_respuesta
+id_opcion: integer, PK (Auto-increment)
+id_pregunta: integer (FK -> preguntas.id_pregunta)
+texto_opcion: text
+es_correcta: boolean (Default: false)
+orden: integer (Default: 1)
+
+Tabla: cuestionarios
+id_cuestionario: integer, PK (Auto-increment)
+id_modulo: integer (FK -> modulos.id_modulo)
+id_tipo_actividad: integer (FK -> tipos_actividad.id)
+titulo: varchar
+descripcion: text
+tiempo_limite_minutos: integer
+nivel_dificultad: varchar (Check: 'Basico', 'Intermedio', 'Avanzado')
+tipo_evaluacion: varchar (Check: 'Practica', 'Simulacro', 'Examen')
+fecha_creacion: timestamp (Default: now)
+creado_por: integer (FK -> docentes.id_docente)
+activo: boolean (Default: true)
+
+Tabla: cuestionario_preguntas
+id_cuestionario: integer (FK -> cuestionarios.id_cuestionario)
+id_pregunta: integer (FK -> preguntas.id_pregunta)
+orden: integer (Default: 1)
+PRIMARY KEY compuesta: (id_cuestionario, id_pregunta)
+
+### 5. PROGRESO Y RETROALIMENTACIÓN
+
+Tabla: respuestas_usuario
+id_respuesta: integer, PK (Auto-increment)
+id_usuario: integer (FK -> usuarios.id_usuario)
+id_pregunta: integer (FK -> preguntas.id_pregunta)
+id_cuestionario: integer (FK -> cuestionarios.id_cuestionario)
+id_opcion_seleccionada: integer (FK -> opciones_respuesta.id_opcion)
+texto_ensayo: text
+url_grabacion: varchar
+es_correcta: boolean
+puntos_obtenidos: integer (Default: 0)
+fecha_respuesta: timestamp (Default: now)
+requiere_revision: boolean (Default: false)
+respuesta_texto: text
+respuesta_audio_url: text
+
+Tabla: retroalimentacion_docente
+id_retroalimentacion: integer, PK (Auto-increment)
+id_respuesta: integer (FK -> respuestas_usuario.id_respuesta)
+id_docente: integer (FK -> docentes.id_docente)
+comentario: text
+calificacion: integer (Check: 0-100)
+puntos_asignados: integer
+fecha_retroalimentacion: timestamp (Default: now)
+
+Tabla: progreso_usuarios
+id_progreso: integer, PK (Auto-increment)
+id_usuario: integer (FK -> usuarios.id_usuario)
+curso_id: integer (FK -> cursos.id)
+avance_porcentaje: numeric (Check: 0-100, Default: 0.00)
+modulos_completados: integer (Default: 0)
+preguntas_respondidas: integer (Default: 0)
+preguntas_correctas: integer (Default: 0)
+puntos_totales: integer (Default: 0)
+ultima_actividad: timestamp (Default: now)
+fecha_inicio: timestamp (Default: now)
+
+### 6. FINANZAS Y SISTEMA
+
+Tabla: pagos
+id_pago: integer, PK (Auto-increment)
+id_usuario: integer (FK -> usuarios.id_usuario)
+id_plan: integer (FK -> planes.id_plan)
+monto: numeric
+metodo_pago: varchar
+estado_pago: varchar (Check: 'Pendiente', 'Completado', 'Fallido', 'Reembolsado')
+id_transaccion_stripe: varchar, UNIQUE
+fecha_pago: timestamp (Default: now)
+fecha_inicio_vigencia: timestamp
+fecha_fin_vigencia: timestamp
+
+Tabla: notificaciones
+id_notificacion: integer, PK (Auto-increment)
+id_usuario: integer (FK -> usuarios.id_usuario)
+titulo: varchar
+mensaje: text
+tipo: varchar (Check: 'Info', 'Retroalimentacion', 'Pago', 'Sistema')
+leida: boolean (Default: false)
+fecha_creacion: timestamp (Default: now)
+
+
 ## 📋 16 Tablas Explicadas
 
 ### 1. Planes

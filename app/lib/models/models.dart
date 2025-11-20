@@ -10,5 +10,7 @@ export 'course_model.dart';
 export 'skill_model.dart';
 export 'activity_type_model.dart';
 export 'question_model.dart';
+export 'matching_models.dart';
+export 'completion_models.dart';
 export 'material_model.dart';
 export 'progress_model.dart';
