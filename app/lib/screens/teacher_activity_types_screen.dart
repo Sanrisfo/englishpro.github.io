@@ -477,7 +477,11 @@ class _TeacherActivityTypesScreenState
                   color: Color(0xFF23408E)),
               onPressed: () => _renameTypeDialog(t),
             ),
-
+            IconButton(
+              icon: const Icon(Icons.rule, color: Color(0xFF23408E)),
+              tooltip: 'Allowed question types',
+              onPressed: () => _editAllowedTypesDialog((t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0), nombre),
+            ),
             IconButton(
               icon: const Icon(Icons.delete_rounded,
                   color: Color(0xFFD9232A)),
@@ -485,6 +489,70 @@ class _TeacherActivityTypesScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _editAllowedTypesDialog(int activityTypeId, String title) async {
+    final all = const [
+      'multiple_choice',
+      'matching',
+      'completion',
+      'record_audio',
+      'write_text',
+    ];
+    final current = await ApiService.getAllowedQuestionTypes(activityTypeId);
+    final selected = {...current};
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Allowed Question Types\n$title', textAlign: TextAlign.center),
+        content: StatefulBuilder(builder: (context, setStateDialog) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: all
+                .map((t) => CheckboxListTile(
+                      value: selected.contains(t),
+                      onChanged: (v) => setStateDialog(() {
+                        if (v == true) {
+                          selected.add(t);
+                        } else {
+                          selected.remove(t);
+                        }
+                      }),
+                      title: Text(t.replaceAll('_', ' ')),
+                    ))
+                .toList(),
+          );
+        }),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final r = await ApiService.setAllowedQuestionTypes(
+                activityTypeId: activityTypeId,
+                allowed: selected.toList(),
+              );
+              if (!mounted) return;
+              Navigator.pop(context);
+              if (r['success'] == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Allowed types saved')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(r['message'] ?? 'Error saving allowed types')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

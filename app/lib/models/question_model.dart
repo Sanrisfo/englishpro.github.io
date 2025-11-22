@@ -1,16 +1,30 @@
+import 'matching_models.dart';
+import 'completion_models.dart';
+
 /// Question Model - Representa una pregunta multimedia
 class QuestionModel {
   final int id;
   final int habilidadId;
   final String textoPregunta;
-  final String tipoPregunta; // 'multiple_choice', 'open_text', 'audio_response'
+  final String tipoPregunta; // 'multiple_choice', 'matching', 'completion', 'record_audio', 'write_text'
   final String? audioUrl;
   final String? videoUrl;
   final String? imagenUrl;
   final String nivelDificultad; // 'easy', 'medium', 'hard'
   final int puntaje;
   final int? tiempoLimiteSegundos;
-  final List<AnswerOptionModel>? opciones; // Solo para multiple_choice
+  // Multiple Choice
+  final List<AnswerOptionModel>? opciones; // Para multiple_choice (multi-select)
+  // Matching
+  final List<MatchingAnswer>? matchingAnswers;
+  final List<MatchingStatement>? matchingStatements;
+  // Completion
+  final List<CompletionSentence>? completionSentences;
+  // Write Text
+  final int? maxWords;
+  // Record Audio
+  final int? thinkTimeSeconds; // esperado 10
+  final int? maxRecordSeconds; // esperado 45
   final String? explicacionGeneral; // Retroalimentación general para la pregunta
 
   QuestionModel({
@@ -25,6 +39,12 @@ class QuestionModel {
     required this.puntaje,
     this.tiempoLimiteSegundos,
     this.opciones,
+    this.matchingAnswers,
+    this.matchingStatements,
+    this.completionSentences,
+    this.maxWords,
+    this.thinkTimeSeconds,
+    this.maxRecordSeconds,
     this.explicacionGeneral,
   });
 
@@ -46,6 +66,24 @@ class QuestionModel {
               .map((e) => AnswerOptionModel.fromJson(e as Map<String, dynamic>))
               .toList()
           : null,
+      matchingAnswers: json['matching_answers'] != null
+          ? (json['matching_answers'] as List)
+              .map((e) => MatchingAnswer.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
+      matchingStatements: json['matching_statements'] != null
+          ? (json['matching_statements'] as List)
+              .map((e) => MatchingStatement.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
+      completionSentences: json['completion_sentences'] != null
+          ? (json['completion_sentences'] as List)
+              .map((e) => CompletionSentence.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
+      maxWords: json['max_words'] as int?,
+      thinkTimeSeconds: json['think_time_seconds'] as int?,
+      maxRecordSeconds: json['max_record_seconds'] as int?,
       explicacionGeneral: (json['explicacion'] ?? json['explicacion_general']) as String?,
     );
   }
@@ -64,6 +102,12 @@ class QuestionModel {
       'puntaje': puntaje,
       'tiempo_limite_segundos': tiempoLimiteSegundos,
       'opciones': opciones?.map((e) => e.toJson()).toList(),
+      'matching_answers': matchingAnswers?.map((e) => e.toJson()).toList(),
+      'matching_statements': matchingStatements?.map((e) => e.toJson()).toList(),
+      'completion_sentences': completionSentences?.map((e) => e.toJson()).toList(),
+      'max_words': maxWords,
+      'think_time_seconds': thinkTimeSeconds,
+      'max_record_seconds': maxRecordSeconds,
       // Persistimos usando la columna existente 'explicacion'
       'explicacion': explicacionGeneral,
     };
@@ -72,11 +116,11 @@ class QuestionModel {
   /// Verificar si es pregunta de selección múltiple
   bool get isMultipleChoice => tipoPregunta == 'multiple_choice';
 
-  /// Verificar si es pregunta de texto abierto
-  bool get isOpenText => tipoPregunta == 'open_text';
-
-  /// Verificar si es pregunta con respuesta de audio
-  bool get isAudioResponse => tipoPregunta == 'audio_response';
+  /// Tipos adicionales
+  bool get isMatching => tipoPregunta == 'matching';
+  bool get isCompletion => tipoPregunta == 'completion';
+  bool get isRecordAudio => tipoPregunta == 'record_audio';
+  bool get isWriteText => tipoPregunta == 'write_text';
 
   /// Verificar si tiene contenido multimedia
   bool get hasMultimedia =>
