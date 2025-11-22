@@ -67,7 +67,11 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
 
     if (teacherId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Usuario no autenticado')),
+          const SnackBar(content: Text('Error: Login failed',
+            style: TextStyle(color: Color(0xFFFFFFFF)),
+          ),
+            backgroundColor: const Color(0xFFD9232A),
+          )
       );
       return;
     }

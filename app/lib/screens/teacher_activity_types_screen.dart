@@ -376,8 +376,12 @@ class _TeacherActivityTypesScreenState
                 onRefresh: _load,
                 color: _courseColor,
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16),
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                    top: 0,
+                    bottom: 150.0, //espacio para los botones
+                  ),
                   itemCount: _types.length,
                   separatorBuilder: (_, __) =>
                   const SizedBox(height: 12),
@@ -469,7 +473,7 @@ class _TeacherActivityTypesScreenState
             ),
 
             IconButton(
-              icon: Icon(Icons.edit_rounded,
+              icon: Icon(Icons.mode_edit_outlined,
                   color: Color(0xFF23408E)),
               onPressed: () => _renameTypeDialog(t),
             ),
@@ -479,7 +483,7 @@ class _TeacherActivityTypesScreenState
               onPressed: () => _editAllowedTypesDialog((t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0), nombre),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_rounded,
+              icon: const Icon(Icons.delete_outline,
                   color: Color(0xFFD9232A)),
               onPressed: () => _deleteType(id),
             ),

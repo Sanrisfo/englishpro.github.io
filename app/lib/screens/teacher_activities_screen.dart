@@ -540,22 +540,6 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
 
             // Botones de Acción
             IconButton(
-              tooltip: 'Manage questions',
-              icon: Icon(Icons.quiz_outlined, color: Colors.grey[600]),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TeacherQuestionsScreen(
-                      quizId: id,
-                      skillId: widget.skillId,
-                      quizTitle: title,
-                    ),
-                  ),
-                ).then((_) => _load());
-              },
-            ),
-            IconButton(
               tooltip: 'Delete activity',
               icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
               onPressed: () => _deleteQuiz(id, title),

@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../config/supabase_config.dart';
 
 class TeacherQuestionsScreen extends StatefulWidget {
   final int quizId;
   final int skillId;
   final String quizTitle;
+  final String courseName;
+  final String skillName;
 
   const TeacherQuestionsScreen({
     Key? key,
     required this.quizId,
     required this.skillId,
     required this.quizTitle,
+    this.courseName = 'Course',
+    this.skillName = 'Skill',
   }) : super(key: key);
 
   @override
@@ -23,10 +28,12 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
   List<Map<String, dynamic>> _items = [];
   int? _activityTypeId;
   List<String> _allowedTypes = const [];
+  late final Color _courseColor;
 
   @override
   void initState() {
     super.initState();
+    _courseColor = _getCourseColor(widget.courseName);
     _load();
   }
 
@@ -36,7 +43,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       _errorMessage = null;
     });
     try {
-      // 1) get quiz activity type and allowed question types (always load, even if no questions yet)
+      // 1) Obtener tipos permitidos
       try {
         final quizRow = await supabase
             .from('cuestionarios')
@@ -56,7 +63,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
         }
       } catch (_) {}
 
-      // 2) get question ids for this quiz with order
+      // 2) Obtener IDs y orden
       final cp = await supabase
           .from('cuestionario_preguntas')
           .select('id_pregunta, orden')
@@ -69,14 +76,14 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       }
       final ids = cpList.map((e) => e['id_pregunta']).where((e) => e != null).toList();
 
-      // 3) fetch questions and embed options
+      // 3) Obtener preguntas
       final qs = await supabase
           .from('preguntas')
           .select('id_pregunta, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos, explicacion')
           .inFilter('id_pregunta', ids);
       final qList = List<Map<String, dynamic>>.from(qs as List);
 
-      // 4) fetch options for all questions
+      // 4) Obtener opciones
       final opts = await supabase
           .from('opciones_respuesta')
           .select('id_opcion, id_pregunta, texto_opcion, es_correcta, orden')
@@ -84,7 +91,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
           .order('orden', ascending: true);
       final optList = List<Map<String, dynamic>>.from(opts as List);
 
-      // 5) merge by id and order
+      // 5) Unir
       final byId = {
         for (final q in qList) q['id_pregunta']: {
           ...q,
@@ -136,6 +143,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Text('Crear Pregunta'),
             content: SingleChildScrollView(
               child: Column(
@@ -179,17 +187,17 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                       TextButton.icon(onPressed: mcOptCtrls.length < 5 ? () => setStateDialog(() => mcOptCtrls.add(TextEditingController())) : null, icon: const Icon(Icons.add), label: const Text('Agregar')),
                     ]),
                     ...mcOptCtrls.asMap().entries.map((e) => Row(children: [
-                          Checkbox(value: mcCorrect.contains(e.key), onChanged: (v) => setStateDialog(() => v == true ? mcCorrect.add(e.key) : mcCorrect.remove(e.key))),
-                          Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Opción ${e.key + 1}'))),
-                          IconButton(icon: const Icon(Icons.close), onPressed: mcOptCtrls.length > 3 ? () => setStateDialog(() { mcCorrect.remove(e.key); mcOptCtrls.removeAt(e.key); }) : null),
-                        ])),
+                      Checkbox(value: mcCorrect.contains(e.key), onChanged: (v) => setStateDialog(() => v == true ? mcCorrect.add(e.key) : mcCorrect.remove(e.key))),
+                      Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Opción ${e.key + 1}'))),
+                      IconButton(icon: const Icon(Icons.close), onPressed: mcOptCtrls.length > 3 ? () => setStateDialog(() { mcCorrect.remove(e.key); mcOptCtrls.removeAt(e.key); }) : null),
+                    ])),
                   ]
                   else if (type == 'matching') ...[
                     const Align(alignment: Alignment.centerLeft, child: Text('Respuestas (B) 1..7', style: TextStyle(fontWeight: FontWeight.w600))),
                     ...matchAnswersCtrls.asMap().entries.map((e) => Row(children: [
-                          Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Respuesta B${e.key + 1}'))),
-                          IconButton(icon: const Icon(Icons.close), onPressed: matchAnswersCtrls.length > 1 ? () => setStateDialog(() => matchAnswersCtrls.removeAt(e.key)) : null),
-                        ])),
+                      Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Respuesta B${e.key + 1}'))),
+                      IconButton(icon: const Icon(Icons.close), onPressed: matchAnswersCtrls.length > 1 ? () => setStateDialog(() => matchAnswersCtrls.removeAt(e.key)) : null),
+                    ])),
                     Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: matchAnswersCtrls.length < 7 ? () => setStateDialog(() => matchAnswersCtrls.add(TextEditingController())) : null, icon: const Icon(Icons.add), label: const Text('Agregar respuesta'))),
                     const SizedBox(height: 8),
                     const Align(alignment: Alignment.centerLeft, child: Text('Enunciados (A) 1..5', style: TextStyle(fontWeight: FontWeight.w600))),
@@ -209,27 +217,29 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                     Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: matchStatements.length < 5 ? () => setStateDialog(() => matchStatements.add({'text': TextEditingController(), 'answer': null})) : null, icon: const Icon(Icons.add), label: const Text('Agregar enunciado'))),
                   ]
                   else if (type == 'completion') ...[
-                    const Align(alignment: Alignment.centerLeft, child: Text('Completion (5..6)', style: TextStyle(fontWeight: FontWeight.w600))),
-                    const Align(alignment: Alignment.centerLeft, child: Text('Escribe la oración completa y la palabra que será el gap. Nosotros generamos los espacios automáticamente.')),
-                    ...completionRows.asMap().entries.map((e) => Row(children: [
-                          Expanded(child: TextField(controller: e.value['sentence'], decoration: InputDecoration(labelText: 'Oración ${e.key + 1}'))),
-                          const SizedBox(width: 8),
-                          SizedBox(width: 180, child: TextField(controller: e.value['correct'], decoration: const InputDecoration(labelText: 'Palabra (gap)'))),
-                        ])),
-                    Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: completionRows.length < 6 ? () => setStateDialog(() => completionRows.add({'sentence': TextEditingController(), 'correct': TextEditingController()})) : null, icon: const Icon(Icons.add), label: const Text('Agregar oración'))),
-                  ]
-                  else if (type == 'write_text') ...[
-                    TextField(controller: maxWordsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Máximo de palabras')),
-                  ]
-                  else if (type == 'record_audio') ...[
-                    const Text('El estudiante grabará audio (hasta 45s).'),
-                  ],
+                      const Align(alignment: Alignment.centerLeft, child: Text('Completion (5..6)', style: TextStyle(fontWeight: FontWeight.w600))),
+                      const Align(alignment: Alignment.centerLeft, child: Text('Escribe la oración completa y la palabra que será el gap. Nosotros generamos los espacios automáticamente.')),
+                      ...completionRows.asMap().entries.map((e) => Row(children: [
+                        Expanded(child: TextField(controller: e.value['sentence'], decoration: InputDecoration(labelText: 'Oración ${e.key + 1}'))),
+                        const SizedBox(width: 8),
+                        SizedBox(width: 180, child: TextField(controller: e.value['correct'], decoration: const InputDecoration(labelText: 'Palabra (gap)'))),
+                      ])),
+                      Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: completionRows.length < 6 ? () => setStateDialog(() => completionRows.add({'sentence': TextEditingController(), 'correct': TextEditingController()})) : null, icon: const Icon(Icons.add), label: const Text('Agregar oración'))),
+                    ]
+                    else if (type == 'write_text') ...[
+                        TextField(controller: maxWordsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Máximo de palabras')),
+                      ]
+                      else if (type == 'record_audio') ...[
+                          const Text('El estudiante grabará audio (hasta 45s).'),
+                        ],
                 ],
               ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
               ElevatedButton(
+                // Botón con estilo consistente en color pero forma por defecto del dialogo original
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF23408E).withOpacity(0.1), foregroundColor: const Color(0xFF23408E)),
                 onPressed: () async {
                   final texto = textCtrl.text.trim();
                   if (texto.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Texto requerido'))); return; }
@@ -379,13 +389,14 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Confirmar eliminación'),
         content: const Text('Esta acción eliminará la pregunta y sus opciones.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD9232A), foregroundColor: Colors.white),
             child: const Text('Eliminar'),
           ),
         ],
@@ -409,104 +420,237 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Preguntas · ${widget.quizTitle}'),
-        backgroundColor: Colors.deepPurple,
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+      backgroundColor: Colors.white,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            onPressed: _isLoading ? null : _createQuestionDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('New Question'),
+            heroTag: null,
+            backgroundColor: _courseColor.withOpacity(0.1),
+            foregroundColor: _courseColor,
+            elevation: 0, // Estilo plano
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            onPressed: () => Navigator.of(context).pop(),
+            backgroundColor: const Color(0xFFD9232A),
+            foregroundColor: Colors.white,
+            heroTag: null,
+            child: const Icon(Icons.arrow_back_ios_new),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isLoading ? null : _createQuestionDialog,
-        backgroundColor: Colors.deepPurple,
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva Pregunta'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : _items.isEmpty
-                  ? const Center(child: Text('No hay preguntas'))
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: _items.length,
-                        itemBuilder: (context, index) {
-                          final q = _items[index];
-                          return _buildQuestionCard(q);
-                        },
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      body: SafeArea(
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            : _errorMessage != null
+            ? Center(child: Text(_errorMessage!))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Encabezado Estándar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
+                      decoration: BoxDecoration(
+                        color: _courseColor,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Text(
+                        widget.quizTitle,
+                        style: GoogleFonts.ptSans(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "... > ${widget.quizTitle} > Questions",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // 2. Lista de Preguntas
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                color: _courseColor,
+                child: _items.isEmpty
+                    ? const Center(child: Text('No hay preguntas'))
+                    : ListView.separated(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 150),
+                  itemCount: _items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final q = _items[index];
+                    return _buildQuestionTile(q);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildQuestionCard(Map<String, dynamic> q) {
+  Widget _buildQuestionTile(Map<String, dynamic> q) {
     final orden = q['orden'] as int?;
     final texto = q['texto_pregunta'] as String? ?? '';
     final tipo = (q['tipo_pregunta'] as String?)?.toLowerCase() ?? '';
     final nivel = q['nivel_dificultad'] as String? ?? '';
     final puntos = q['puntos'] as int? ?? 1;
     final opciones = (q['opciones'] as List?) ?? const [];
-    final expGeneral = (q['explicacion'] as String?)?.trim();
     final qid = q['id_pregunta'] as int;
+    final expGeneral = (q['explicacion'] as String?)?.trim();
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    // Icono según tipo
+    IconData icon;
+    if (tipo.contains('multiple')) icon = Icons.checklist_rtl_rounded;
+    else if (tipo.contains('matching')) icon = Icons.abc_rounded;
+    else if (tipo.contains('completion')) icon = Icons.short_text_rounded;
+    else if (tipo.contains('audio')) icon = Icons.multitrack_audio_rounded;
+    else icon = Icons.text_snippet_outlined;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Fila Superior: Icono + Texto + Botón Borrar
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _courseColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: _courseColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      orden != null ? 'Question #$orden' : 'Question',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      texto,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    if (expGeneral != null && expGeneral.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          expGeneral,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
+                onPressed: () => _deleteQuestion(qid),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 56.0),
+            child: Wrap(
+              spacing: 8,
               children: [
-                Text(
-                  orden != null ? '#$orden' : '#',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(texto, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteQuestion(qid),
-                ),
+                _infoChip(nivel, const Color(0xFF23408E)),
+                _infoChip('$puntos pts', const Color(0xFF23408E)),
+                _infoChip(tipo.replaceAll('_', ' '), const Color(0xFFD9232A)),
               ],
             ),
-            const SizedBox(height: 6),
-            Text('Tipo: $tipo • Nivel: $nivel • Puntos: $puntos', style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 10),
-            if (expGeneral != null && expGeneral.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              const Text('Explicación general:', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(expGeneral, style: const TextStyle(color: Colors.black87)),
-              const SizedBox(height: 10),
-            ],
-            if (opciones.isNotEmpty) const Text('Opciones:', style: TextStyle(fontWeight: FontWeight.w600)),
-            if (opciones.isNotEmpty) const SizedBox(height: 6),
+          ),
+
+          // Opciones (si es MC)
+          if (opciones.isNotEmpty) ...[
+            const SizedBox(height: 12),
             ...opciones.map((o) {
               final correct = o['es_correcta'] == true;
               return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                padding: const EdgeInsets.fromLTRB(56, 0, 0, 2),
                 child: Row(
                   children: [
                     Icon(
-                      correct ? Icons.check_circle : Icons.radio_button_unchecked,
-                      size: 16,
-                      color: correct ? Colors.green : Colors.grey,
+                      correct ? Icons.circle_rounded : Icons.radio_button_unchecked,
+                      size: 14,
+                      color: correct ? Color(0xFF23408E)  : Colors.grey[400],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(o['texto_opcion'] as String? ?? '')),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(o['texto_opcion'] as String? ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
                   ],
                 ),
               );
             }),
-          ],
-        ),
+          ]
+        ],
       ),
     );
+  }
+
+  Widget _infoChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+
+  Color _getCourseColor(String courseName) {
+    String lower = courseName.toLowerCase();
+    if (lower.contains('toefl')) return const Color(0xFFD9232A);
+    if (lower.contains('ielts')) return const Color(0xFF23408E);
+    if (lower.contains('business')) return const Color(0xFFB02224);
+    return const Color(0xFF1F3A89);
   }
 }

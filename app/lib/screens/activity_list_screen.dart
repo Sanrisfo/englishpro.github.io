@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener esto importado
 import '../config/supabase_config.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -28,10 +29,12 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<Map<String, dynamic>> _quizzes = [];
+  late final Color _courseColor;
 
   @override
   void initState() {
     super.initState();
+    _courseColor = _getCourseColor(widget.courseName);
     _load();
   }
 
@@ -43,7 +46,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     try {
       final qs = await supabase
           .from('cuestionarios')
-          .select('id_cuestionario, titulo, tiempo_limite_minutos, tipo_evaluacion, activo')
+          .select('id_cuestionario, titulo, tiempo_limite_minutos, tipo_evaluacion, activo, descripcion') // Agregué descripción
           .eq('id_tipo_actividad', widget.activityTypeId)
           .eq('activo', true)
           .order('id_cuestionario');
@@ -55,68 +58,195 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     }
   }
 
+  Color _getCourseColor(String courseName) {
+    String lower = courseName.toLowerCase();
+    if (lower.contains('toefl')) return const Color(0xFFD9232A);
+    if (lower.contains('ielts')) return const Color(0xFF23408E);
+    if (lower.contains('business')) return const Color(0xFFB02224);
+    return const Color(0xFF1F3A89);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String breadcrumb = '... > ${widget.skillName} > ${widget.activityTypeName}';
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.courseName} > ${widget.skillName} > ${widget.activityTypeName}'),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+      backgroundColor: Colors.white,
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).pop(),
+        backgroundColor: const Color(0xFFD9232A),
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.arrow_back_ios_new),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : RefreshIndicator(
-                  onRefresh: _load,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      const Text('Actividades', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      if (_quizzes.isEmpty)
-                        const Text('Aún no hay actividades para esta habilidad')
-                      else
-                        ..._quizzes.map((q) {
-                          final title = q['titulo'] as String? ?? 'Actividad';
-                          final tipo = q['tipo_evaluacion'] as String? ?? '';
-                          final minutos = q['tiempo_limite_minutos'] as int?;
-                          final quizId = q['id_cuestionario'] as int;
-                          return Card(
-                            elevation: 2,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              leading: const Icon(Icons.assignment, color: Colors.deepPurple),
-                              title: Text(title),
-                              subtitle: Text(minutos != null ? 'Tipo: $tipo · Tiempo: $minutos min' : 'Tipo: $tipo'),
-                              onTap: () {
-                                final user = context.read<AuthProvider>().user;
-                                final userId = user?.idUsuario;
-                                if (userId == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Debes iniciar sesión para realizar la actividad')),
-                                  );
-                                  return;
-                                }
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ActivityPlayerScreen(
-                                      quizId: quizId,
-                                      skillId: widget.skillId,
-                                      skillName: widget.skillName,
-                                      quizTitle: title,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        }),
-                    ],
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      body: SafeArea(
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            : _errorMessage != null
+            ? Center(child: Text(_errorMessage!))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. ENCABEZADO ESTÁNDAR
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
+                      decoration: BoxDecoration(
+                        color: _courseColor,
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Text(
+                        widget.activityTypeName,
+                        style: GoogleFonts.ptSans(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    breadcrumb,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // lista de actividades
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _load,
+                color: _courseColor,
+                child: _quizzes.isEmpty
+                    ? const Center(child: Text('No activities found yet'))
+                    : ListView.separated(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 100),
+                  itemCount: _quizzes.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final q = _quizzes[index];
+                    return _buildActivityTile(q);
+                  },
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  //Tarjeta
+  Widget _buildActivityTile(Map<String, dynamic> q) {
+    final title = q['titulo'] as String? ?? 'Actividad';
+    final tipo = q['tipo_evaluacion'] as String? ?? '—';
+    final minutos = q['tiempo_limite_minutos'] as int?;
+    final quizId = q['id_cuestionario'] as int;
+    final desc = q['descripcion'] as String? ?? '';
+
+    return InkWell(
+      onTap: () {
+        final user = context.read<AuthProvider>().user;
+        final userId = user?.idUsuario;
+        if (userId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Debes iniciar sesión para realizar la actividad')),
+          );
+          return;
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ActivityPlayerScreen(
+              quizId: quizId,
+              skillId: widget.skillId,
+              skillName: widget.skillName,
+              quizTitle: title,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            // Ícono
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _courseColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.assignment_outlined, color: _courseColor, size: 28),
+            ),
+            const SizedBox(width: 16),
+
+            // Textos
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Subtítulos
+                  Text(
+                    "Type: $tipo" + (minutos != null ? "  •  Time: $minutos min" : ""),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (desc.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        desc,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey[700],
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Flecha a la derecha
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
     );
   }
 }
-
