@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/supabase_config.dart';
+import 'create_question_screen.dart';
 
 class TeacherQuestionsScreen extends StatefulWidget {
   final int quizId;
@@ -426,7 +427,28 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton.extended(
-            onPressed: _isLoading ? null : _createQuestionDialog,
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    final created = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateQuestionScreen(
+                          quizId: widget.quizId,
+                          skillId: widget.skillId,
+                          courseName: widget.courseName,
+                          allowedTypes: _allowedTypes,
+                        ),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                    if (created == true) {
+                      await _load();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pregunta creada')));
+                      }
+                    }
+                  },
             icon: const Icon(Icons.add),
             label: const Text('New Question'),
             heroTag: null,

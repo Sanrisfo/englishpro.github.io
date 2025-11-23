@@ -5,6 +5,7 @@ import '../config/supabase_config.dart';
 import '../services/supabase_storage_service.dart';
 import '../services/api_service.dart';
 import 'teacher_questions_screen.dart';
+import 'create_activity_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class TeacherActivitiesScreen extends StatefulWidget {
@@ -363,7 +364,29 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton.extended(
-            onPressed: _isLoading ? null : _createQuizDialog,
+            onPressed: _isLoading
+                ? null
+                : () async {
+                    final created = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateActivityScreen(
+                          skillId: widget.skillId,
+                          skillName: widget.skillName,
+                          courseName: widget.courseName,
+                          activityTypeId: widget.activityTypeId,
+                          activityTypeName: widget.activityTypeName,
+                        ),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                    if (created == true) {
+                      await _load();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity created')));
+                      }
+                    }
+                  },
             icon: const Icon(Icons.add),
             label: const Text('New Activity'),
             heroTag: null,

@@ -15,6 +15,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
   String? _errorMessage;
   List<Map<String, dynamic>> _students = [];
   String _query = '';
+
   List<Map<String, dynamic>> _plans = [];
   int? _selectedPlanId;
 
