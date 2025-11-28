@@ -49,7 +49,7 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
 
   // Completion
   List<Map<String, TextEditingController>> _completionRows =
-      List.generate(5, (_) => {'sentence': TextEditingController(), 'correct': TextEditingController()});
+  List.generate(5, (_) => {'sentence': TextEditingController(), 'correct': TextEditingController()});
 
   // Write text
   final _maxWordsCtrl = TextEditingController(text: '120');
@@ -256,192 +256,304 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
     }
   }
 
+  // esto nos ayuda a diseñar el frontend
+  InputDecoration _inputDeco(String label) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: _courseColor.withOpacity(0.05),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _courseColor, width: 2)),
+    );
+  }
+
+  Widget _buildTypeSelector() {
+    // Definimos los datos de cada tipo (ID, Etiqueta, Icono)
+    final typesData = [
+      {'id': 'multiple_choice', 'label': 'Choice', 'icon': Icons.checklist_rtl_rounded},
+      {'id': 'matching', 'label': 'Match', 'icon': Icons.abc_rounded},
+      {'id': 'completion', 'label': 'Complete', 'icon': Icons.short_text_rounded},
+      {'id': 'record_audio', 'label': 'Audio', 'icon': Icons.multitrack_audio_rounded},
+      {'id': 'write_text', 'label': 'Write', 'icon': Icons.text_snippet_outlined},
+    ];
+
+    // Filtramos solo los tipos permitidos
+    final availableTypes = typesData.where((t) => _allowedTypes.contains(t['id'])).toList();
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start, // Alineado a la izquierda
+        children: availableTypes.map((t) {
+          final id = t['id'] as String;
+          final label = t['label'] as String;
+          final icon = t['icon'] as IconData;
+          final isSelected = _type == id;
+
+          return GestureDetector(
+            onTap: () => setState(() => _type = id),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0), // Espacio entre botones
+              child: Column(
+                children: [
+                  // Etiqueta superior (pequeña)
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? const Color(0xFF23408E) : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Caja del Icono
+                  Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0xFF23408E) : Colors.grey[100], // Azul si seleccionado
+                      borderRadius: BorderRadius.circular(12), // Bordes redondeados
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFF23408E) : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: isSelected ? Colors.white : Colors.grey[400], // Blanco si seleccionado
+                      size: 28,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Question'),
-        backgroundColor: _courseColor,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: Colors.white,
       body: _loading
           ? Center(child: CircularProgressIndicator(color: _courseColor))
           : _error != null
-              ? Center(child: Text(_error!))
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 8.0),
-                            decoration: BoxDecoration(color: _courseColor, borderRadius: BorderRadius.circular(10.0)),
-                            child: Text('New Question', style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20)),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _type,
-                          decoration: const InputDecoration(labelText: 'Tipo de pregunta'),
-                          items: _allowedTypes
-                              .map((t) => DropdownMenuItem(value: t, child: Text(t.replaceAll('_', ' '))))
-                              .toList(),
-                          onChanged: (v) => setState(() => _type = v ?? _type),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(controller: _textCtrl, decoration: const InputDecoration(labelText: 'Texto de la pregunta'), maxLines: 3),
-                        const SizedBox(height: 8),
-                        TextField(controller: _explanationCtrl, decoration: const InputDecoration(labelText: 'Explicación general (opcional)'), maxLines: 3),
-                        const SizedBox(height: 8),
-                        TextField(controller: _pointsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Puntos')),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<String>(
-                          value: _nivel,
-                          decoration: const InputDecoration(labelText: 'Nivel de dificultad'),
-                          items: const [
-                            DropdownMenuItem(value: 'Basico', child: Text('Básico')),
-                            DropdownMenuItem(value: 'Intermedio', child: Text('Intermedio')),
-                            DropdownMenuItem(value: 'Avanzado', child: Text('Avanzado')),
-                          ],
-                          onChanged: (v) => setState(() => _nivel = v ?? 'Basico'),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_allowedTypes.isNotEmpty)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Tipos permitidos en esta actividad: ${_allowedTypes.map((e) => e.replaceAll('_',' ')).join(', ')}',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ),
+          ? Center(child: Text(_error!))
+          : SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-                        // multiple_choice
-                        if (_type == 'multiple_choice') ...[
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            const Text('Opciones (3 a 5)', style: TextStyle(fontWeight: FontWeight.w600)),
-                            TextButton.icon(
-                              onPressed: _mcOptCtrls.length < 5 ? () => setState(() => _mcOptCtrls.add(TextEditingController())) : null,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Agregar'),
-                            ),
-                          ]),
-                          ..._mcOptCtrls.asMap().entries.map((e) => Row(children: [
-                                Checkbox(
-                                  value: _mcCorrect.contains(e.key),
-                                  onChanged: (v) => setState(() => v == true ? _mcCorrect.add(e.key) : _mcCorrect.remove(e.key)),
-                                ),
-                                Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Opción ${e.key + 1}'))),
-                                IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: _mcOptCtrls.length > 3
-                                      ? () => setState(() {
-                                            _mcCorrect.remove(e.key);
-                                            _mcOptCtrls.removeAt(e.key);
-                                          })
-                                      : null,
-                                ),
-                              ])),
-                        ]
-                        // matching
-                        else if (_type == 'matching') ...[
-                          const Align(alignment: Alignment.centerLeft, child: Text('Respuestas (B) 1..7', style: TextStyle(fontWeight: FontWeight.w600))),
-                          ..._matchAnswersCtrls.asMap().entries.map((e) => Row(children: [
-                                Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Respuesta B${e.key + 1}'))),
-                                IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: _matchAnswersCtrls.length > 1 ? () => setState(() => _matchAnswersCtrls.removeAt(e.key)) : null,
-                                ),
-                              ])),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: _matchAnswersCtrls.length < 7 ? () => setState(() => _matchAnswersCtrls.add(TextEditingController())) : null,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Agregar respuesta'),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Align(alignment: Alignment.centerLeft, child: Text('Enunciados (A) 1..5', style: TextStyle(fontWeight: FontWeight.w600))),
-                          ..._matchStatements.asMap().entries.map((e) {
-                            final i = e.key;
-                            final row = e.value;
-                            return Row(children: [
-                              Expanded(child: TextField(controller: row['text'], decoration: InputDecoration(labelText: 'Enunciado A${i + 1}'))),
-                              const SizedBox(width: 8),
-                              DropdownButton<int>(
-                                value: row['answer'] as int?,
-                                hint: const Text('B?'),
-                                items: _matchAnswersCtrls
-                                    .asMap()
-                                    .entries
-                                    .map((a) => DropdownMenuItem(value: a.key, child: Text('B${a.key + 1}')))
-                                    .toList(),
-                                onChanged: (v) => setState(() => row['answer'] = v),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: _matchStatements.length > 1 ? () => setState(() => _matchStatements.removeAt(i)) : null,
-                              ),
-                            ]);
-                          }),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: _matchStatements.length < 5
-                                  ? () => setState(() => _matchStatements.add({'text': TextEditingController(), 'answer': null}))
-                                  : null,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Agregar enunciado'),
-                            ),
-                          ),
-                        ]
-                        // completion
-                        else if (_type == 'completion') ...[
-                          const Align(alignment: Alignment.centerLeft, child: Text('Completion (5..6)', style: TextStyle(fontWeight: FontWeight.w600))),
-                          const Align(alignment: Alignment.centerLeft, child: Text('Escribe la oración completa y la palabra que será el gap. Nosotros generamos los espacios automáticamente.')),
-                          ..._completionRows.asMap().entries.map((e) => Row(children: [
-                                Expanded(child: TextField(controller: e.value['sentence'], decoration: InputDecoration(labelText: 'Oración ${e.key + 1}'))),
-                                const SizedBox(width: 8),
-                                SizedBox(width: 180, child: TextField(controller: e.value['correct'], decoration: const InputDecoration(labelText: 'Palabra (gap)'))),
-                              ])),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: _completionRows.length < 6
-                                  ? () => setState(() => _completionRows.add({'sentence': TextEditingController(), 'correct': TextEditingController()}))
-                                  : null,
-                              icon: const Icon(Icons.add),
-                              label: const Text('Agregar'),
-                            ),
-                          ),
-                        ]
-                        else if (_type == 'write_text') ...[
-                          TextField(controller: _maxWordsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Max palabras')), 
-                        ]
-                        else if (_type == 'record_audio') ...[
-                          const Text('El estudiante grabará audio (hasta 45s).'),
-                        ],
 
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                            const Spacer(),
-                            ElevatedButton(
-                              onPressed: _submitting ? null : _submit,
-                              style: ElevatedButton.styleFrom(backgroundColor: _courseColor.withOpacity(0.1), foregroundColor: _courseColor),
-                              child: _submitting
-                                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                                  : const Text('Crear'),
-                            ),
-                          ],
-                        )
+
+              // Selector de iconos segun preguntaaaa
+              const Text("Select question type", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black54)),
+              const SizedBox(height: 12),
+              _buildTypeSelector(),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // --- CAMPOS COMUNES ---
+              TextField(controller: _textCtrl, decoration: _inputDeco('Texto de la pregunta'), maxLines: 3),
+              const SizedBox(height: 16),
+              TextField(controller: _explanationCtrl, decoration: _inputDeco('Explicación general (opcional)'), maxLines: 2),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: _pointsCtrl, keyboardType: TextInputType.number, decoration: _inputDeco('Puntos'))),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _nivel,
+                      decoration: _inputDeco('Nivel de dificultad'),
+                      items: const [
+                        DropdownMenuItem(value: 'Basico', child: Text('Básico')),
+                        DropdownMenuItem(value: 'Intermedio', child: Text('Intermedio')),
+                        DropdownMenuItem(value: 'Avanzado', child: Text('Avanzado')),
                       ],
+                      onChanged: (v) => setState(() => _nivel = v ?? 'Basico'),
                     ),
                   ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // --- FORMULARIOS DINÁMICOS ---
+
+              // multiple_choice
+              if (_type == 'multiple_choice') ...[
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  const Text('Opciones (3 a 5)', style: TextStyle(fontWeight: FontWeight.w600)),
+                  TextButton.icon(
+                    onPressed: _mcOptCtrls.length < 5 ? () => setState(() => _mcOptCtrls.add(TextEditingController())) : null,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar'),
+                    style: TextButton.styleFrom(foregroundColor: _courseColor),
+                  ),
+                ]),
+                const SizedBox(height: 8),
+                ..._mcOptCtrls.asMap().entries.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(children: [
+                    Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        activeColor: _courseColor,
+                        value: _mcCorrect.contains(e.key),
+                        onChanged: (v) => setState(() => v == true ? _mcCorrect.add(e.key) : _mcCorrect.remove(e.key)),
+                      ),
+                    ),
+                    Expanded(child: TextField(controller: e.value, decoration: _inputDeco('Opción ${e.key + 1}'))),
+                    if (_mcOptCtrls.length > 3)
+                      IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(() {
+                            _mcCorrect.remove(e.key);
+                            _mcOptCtrls.removeAt(e.key);
+                          })
+                      ),
+                  ]),
+                )),
+              ]
+              // matching
+              else if (_type == 'matching') ...[
+                Text('Respuestas (Columna B)', style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: _courseColor)),
+                const SizedBox(height: 8),
+                ..._matchAnswersCtrls.asMap().entries.map((e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(children: [
+                    Expanded(child: TextField(controller: e.value, decoration: _inputDeco('Respuesta B${e.key + 1}'))),
+                    if (_matchAnswersCtrls.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() => _matchAnswersCtrls.removeAt(e.key)),
+                      ),
+                  ]),
+                )),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _matchAnswersCtrls.length < 7 ? () => setState(() => _matchAnswersCtrls.add(TextEditingController())) : null,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar respuesta'),
+                    style: TextButton.styleFrom(foregroundColor: _courseColor),
+                  ),
                 ),
+                const Divider(),
+                Text('Enunciados (Columna A)', style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: _courseColor)),
+                const SizedBox(height: 8),
+                ..._matchStatements.asMap().entries.map((e) {
+                  final i = e.key;
+                  final row = e.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(children: [
+                      Expanded(flex: 2, child: TextField(controller: row['text'], decoration: _inputDeco('Enunciado A${i + 1}'))),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField<int>(
+                          value: row['answer'] as int?,
+                          decoration: _inputDeco('Match'),
+                          items: _matchAnswersCtrls
+                              .asMap()
+                              .entries
+                              .map((a) => DropdownMenuItem(value: a.key, child: Text('B${a.key + 1}')))
+                              .toList(),
+                          onChanged: (v) => setState(() => row['answer'] = v),
+                        ),
+                      ),
+                      if (_matchStatements.length > 1)
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(() => _matchStatements.removeAt(i)),
+                        ),
+                    ]),
+                  );
+                }),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _matchStatements.length < 5
+                        ? () => setState(() => _matchStatements.add({'text': TextEditingController(), 'answer': null}))
+                        : null,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar enunciado'),
+                    style: TextButton.styleFrom(foregroundColor: _courseColor),
+                  ),
+                ),
+              ]
+              // completion
+              else if (_type == 'completion') ...[
+                  Text('Completion (5-6)', style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: _courseColor)),
+                  const Text('Escribe la oración completa y la palabra que será el gap.', style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  ..._completionRows.asMap().entries.map((e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Column(
+                      children: [
+                        TextField(controller: e.value['sentence'], decoration: _inputDeco('Oración Completa ${e.key + 1}')),
+                        const SizedBox(height: 8),
+                        TextField(controller: e.value['correct'], decoration: _inputDeco('Palabra (Gap)')),
+                      ],
+                    ),
+                  )),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: _completionRows.length < 6
+                          ? () => setState(() => _completionRows.add({'sentence': TextEditingController(), 'correct': TextEditingController()}))
+                          : null,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Agregar oración'),
+                      style: TextButton.styleFrom(foregroundColor: _courseColor),
+                    ),
+                  ),
+                ]
+                else if (_type == 'write_text') ...[
+                    TextField(controller: _maxWordsCtrl, keyboardType: TextInputType.number, decoration: _inputDeco('Máximo de palabras')),
+                  ]
+                  else if (_type == 'record_audio') ...[
+                      Center(child: Text('El estudiante grabará audio (hasta 45s).', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey[600]))),
+                    ],
+
+              const SizedBox(height: 40),
+
+              // --- BOTONES DE ACCIÓN ---
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                  ),
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed: _submitting ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _courseColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _submitting
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Crear', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -453,4 +565,3 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
     return const Color(0xFF1F3A89);
   }
 }
-

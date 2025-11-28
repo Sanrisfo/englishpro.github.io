@@ -31,6 +31,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+
+    FocusScope.of(context).unfocus(); //esto cierra el teclado para evitar errores
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);

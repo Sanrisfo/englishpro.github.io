@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener google_fonts
+import 'package:audioplayers/audioplayers.dart';
+import 'package:record/record.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
+// Importaciones de tu proyecto (ajusta las rutas si es necesario)
 import '../config/supabase_config.dart';
 import '../models/question_model.dart';
 import '../models/matching_models.dart';
@@ -8,18 +15,15 @@ import '../models/completion_models.dart';
 import '../models/material_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
-import '../widgets/pdf_viewer_widget.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:record/record.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import '../services/supabase_storage_service.dart';
+import '../widgets/pdf_viewer_widget.dart';
 
 class ActivityPlayerScreen extends StatefulWidget {
   final int quizId;
   final int skillId;
   final String skillName;
   final String quizTitle;
+  final String courseName;
 
   const ActivityPlayerScreen({
     Key? key,
@@ -27,6 +31,7 @@ class ActivityPlayerScreen extends StatefulWidget {
     required this.skillId,
     required this.skillName,
     required this.quizTitle,
+    this.courseName = 'Course',
   }) : super(key: key);
 
   @override
@@ -34,27 +39,33 @@ class ActivityPlayerScreen extends StatefulWidget {
 }
 
 class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
+  // --- VARIABLES DE ESTADO ---
   bool _isLoading = true;
   String? _errorMessage;
   MaterialModel? _material;
   List<QuestionModel> _questions = [];
+
   // Respuestas en memoria
-  final Map<int, Set<int>> _selectedOptionsByQuestion = {}; // MC: questionId -> set<optionId>
-  final Map<int, Map<int, int>> _matchingByQuestion = {}; // Matching: questionId -> {statementId: answerId}
-  final Map<int, Map<int, String>> _completionByQuestion = {}; // Completion: questionId -> {gapId: text}
-  final Map<int, Map<int, TextEditingController>> _completionControllers = {}; // questionId -> {gapId: controller}
-  final Map<int, String> _writeTextByQuestion = {}; // Write Text: questionId -> text
-  final Map<int, TextEditingController> _writeTextControllers = {}; // controllers por pregunta
-  final Map<int, String?> _audioUrlByQuestion = {}; // Record Audio: questionId -> uploaded url
-  bool _allSubmitted = false; // all answers submitted flag
+  final Map<int, Set<int>> _selectedOptionsByQuestion = {};
+  final Map<int, Map<int, int>> _matchingByQuestion = {};
+  final Map<int, Map<int, String>> _completionByQuestion = {};
+  final Map<int, Map<int, TextEditingController>> _completionControllers = {};
+  final Map<int, String> _writeTextByQuestion = {};
+  final Map<int, TextEditingController> _writeTextControllers = {};
+  final Map<int, String?> _audioUrlByQuestion = {};
+
+  bool _allSubmitted = false;
   final _audioPlayer = AudioPlayer();
   int _secondsRemaining = 0;
   Timer? _timer;
   int? _quizTimeMinutes;
 
+  late final Color _courseColor; // Color del tema
+
   @override
   void initState() {
     super.initState();
+    _courseColor = _getCourseColor(widget.courseName);
     _load();
   }
 
@@ -62,16 +73,22 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   void dispose() {
     _audioPlayer.dispose();
     _timer?.cancel();
+    // Limpiar controladores
+    for (var map in _completionControllers.values) {
+      for (var ctrl in map.values) ctrl.dispose();
+    }
+    for (var ctrl in _writeTextControllers.values) ctrl.dispose();
     super.dispose();
   }
 
+  // --- LÓGICA DE CARGA (INTACTA) ---
   Future<void> _load() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
-      // Load quiz info (time limit minutes)
+      // 1. Cargar info del quiz (tiempo)
       try {
         final quizRow = await supabase
             .from('cuestionarios')
@@ -81,7 +98,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
         _quizTimeMinutes = quizRow['tiempo_limite_minutos'] as int?;
       } catch (_) {}
 
-      // Load material linked to this quiz (si existe). No fallback a nivel habilidad
+      // 2. Cargar material (si existe)
       try {
         final mats = await supabase
             .from('materiales_estudio')
@@ -94,20 +111,19 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
         }
       } catch (_) {}
 
-      // Load questions for this quiz (via junction table)
+      // 3. Cargar preguntas
       final cp = await supabase
           .from('cuestionario_preguntas')
           .select('id_pregunta, orden')
           .eq('id_cuestionario', widget.quizId)
           .order('orden', ascending: true);
       final cpList = List<Map<String, dynamic>>.from(cp as List);
+
       if (cpList.isEmpty) {
-        setState(() {
-          _questions = [];
-          _isLoading = false;
-        });
+        setState(() { _questions = []; _isLoading = false; });
         return;
       }
+
       final ids = cpList.map((e) => e['id_pregunta']).where((e) => e != null).toList();
 
       final qs = await supabase
@@ -123,119 +139,57 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           .order('orden', ascending: true);
       final optList = List<Map<String, dynamic>>.from(opts as List);
 
-      // Cargar datos adicionales para Matching, Completion y Configs
-      final matchingIds = qList
-          .where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('matching'))
-          .map((q) => q['id_pregunta'] as int)
-          .toList();
-      final completionIds = qList
-          .where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('completion'))
-          .map((q) => q['id_pregunta'] as int)
-          .toList();
-      final writeTextIds = qList
-          .where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('write'))
-          .map((q) => q['id_pregunta'] as int)
-          .toList();
-      final recordAudioIds = qList
-          .where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('record'))
-          .map((q) => q['id_pregunta'] as int)
-          .toList();
+      final matchingIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('matching')).map((q) => q['id_pregunta'] as int).toList();
+      final completionIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('completion')).map((q) => q['id_pregunta'] as int).toList();
+      final writeTextIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('write')).map((q) => q['id_pregunta'] as int).toList();
+      final recordAudioIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('record')).map((q) => q['id_pregunta'] as int).toList();
 
       List<Map<String, dynamic>> mAnswers = [];
       List<Map<String, dynamic>> mStatements = [];
       if (matchingIds.isNotEmpty) {
-        final a = await supabase
-            .from('matching_answers')
-            .select('id, id_pregunta, texto, orden')
-            .inFilter('id_pregunta', matchingIds)
-            .order('orden');
+        final a = await supabase.from('matching_answers').select('id, id_pregunta, texto, orden').inFilter('id_pregunta', matchingIds).order('orden');
         mAnswers = List<Map<String, dynamic>>.from(a as List);
-        final s = await supabase
-            .from('matching_statements')
-            .select('id, id_pregunta, texto, orden, correct_answer_id')
-            .inFilter('id_pregunta', matchingIds)
-            .order('orden');
+        final s = await supabase.from('matching_statements').select('id, id_pregunta, texto, orden, correct_answer_id').inFilter('id_pregunta', matchingIds).order('orden');
         mStatements = List<Map<String, dynamic>>.from(s as List);
       }
 
       List<Map<String, dynamic>> cSentences = [];
       List<Map<String, dynamic>> cGaps = [];
       if (completionIds.isNotEmpty) {
-        final cs = await supabase
-            .from('completion_sentences')
-            .select('id, id_pregunta, texto_template, orden')
-            .inFilter('id_pregunta', completionIds)
-            .order('orden');
+        final cs = await supabase.from('completion_sentences').select('id, id_pregunta, texto_template, orden').inFilter('id_pregunta', completionIds).order('orden');
         cSentences = List<Map<String, dynamic>>.from(cs as List);
         final sentIds = cSentences.map((e) => e['id'] as int).toList();
         if (sentIds.isNotEmpty) {
-          final cg = await supabase
-              .from('completion_gaps')
-              .select('id, sentence_id, gap_index, correct_text')
-              .inFilter('sentence_id', sentIds)
-              .order('gap_index');
+          final cg = await supabase.from('completion_gaps').select('id, sentence_id, gap_index, correct_text').inFilter('sentence_id', sentIds).order('gap_index');
           cGaps = List<Map<String, dynamic>>.from(cg as List);
         }
       }
 
       Map<int, int> maxWordsByQ = {};
       if (writeTextIds.isNotEmpty) {
-        final wt = await supabase
-            .from('write_text_config')
-            .select('id_pregunta, max_words')
-            .inFilter('id_pregunta', writeTextIds);
-        final wtl = List<Map<String, dynamic>>.from(wt as List);
-        for (final r in wtl) {
-          maxWordsByQ[(r['id_pregunta'] as num).toInt()] = (r['max_words'] as num).toInt();
-        }
+        final wt = await supabase.from('write_text_config').select('id_pregunta, max_words').inFilter('id_pregunta', writeTextIds);
+        for (final r in List<Map<String, dynamic>>.from(wt as List)) maxWordsByQ[(r['id_pregunta'] as num).toInt()] = (r['max_words'] as num).toInt();
       }
 
       Map<int, Map<String, int>> audioConfigByQ = {};
       if (recordAudioIds.isNotEmpty) {
-        final ra = await supabase
-            .from('record_audio_config')
-            .select('id_pregunta, think_time_seconds, max_record_seconds')
-            .inFilter('id_pregunta', recordAudioIds);
-        final ral = List<Map<String, dynamic>>.from(ra as List);
-        for (final r in ral) {
-          audioConfigByQ[(r['id_pregunta'] as num).toInt()] = {
-            'think': (r['think_time_seconds'] as num).toInt(),
-            'max': (r['max_record_seconds'] as num).toInt(),
-          };
+        final ra = await supabase.from('record_audio_config').select('id_pregunta, think_time_seconds, max_record_seconds').inFilter('id_pregunta', recordAudioIds);
+        for (final r in List<Map<String, dynamic>>.from(ra as List)) {
+          audioConfigByQ[(r['id_pregunta'] as num).toInt()] = {'think': (r['think_time_seconds'] as num).toInt(), 'max': (r['max_record_seconds'] as num).toInt()};
         }
       }
+      // --- FIN BLOQUE DE CARGA AUXILIAR ---
 
-      // Build QuestionModel list preserving order
       final byId = <int, Map<String, dynamic>>{};
       for (final q in qList) {
         final tipo = (q['tipo_pregunta'] as String? ?? '').toLowerCase();
-        // Normalize type to match model expectations
-        String normalized;
-        if (tipo.contains('multiple')) {
-          normalized = 'multiple_choice';
-        } else if (tipo.contains('matching')) {
-          normalized = 'matching';
-        } else if (tipo.contains('completion')) {
-          normalized = 'completion';
-        } else if (tipo.contains('record')) {
-          normalized = 'record_audio';
-        } else if (tipo.contains('write') || tipo.contains('texto')) {
-          normalized = 'write_text';
-        } else {
-          normalized = tipo.isEmpty ? 'multiple_choice' : tipo;
-        }
+        String normalized = tipo.contains('multiple') ? 'multiple_choice' : tipo.contains('matching') ? 'matching' : tipo.contains('completion') ? 'completion' : tipo.contains('record') ? 'record_audio' : (tipo.contains('write') || tipo.contains('texto')) ? 'write_text' : 'multiple_choice';
+
         final qid = q['id_pregunta'] as int;
-        // Matching data for this question
         final myAnswers = mAnswers.where((e) => e['id_pregunta'] == qid).toList();
         final myStatements = mStatements.where((e) => e['id_pregunta'] == qid).toList();
-        // Completion data
         final mySentences = cSentences.where((e) => e['id_pregunta'] == qid).toList();
-        final sentWithGaps = mySentences
-            .map((s) => {
-                  ...s,
-                  'gaps': cGaps.where((g) => g['sentence_id'] == s['id']).toList(),
-                })
-            .toList();
+        final sentWithGaps = mySentences.map((s) => {...s, 'gaps': cGaps.where((g) => g['sentence_id'] == s['id']).toList()}).toList();
 
         byId[qid] = {
           'id': q['id_pregunta'],
@@ -244,17 +198,8 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           'tipo_pregunta': normalized,
           'nivel_dificultad': q['nivel_dificultad'] ?? 'Basico',
           'puntaje': q['puntos'] ?? 1,
-          // Sin tiempo por pregunta; se usa tiempo del cuestionario
           'tiempo_limite_segundos': null,
-          'opciones': optList
-              .where((o) => o['id_pregunta'] == qid)
-              .map((o) => {
-                    'id': o['id_opcion'],
-                    'pregunta_id': o['id_pregunta'],
-                    'texto_opcion': o['texto_opcion'],
-                    'es_correcta': o['es_correcta'],
-                  })
-              .toList(),
+          'opciones': optList.where((o) => o['id_pregunta'] == qid).map((o) => {'id': o['id_opcion'], 'pregunta_id': o['id_pregunta'], 'texto_opcion': o['texto_opcion'], 'es_correcta': o['es_correcta']}).toList(),
           'matching_answers': myAnswers,
           'matching_statements': myStatements,
           'completion_sentences': sentWithGaps,
@@ -274,7 +219,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
 
       setState(() {
         _questions = ordered;
-        // Start timer if quiz-level time is present
+        // Timer
         if ((_quizTimeMinutes ?? 0) > 0) {
           _secondsRemaining = (_quizTimeMinutes!) * 60;
           _timer?.cancel();
@@ -289,7 +234,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
         }
       });
     } catch (e) {
-      setState(() => _errorMessage = 'Error cargando actividad: $e');
+      setState(() => _errorMessage = 'Error loading activity: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -300,90 +245,56 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
     final user = context.read<AuthProvider>().user;
     final userId = user?.idUsuario;
     if (userId == null) {
-      if (!auto) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Debes iniciar sesión para enviar respuestas')),
-        );
-      }
+      if (!auto) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must log in to submit answers')));
       return;
     }
-    final total = _questions.length;
-    // Count answered across all types
+
+    // Validación de completitud
     int answered = 0;
     for (final q in _questions) {
       if (q.isMultipleChoice) {
-        final set = _selectedOptionsByQuestion[q.id];
-        if (set != null && set.isNotEmpty) answered++;
+        if ((_selectedOptionsByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
       } else if (q.isMatching) {
         final map = _matchingByQuestion[q.id];
         final totalStmts = q.matchingStatements?.length ?? 0;
         if (map != null && map.length == totalStmts && !map.values.contains(null)) answered++;
       } else if (q.isCompletion) {
         final map = _completionByQuestion[q.id];
-        final totalGaps = (q.completionSentences ?? const <CompletionSentence>[])
-            .fold<int>(0, (int sum, CompletionSentence s) => sum + s.gaps.length);
+        final totalGaps = (q.completionSentences ?? []).fold<int>(0, (sum, s) => sum + s.gaps.length);
         if (map != null && map.length == totalGaps) answered++;
       } else if (q.isWriteText) {
-        final t = _writeTextByQuestion[q.id];
-        if ((t?.trim().isNotEmpty ?? false)) answered++;
+        if ((_writeTextByQuestion[q.id]?.trim().isNotEmpty ?? false)) answered++;
       } else if (q.isRecordAudio) {
-        final u = _audioUrlByQuestion[q.id];
-        if (u != null && u.isNotEmpty) answered++;
+        if ((_audioUrlByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
       }
     }
-    if (!auto && (answered < total)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Responde todas las preguntas ($answered/$total)')),
-      );
+
+    if (!auto && (answered < _questions.length)) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please answer all questions ($answered/${_questions.length})')));
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-    final futures = <Future>[];
-    for (final q in _questions) {
-      if (q.isMultipleChoice) {
-        final set = _selectedOptionsByQuestion[q.id] ?? const {};
-        futures.add(ApiService.submitAnswerMultipleChoice(
-          userId: userId,
-          preguntaId: q.id,
-          optionIds: set.toList(),
-          quizId: widget.quizId,
-        ));
-      } else if (q.isMatching) {
-        final map = _matchingByQuestion[q.id] ?? const {};
-        futures.add(ApiService.submitAnswerMatching(
-          userId: userId,
-          preguntaId: q.id,
-          statementToAnswer: Map<int, int>.from(map),
-          quizId: widget.quizId,
-        ));
-      } else if (q.isCompletion) {
-        final map = _completionByQuestion[q.id] ?? const {};
-        futures.add(ApiService.submitAnswerCompletion(
-          userId: userId,
-          preguntaId: q.id,
-          gapToText: Map<int, String>.from(map),
-          quizId: widget.quizId,
-        ));
-      } else if (q.isWriteText) {
-        final text = _writeTextByQuestion[q.id] ?? '';
-        futures.add(ApiService.submitAnswerWriteText(
-          userId: userId,
-          preguntaId: q.id,
-          text: text,
-          quizId: widget.quizId,
-        ));
-      } else if (q.isRecordAudio) {
-        final url = _audioUrlByQuestion[q.id] ?? '';
-        futures.add(ApiService.submitAnswerRecordAudio(
-          userId: userId,
-          preguntaId: q.id,
-          audioUrl: url,
-          quizId: widget.quizId,
-        ));
+      final futures = <Future>[];
+      for (final q in _questions) {
+        if (q.isMultipleChoice) {
+          final set = _selectedOptionsByQuestion[q.id] ?? const {};
+          futures.add(ApiService.submitAnswerMultipleChoice(userId: userId, preguntaId: q.id, optionIds: set.toList(), quizId: widget.quizId));
+        } else if (q.isMatching) {
+          final map = _matchingByQuestion[q.id] ?? const {};
+          futures.add(ApiService.submitAnswerMatching(userId: userId, preguntaId: q.id, statementToAnswer: Map<int, int>.from(map), quizId: widget.quizId));
+        } else if (q.isCompletion) {
+          final map = _completionByQuestion[q.id] ?? const {};
+          futures.add(ApiService.submitAnswerCompletion(userId: userId, preguntaId: q.id, gapToText: Map<int, String>.from(map), quizId: widget.quizId));
+        } else if (q.isWriteText) {
+          final text = _writeTextByQuestion[q.id] ?? '';
+          futures.add(ApiService.submitAnswerWriteText(userId: userId, preguntaId: q.id, text: text, quizId: widget.quizId));
+        } else if (q.isRecordAudio) {
+          final url = _audioUrlByQuestion[q.id] ?? '';
+          futures.add(ApiService.submitAnswerRecordAudio(userId: userId, preguntaId: q.id, audioUrl: url, quizId: widget.quizId));
+        }
       }
-    }
       await Future.wait(futures);
       if (mounted) {
         setState(() {
@@ -391,328 +302,454 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           _timer?.cancel();
           _secondsRemaining = 0;
         });
-        if (!auto) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Respuestas enviadas')));
-        }
+        if (!auto) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Answers submitted successfully')));
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error al enviar: $e')));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error submitting: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Widget _buildMaterial() {
-    final m = _material;
-    if (m == null) return const SizedBox.shrink();
-    final t = m.tipoMaterial.toLowerCase();
-    if (t == 'pdf' && (m.archivoUrl?.isNotEmpty ?? false)) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: ListTile(
-          leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
-          title: Text(m.titulo),
-          subtitle: const Text('Abrir PDF'),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PDFViewerWidget(pdfUrl: m.archivoUrl!, title: m.titulo),
-            ),
-          ),
-        ),
-      );
-    }
-    if ((t == 'image' || t == 'imagen') && (m.archivoUrl?.isNotEmpty ?? false)) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(m.archivoUrl!, fit: BoxFit.cover),
-      );
-    }
-    if (t == 'audio' && (m.archivoUrl?.isNotEmpty ?? false)) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: ListTile(
-          leading: const Icon(Icons.audiotrack, color: Colors.indigo),
-          title: Text(m.titulo),
-          trailing: IconButton(
-            icon: const Icon(Icons.play_arrow),
-            onPressed: () async {
-              try {
-                await _audioPlayer.stop();
-                await _audioPlayer.play(UrlSource(m.archivoUrl!));
-              } catch (_) {}
-            },
-          ),
-        ),
-      );
-    }
-    if (t == 'text' || t == 'texto') {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(m.titulo, style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              Text(m.contenidoTexto ?? ''),
-            ],
-          ),
-        ),
-      );
-    }
-    return const SizedBox.shrink();
+  // --- HELPERS VISUALES (ESTÁNDAR DE ORO) ---
+  Color _getCourseColor(String courseName) {
+    String lower = courseName.toLowerCase();
+    if (lower.contains('toefl')) return const Color(0xFFD9232A);
+    if (lower.contains('ielts')) return const Color(0xFF23408E);
+    if (lower.contains('business')) return const Color(0xFFB02224);
+    return const Color(0xFF1F3A89);
   }
 
+  InputDecoration _inputDeco(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: _courseColor.withOpacity(0.05),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _courseColor, width: 2)),
+    );
+  }
+
+  // --- BUILD PRINCIPAL ---
+  @override
+  Widget build(BuildContext context) {
+    // Calculamos contestadas
+    int answered = 0;
+    for (final q in _questions) {
+      if (q.isMultipleChoice) {
+        if ((_selectedOptionsByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
+      } else if (q.isMatching) {
+        if ((_matchingByQuestion[q.id]?.length ?? 0) == (q.matchingStatements?.length ?? 0)) answered++;
+      } else if (q.isCompletion) {
+        final totalGaps = (q.completionSentences ?? []).fold<int>(0, (s, e) => s + e.gaps.length);
+        if ((_completionByQuestion[q.id]?.length ?? 0) == totalGaps) answered++;
+      } else if (q.isWriteText) {
+        if ((_writeTextByQuestion[q.id]?.trim().isNotEmpty ?? false)) answered++;
+      } else if (q.isRecordAudio) {
+        if ((_audioUrlByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
+      }
+    }
+    final total = _questions.length;
+    final allAnswered = total > 0 && answered == total;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            : _errorMessage != null
+            ? Center(child: Text(_errorMessage!))
+            : Column(
+          children: [
+            // 1. ENCABEZADO
+            _buildHeader(),
+
+            // 2. BARRA DE PROGRESO
+            LinearProgressIndicator(
+              value: total == 0 ? 0 : (answered / total),
+              backgroundColor: Colors.grey[100],
+              color: _courseColor,
+              minHeight: 4,
+            ),
+
+            // 3. CONTENIDO (Material + Preguntas)
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  // Título de la Actividad
+                  Text(
+                    widget.quizTitle,
+                    style: GoogleFonts.ptSans(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _allSubmitted ? 'Activity Completed' : 'Answer all questions below',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Material (Si existe)
+                  if (_material != null) _buildMaterialCard(),
+                  if (_material != null) const SizedBox(height: 24),
+
+                  // Lista de Preguntas
+                  if (_questions.isEmpty)
+                    const Center(child: Text('No questions available'))
+                  else
+                    ..._questions.asMap().entries.map((e) => _buildQuestionCard(e.value, e.key)),
+                ],
+              ),
+            ),
+
+            // 4. BOTÓN INFERIOR
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey[100]!)),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (_allSubmitted || !allAnswered) ? null : () => _submitAllAnswers(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _courseColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    _allSubmitted
+                        ? 'Answers Submitted'
+                        : allAnswered
+                        ? 'Submit Answers'
+                        : 'Answer all questions to submit ($answered/$total)',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- COMPONENTES VISUALES ---
+
+  Widget _buildHeader() {
+    final minutes = (_secondsRemaining / 60).floor();
+    final seconds = _secondsRemaining % 60;
+    final timerText = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.grey),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          if ((_quizTimeMinutes ?? 0) > 0 && !_allSubmitted)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(color: _courseColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+              child: Row(
+                children: [
+                  Icon(Icons.timer_outlined, size: 16, color: _courseColor),
+                  const SizedBox(width: 6),
+                  Text(timerText, style: TextStyle(color: _courseColor, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaterialCard() {
+    final m = _material!;
+    final type = m.tipoMaterial.toLowerCase();
+    IconData icon = Icons.description;
+    if (type == 'audio') icon = Icons.audiotrack;
+    if (type == 'image') icon = Icons.image;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: _courseColor, size: 20),
+              const SizedBox(width: 8),
+              Text('Study Material', style: TextStyle(color: _courseColor, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(m.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+
+          if (type == 'text' || type == 'texto')
+            Text(m.contenidoTexto ?? '', style: TextStyle(color: Colors.grey[800], height: 1.5))
+          else if ((type == 'image' || type == 'imagen') && (m.archivoUrl?.isNotEmpty ?? false))
+            ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(m.archivoUrl!))
+          else if (type == 'audio' && (m.archivoUrl?.isNotEmpty ?? false))
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Play Audio'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.play_circle_filled, size: 32),
+                  color: _courseColor,
+                  onPressed: () async {
+                    try { await _audioPlayer.stop(); await _audioPlayer.play(UrlSource(m.archivoUrl!)); } catch (_) {}
+                  },
+                ),
+              )
+            else if (type == 'pdf' && (m.archivoUrl?.isNotEmpty ?? false))
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0, side: BorderSide(color: Colors.grey[300]!)),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PDFViewerWidget(pdfUrl: m.archivoUrl!, title: m.titulo))),
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('View PDF'),
+                ),
+        ],
+      ),
+    );
+  }
+
+  // --- RENDERIZADO DE PREGUNTAS (ESTILO ACTUALIZADO) ---
   Widget _buildQuestionCard(QuestionModel q, int index) {
     Widget body;
+
+    // 1. Multiple Choice
     if (q.isMultipleChoice) {
       final selected = _selectedOptionsByQuestion[q.id] ?? <int>{};
-      final isSubmitted = _allSubmitted;
-      final options = q.opciones ?? const <AnswerOptionModel>[];
+      final options = q.opciones ?? [];
       body = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: options.map((o) {
-          final bool isSelected = selected.contains(o.id);
-          final bool isCorrect = (o.esCorrecta);
-          if (isSubmitted) {
-            final Color borderColor = isSelected
-                ? (isCorrect ? Colors.green : Colors.red)
-                : (isCorrect ? Colors.green : Colors.grey.shade300);
-            final IconData icon = isCorrect
-                ? Icons.check_circle
-                : (isSelected ? Icons.cancel : Icons.radio_button_unchecked);
-            final Color iconColor = isCorrect
-                ? Colors.green
-                : (isSelected ? Colors.red : Colors.grey);
-            return Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          final isSelected = selected.contains(o.id);
+          final isCorrect = o.esCorrecta;
+          Color borderColor = Colors.grey[200]!;
+          Color bgColor = Colors.white;
+          IconData icon = isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked;
+          Color iconColor = isSelected ? _courseColor : Colors.grey[400]!;
+
+          if (_allSubmitted) {
+            if (isCorrect) {
+              borderColor = Color(0xFF1A3075);
+              bgColor = Color(0xFFE5E4EE);
+              icon = Icons.check_circle_rounded;
+              iconColor = Color(0xFF1A3075);
+            } else if (isSelected && !isCorrect) {
+              borderColor = Color(0xFFD9232A);
+              bgColor = Colors.red.withOpacity(0.05);
+              icon = Icons.cancel_rounded;
+              iconColor = Color(0xFFD9232A);
+            }
+          } else if (isSelected) {
+            borderColor = _courseColor;
+            bgColor = _courseColor.withOpacity(0.05);
+          }
+
+          return GestureDetector(
+            onTap: _allSubmitted ? null : () {
+              setState(() {
+                final set = _selectedOptionsByQuestion.putIfAbsent(q.id, () => <int>{});
+                // Lógica para single selection (si quieres multiple, quita el clear)
+                // set.clear();
+                if (set.contains(o.id)) set.remove(o.id); else set.add(o.id);
+              });
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: borderColor),
-                borderRadius: BorderRadius.circular(8),
+                color: bgColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor, width: isSelected || _allSubmitted ? 1.5 : 1),
               ),
               child: Row(
                 children: [
-                  Icon(icon, color: iconColor, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(o.textoOpcion)),
+                  Icon(icon, color: iconColor),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(o.textoOpcion, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal))),
                 ],
               ),
-            );
-          }
-          return CheckboxListTile(
-            value: isSelected,
-            onChanged: (v) {
-              setState(() {
-                final set = _selectedOptionsByQuestion.putIfAbsent(q.id, () => <int>{});
-                if (v == true) {
-                  set.add(o.id);
-                } else {
-                  set.remove(o.id);
-                }
-              });
-            },
-            title: Text(o.textoOpcion),
-            controlAffinity: ListTileControlAffinity.leading,
+            ),
           );
         }).toList(),
       );
-    } else if (q.isMatching) {
-      final statements = q.matchingStatements ?? const <MatchingStatement>[];
-      final answers = q.matchingAnswers ?? const <MatchingAnswer>[];
-      final map = _matchingByQuestion.putIfAbsent(q.id, () => <int, int>{});
+    }
+    // 2. Matching
+    else if (q.isMatching) {
+      final statements = q.matchingStatements ?? [];
+      final answers = q.matchingAnswers ?? [];
+      final map = _matchingByQuestion.putIfAbsent(q.id, () => {});
+
       body = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: statements.map((s) {
-          final selected = map[s.id];
-          final correctId = s.correctAnswerId;
-          final isCorrect = _allSubmitted && selected == correctId;
-          final answerText = answers.firstWhere((a) => a.id == (selected ?? -1), orElse: () => MatchingAnswer(id: -1, preguntaId: s.preguntaId, texto: '-', orden: 0)).texto;
-          if (_allSubmitted) {
-            final String correctText = answers
-                .firstWhere((a) => a.id == correctId, orElse: () => MatchingAnswer(id: -1, preguntaId: s.preguntaId, texto: '-', orden: 0))
-                .texto;
-            return Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: isCorrect ? Colors.green : Colors.red),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Expanded(child: Text(s.texto)),
-                  const SizedBox(width: 12),
-                  Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: isCorrect ? Colors.green : Colors.red, size: 18),
-                  const SizedBox(width: 8),
-                  Text(answerText),
-                  if (!isCorrect) ...[
-                    const SizedBox(width: 10),
-                    const Text('→', style: TextStyle(color: Colors.grey)),
-                    const SizedBox(width: 6),
-                    Text(correctText, style: const TextStyle(color: Colors.green)),
-                  ],
-                ],
-              ),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
+          final selectedVal = map[s.id];
+          final isCorrect = _allSubmitted && selectedVal == s.correctAnswerId;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _allSubmitted ? (isCorrect ? Color(0xFF1A3075) : Color(
+                  0xFFD9232A)) : Colors.grey[200]!),
+            ),
             child: Row(
               children: [
-                Expanded(child: Text(s.texto)),
+                Expanded(child: Text(s.texto, style: const TextStyle(fontWeight: FontWeight.w500))),
                 const SizedBox(width: 12),
                 DropdownButton<int>(
-                  value: selected,
-                  hint: const Text('Selecciona'),
-                  items: answers.map((a) => DropdownMenuItem<int>(value: a.id, child: Text(a.texto))).toList(),
-                  onChanged: (v) {
-                    if (v == null) return;
-                    setState(() {
-                      map[s.id] = v;
-                    });
-                  },
+                  value: selectedVal,
+                  hint: Text('Select', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                  underline: const SizedBox(), // Quitar línea fea
+                  icon: Icon(Icons.arrow_drop_down, color: _courseColor),
+                  items: answers.map((a) => DropdownMenuItem(value: a.id, child: Text(a.texto, style: const TextStyle(fontSize: 14)))).toList(),
+                  onChanged: _allSubmitted ? null : (v) => setState(() => map[s.id] = v!),
                 ),
               ],
             ),
           );
         }).toList(),
       );
-    } else if (q.isCompletion) {
-      final sentences = q.completionSentences ?? const <CompletionSentence>[];
-      final map = _completionByQuestion.putIfAbsent(q.id, () => <int, String>{});
-      final ctrls = _completionControllers.putIfAbsent(q.id, () => <int, TextEditingController>{});
+    }
+    // 3. Completion
+    else if (q.isCompletion) {
+      final sentences = q.completionSentences ?? [];
+      final map = _completionByQuestion.putIfAbsent(q.id, () => {});
+      final ctrls = _completionControllers.putIfAbsent(q.id, () => {});
+
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: sentences.map((s) {
+          final parts = <Widget>[];
           final reg = RegExp(r'\{\{(\d+)\}\}');
-          final widgets = <Widget>[];
           int last = 0;
-          final text = s.textoTemplate;
-          for (final m in reg.allMatches(text)) {
-            if (m.start > last) {
-              widgets.add(Text(text.substring(last, m.start)));
-            }
+          for (final m in reg.allMatches(s.textoTemplate)) {
+            if (m.start > last) parts.add(Text(s.textoTemplate.substring(last, m.start), style: const TextStyle(fontSize: 16, height: 1.5)));
+
             final gapIndex = int.parse(m.group(1)!);
-            final gap = s.gaps.firstWhere((g) => g.gapIndex == gapIndex, orElse: () => CompletionGap(id: -gapIndex, sentenceId: s.id, gapIndex: gapIndex, correctText: ''));
-            final controller = ctrls.putIfAbsent(gap.id, () => TextEditingController(text: map[gap.id] ?? ''));
-            final isCorrect = _allSubmitted && controller.text.trim().toLowerCase() == gap.correctText.trim().toLowerCase();
-            widgets.add(SizedBox(
-              width: 160,
+            final gap = s.gaps.firstWhere((g) => g.gapIndex == gapIndex);
+            final ctrl = ctrls.putIfAbsent(gap.id, () => TextEditingController(text: map[gap.id] ?? ''));
+            final isCorrect = _allSubmitted && ctrl.text.trim().toLowerCase() == gap.correctText.trim().toLowerCase();
+
+            parts.add(SizedBox(
+              width: 120,
               child: TextField(
-                controller: controller,
+                controller: ctrl,
                 readOnly: _allSubmitted,
-                onChanged: (v) {
-                  map[gap.id] = v;
-                },
+                onChanged: (v) => map[gap.id] = v,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _allSubmitted ? (isCorrect ? Colors.green : Colors.red) : Colors.black),
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   isDense: true,
-                  hintText: '...',
-                  suffixIcon: _allSubmitted
-                      ? Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: isCorrect ? Colors.green : Colors.red, size: 18)
-                      : null,
+                  filled: true,
+                  fillColor: _allSubmitted ? (isCorrect ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1)) : Colors.grey[100],
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                 ),
               ),
             ));
-            if (_allSubmitted && !isCorrect) {
-              widgets.add(Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Text('(${gap.correctText})', style: const TextStyle(color: Colors.green)),
-              ));
-            }
             last = m.end;
           }
-          if (last < text.length) {
-            widgets.add(Text(text.substring(last)));
-          }
+          if (last < s.textoTemplate.length) parts.add(Text(s.textoTemplate.substring(last), style: const TextStyle(fontSize: 16, height: 1.5)));
+
           return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6.0),
-            child: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 6,
-              runSpacing: 6,
-              children: widgets,
-            ),
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 8, spacing: 4, children: parts),
           );
         }).toList(),
       );
-    } else if (q.isWriteText) {
+    }
+    // 4. Write Text
+    else if (q.isWriteText) {
       final max = q.maxWords ?? 0;
-      final controller = _writeTextControllers.putIfAbsent(q.id, () {
-        return TextEditingController(text: _writeTextByQuestion[q.id] ?? '');
-      });
+      final ctrl = _writeTextControllers.putIfAbsent(q.id, () => TextEditingController(text: _writeTextByQuestion[q.id] ?? ''));
+
       body = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
-            controller: controller,
+            controller: ctrl,
+            readOnly: _allSubmitted,
             maxLines: 6,
-            onChanged: (v) {
-              if (_allSubmitted) return;
-              _writeTextByQuestion[q.id] = v;
-              setState(() {});
-            },
-            decoration: InputDecoration(
-              hintText: 'Escribe tu respuesta...',
-              border: const OutlineInputBorder(),
-              // no usar counterText para no depender de maxLength
-            ),
+            onChanged: (v) { if (!_allSubmitted) { _writeTextByQuestion[q.id] = v; setState((){}); } },
+            decoration: _inputDeco('Type your answer here...'),
           ),
-          const SizedBox(height: 6),
-          Builder(builder: (_) {
-            final words = _wordCount(controller.text);
-            return Text(
-              max > 0 ? '$words/$max palabras' : '$words palabras',
-              style: const TextStyle(color: Colors.grey),
-            );
-          })
+          if (max > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text('${_wordCount(ctrl.text)} / $max words', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              ),
+            ),
         ],
       );
-    } else if (q.isRecordAudio) {
+    }
+    // 5. Record Audio
+    else if (q.isRecordAudio) {
       body = _buildRecordAudio(q);
     } else {
-      body = const Text('Tipo de pregunta no soportado aún.');
+      body = const Text('Question type not supported');
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Pregunta ${index + 1}', style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 6),
-            Text(q.textoPregunta, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            body,
-            if (_allSubmitted && (q.explicacionGeneral?.trim().isNotEmpty ?? false))
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber.shade700),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.amber.shade700),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(q.explicacionGeneral!)),
-                  ],
-                ),
-              ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[200]!, width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Question ${index + 1}", style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold, fontSize: 12)),
+              if (q.puntaje > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: Color(0xFFE5E8EE), borderRadius: BorderRadius.circular(4)),
+                  child: Text("${q.puntaje} pts", style: const TextStyle(color: Color(
+                      0xFF1A3075), fontSize: 10, fontWeight: FontWeight.bold)),
+                )
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(q.textoPregunta, style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const SizedBox(height: 24),
+          body,
+          if (_allSubmitted && (q.explicacionGeneral?.isNotEmpty ?? false))
+            Container(
+              margin: const EdgeInsets.only(top: 24),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Color(0xFFECEEF3), borderRadius: BorderRadius.circular(12)),
+              child: Row(children: [
+                Icon(Icons.lightbulb, color: Color(0xFF1A3075), size: 20),
+                const SizedBox(width: 12),
+                Expanded(child: Text(q.explicacionGeneral!, style: TextStyle(color: Color(0xFF1A3075), fontSize: 13))),
+              ]),
+            ),
+        ],
       ),
     );
   }
@@ -724,7 +761,6 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   }
 
   Widget _buildRecordAudio(QuestionModel q) {
-    // Simple estado local por pregunta
     final think = q.thinkTimeSeconds ?? 10;
     final max = q.maxRecordSeconds ?? 45;
     final url = _audioUrlByQuestion[q.id];
@@ -732,152 +768,29 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       thinkSeconds: think,
       maxRecordSeconds: max,
       existingUrl: url,
+      readOnly: _allSubmitted,
       onUploaded: (u) => setState(() => _audioUrlByQuestion[q.id] = u),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Recalcular progreso (preguntas "contestadas")
-    int answered = 0;
-    for (final q in _questions) {
-      if (q.isMultipleChoice) {
-        final set = _selectedOptionsByQuestion[q.id];
-        if (set != null && set.isNotEmpty) answered++;
-      } else if (q.isMatching) {
-        final map = _matchingByQuestion[q.id];
-        final totalStmts = q.matchingStatements?.length ?? 0;
-        if (map != null && map.length == totalStmts && !map.values.contains(null)) answered++;
-      } else if (q.isCompletion) {
-        final map = _completionByQuestion[q.id];
-        final totalGaps = (q.completionSentences ?? const <CompletionSentence>[]) 
-            .fold<int>(0, (int sum, CompletionSentence s) => sum + s.gaps.length);
-        if (map != null && map.length == totalGaps) answered++;
-      } else if (q.isWriteText) {
-        final t = _writeTextByQuestion[q.id];
-        if ((t?.trim().isNotEmpty ?? false)) answered++;
-      } else if (q.isRecordAudio) {
-        final u = _audioUrlByQuestion[q.id];
-        if (u != null && u.isNotEmpty) answered++;
-      }
-    }
-    final total = _questions.length;
-    final allAnswered = total > 0 && answered == total;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.skillName),
-        backgroundColor: Colors.indigo,
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-              ? Center(child: Text(_errorMessage!))
-              : Column(
-                  children: [
-                    if ((_quizTimeMinutes ?? 0) > 0 && !_allSubmitted)
-                      Container(
-                        width: double.infinity,
-                        color: Colors.indigo.withOpacity(0.08),
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.timer, color: Colors.indigo),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Tiempo restante: '
-                              '${(_secondsRemaining ~/ 60).toString().padLeft(2, '0')}:${(_secondsRemaining % 60).toString().padLeft(2, '0')}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Progress counter
-                    Container(
-                      width: double.infinity,
-                      color: Colors.grey.withOpacity(0.08),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.list_alt, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Respondidas $answered de $total',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 120,
-                            child: LinearProgressIndicator(
-                              value: total == 0 ? 0 : (answered / (total == 0 ? 1 : total)),
-                              minHeight: 6,
-                              backgroundColor: Colors.grey.shade300,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                allAnswered ? Colors.green : Colors.indigo,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          // Quiz title
-                          Text(widget.quizTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
-                          // Material
-                          _buildMaterial(),
-                          const SizedBox(height: 8),
-                          // Questions
-                          if (_questions.isEmpty)
-                            const Text('Esta actividad aún no tiene preguntas')
-                          else
-                            ..._questions.asMap().entries.map((e) => _buildQuestionCard(e.value, e.key)),
-                        ],
-                      ),
-                    ),
-                    SafeArea(
-                      top: false,
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _allSubmitted || !allAnswered ? null : () => _submitAllAnswers(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.indigo,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: Text(
-                            _allSubmitted
-                                ? 'Respuestas enviadas'
-                                : allAnswered
-                                    ? 'Enviar respuestas'
-                                    : 'Responde todas para enviar',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+      activeColor: _courseColor,
     );
   }
 }
 
+// --- WIDGET DE GRABACIÓN DE AUDIO (MODERNO) ---
 class _RecordAudioWidget extends StatefulWidget {
   final int thinkSeconds;
   final int maxRecordSeconds;
   final String? existingUrl;
+  final bool readOnly;
   final ValueChanged<String> onUploaded;
+  final Color activeColor;
 
   const _RecordAudioWidget({
     required this.thinkSeconds,
     required this.maxRecordSeconds,
     required this.existingUrl,
+    required this.readOnly,
     required this.onUploaded,
+    required this.activeColor,
   });
 
   @override
@@ -906,42 +819,24 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
   }
 
   Future<void> _start() async {
-    // Thinking countdown
-    setState(() {
-      _isThinking = true;
-      _remaining = widget.thinkSeconds;
-    });
+    setState(() { _isThinking = true; _remaining = widget.thinkSeconds; });
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (_remaining > 0) {
         setState(() => _remaining--);
       } else {
         t.cancel();
-        setState(() {
-          _isThinking = false;
-          _isRecording = true;
-          _remaining = widget.maxRecordSeconds;
-        });
+        setState(() { _isThinking = false; _isRecording = true; _remaining = widget.maxRecordSeconds; });
         await _startRecording();
       }
     });
   }
 
   Future<void> _startRecording() async {
-    if (!await _recorder.hasPermission()) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Sin permiso de micrófono')));
-      setState(() {
-        _isRecording = false;
-      });
-      return;
-    }
+    if (!await _recorder.hasPermission()) return;
     final dir = await getTemporaryDirectory();
     final filePath = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
-      path: filePath,
-    );
+    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000), path: filePath);
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (_remaining > 0) {
@@ -957,73 +852,81 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
     final path = await _recorder.stop();
     setState(() => _isRecording = false);
     if (path == null) return;
-    // Upload to Supabase Storage
+
+    // Subir a Supabase
     try {
-      final userId = 'temp-user'; // reemplazar con user real si se necesita en este contexto
       final file = File(path);
       final name = 'rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
       final storage = SupabaseStorageService();
-      final res = await storage.uploadAudio(userId: userId, audioFile: file, fileName: name);
+      final res = await storage.uploadAudio(userId: 'temp', audioFile: file, fileName: name); // Ajusta userID real si puedes
       if (res['success'] == true) {
         setState(() => _uploadedUrl = res['url'] as String);
         widget.onUploaded(_uploadedUrl!);
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Grabación subida')));
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Error subiendo audio: ${res['error']}')));
-        }
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error subiendo audio: $e')));
-      }
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.readOnly) {
+      if (_uploadedUrl != null) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          child: const Row(children: [Icon(Icons.mic_rounded, color: Colors.green), SizedBox(width: 12), Text("Audio Recorded", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))]),
+        );
+      }
+      return const Text("No audio recorded", style: TextStyle(color: Colors.grey));
+    }
+
     if (_isThinking) {
-      return Row(
-        children: [
-          const Icon(Icons.psychology, color: Colors.indigo),
-          const SizedBox(width: 8),
-          Text('Piensa... ${_remaining}s'),
-        ],
-      );
-    }
-    if (_isRecording) {
-      return Row(
-        children: [
-          const Icon(Icons.mic, color: Colors.red),
-          const SizedBox(width: 8),
-          Text('Grabando... ${_remaining}s'),
-          const SizedBox(width: 12),
-          TextButton(
-            onPressed: _stopRecording,
-            child: const Text('Detener'),
-          )
-        ],
-      );
-    }
-    return Row(
-      children: [
-        ElevatedButton.icon(
-          onPressed: (_uploadedUrl == null) ? _start : null,
-          icon: const Icon(Icons.mic),
-          label: const Text('Grabar'),
+      return Center(
+        child: Column(
+          children: [
+            const Text("Prepare your answer...", style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 8),
+            Text("$_remaining s", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: widget.activeColor)),
+          ],
         ),
-        const SizedBox(width: 12),
-        if (_uploadedUrl != null) ...[
-          const Icon(Icons.check_circle, color: Colors.green),
-          const SizedBox(width: 6),
-          const Text('Audio guardado')
-        ],
-      ],
+      );
+    }
+
+    if (_isRecording) {
+      return Center(
+        child: Column(
+          children: [
+            const Icon(Icons.mic_rounded, color: Color(0xFFD9232A), size: 32),
+            const SizedBox(height: 8),
+            Text("Recording... $_remaining s", style: const TextStyle(color: Color(0xFFD9232A), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: _stopRecording, child: const Text("Stop Recording"))
+          ],
+        ),
+      );
+    }
+
+    if (_uploadedUrl != null) {
+      return Center(
+        child: Column(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF1A3075), size: 48),
+            const SizedBox(height: 8),
+            const Text("Audio Saved", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A3075))),
+            TextButton(onPressed: () => setState(() => _uploadedUrl = null), child: const Text("Record Again"))
+          ],
+        ),
+      );
+    }
+
+    return Center(
+      child: GestureDetector(
+        onTap: _start,
+        child: Container(
+          width: 80, height: 80,
+          decoration: BoxDecoration(color: widget.activeColor.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(Icons.mic_rounded, color: widget.activeColor, size: 32),
+        ),
+      ),
     );
   }
 }

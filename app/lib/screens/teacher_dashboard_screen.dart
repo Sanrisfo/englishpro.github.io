@@ -124,6 +124,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       // SIN APPBAR
       body: SafeArea(

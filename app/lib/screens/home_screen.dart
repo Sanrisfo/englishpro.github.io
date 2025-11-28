@@ -39,9 +39,11 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.white,
       body:
 
-      //Todo esto era el appbar (encabezado) Ahora tiene Hello, nombre, icono
+      //Too esto era el appbar (encabezado) Ahora tiene Hello, nombre, icono
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -134,7 +136,7 @@ class HomeScreen extends StatelessWidget {
                 const Text(
                   'Your fluency starts here.',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 24,
                     color: Colors.grey,
                   ),
                 ),

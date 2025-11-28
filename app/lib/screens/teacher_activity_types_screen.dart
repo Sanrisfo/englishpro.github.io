@@ -95,68 +95,91 @@ class _TeacherActivityTypesScreenState
 
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Create activity type',
-          style: GoogleFonts.ptSans(
-            color: _mainBlue,
-            fontSize: 20,
+      barrierColor: Colors.white38, // evita oscurecer el fondo de la pantalla
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent, // fondo transparente del dialogo
+        insetPadding: const EdgeInsets.all(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white, //fondo del recuadro
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!, width: 1.5),
           ),
-          textAlign: TextAlign.center,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Create activity type',
+                style: GoogleFonts.ptSans(
+                  color: _mainBlue,
+                  fontSize: 20,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
                 controller: nameCtrl,
-                decoration: _dialogTextFieldDecoration('Name')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: descCtrl,
-              decoration: _dialogTextFieldDecoration('Description'),
-              maxLines: 3,
-            ),
-          ],
+                decoration: _dialogTextFieldDecoration('Name'),
+              ),
+              const SizedBox(height: 8),
+
+              TextField(
+                controller: descCtrl,
+                decoration: _dialogTextFieldDecoration('Description'),
+                maxLines: 3,
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: _textButtonStyle,
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: _softButtonStyle,
+                    onPressed: () async {
+                      final nombre = nameCtrl.text.trim();
+                      if (nombre.isEmpty) return;
+
+                      final r = await ApiService.createActivityType(
+                        skillId: widget.skillId,
+                        nombre: nombre,
+                        descripcion: descCtrl.text.trim(),
+                        orden: orden,
+                      );
+
+                      if (!mounted) return;
+
+                      Navigator.pop(context);
+                      if (r['success'] == true) {
+                        await _load();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Type created')),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              r['message'] ?? 'Error creating type',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Create'),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            style: _textButtonStyle,
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: _softButtonStyle,
-            onPressed: () async {
-              final nombre = nameCtrl.text.trim();
-              if (nombre.isEmpty) return;
-
-              final r = await ApiService.createActivityType(
-                skillId: widget.skillId,
-                nombre: nombre,
-                descripcion: descCtrl.text.trim(),
-                orden: orden,
-              );
-
-              if (!mounted) return;
-
-              Navigator.pop(context);
-              if (r['success'] == true) {
-                await _load();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Type created')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(
-                          r['message'] ?? 'Error creating type')),
-                );
-              }
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
@@ -301,7 +324,7 @@ class _TeacherActivityTypesScreenState
           FloatingActionButton.extended(
             onPressed: _loading ? null : _createTypeDialog,
             icon: const Icon(Icons.add),
-            label: const Text('New Type'),
+            label: const Text('New type'),
             heroTag: null,
             backgroundColor: _mainBlue.withOpacity(0.1),
             foregroundColor: _mainBlue,
@@ -352,6 +375,7 @@ class _TeacherActivityTypesScreenState
                         style: GoogleFonts.ptSans(
                           color: Colors.white,
                           fontSize: 20,
+
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -465,6 +489,7 @@ class _TeacherActivityTypesScreenState
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
+
                         ),
                       ),
                     ),
