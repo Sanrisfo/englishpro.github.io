@@ -56,7 +56,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       } else {
         query = query.eq('id_habilidad', widget.skillId);
       }
-      final response = await query.eq('activo', true).order('id_cuestionario');
+      final response = await query.eq('activo', true).order('id_cuestionario', ascending: true);
       setState(() => _quizzes = List<Map<String, dynamic>>.from(response as List));
 
     } catch (e) {

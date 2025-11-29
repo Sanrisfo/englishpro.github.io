@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -92,7 +92,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _teacherStats = await SupabaseTeacherService.getTeacherStats(teacherId);
         _pendingFeedbacks = await SupabaseTeacherService.getPendingFeedbacks();
       } else {
-        _errorMessage = 'No se encontró información de docente para este usuario. '
+        _errorMessage = 'No se encontrÃ³ informaciÃ³n de docente para este usuario. '
             'Por favor contacte al administrador para que lo registre como docente.';
       }
     } catch (e) {
@@ -154,7 +154,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 const SizedBox(height: 32),
 
                 // Tareas pendientes
-                _buildPendingFeedbacksSection(textTheme),
+                // // _buildPendingFeedbacksSection(textTheme), // oculto: ver en Manual Review
 
                 // Modulos
                 _buildModulesSection(context, textTheme),
@@ -335,7 +335,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
         ),
 
-        // Pestaña
+        // PestaÃ±a
         const SizedBox(height: 16),
         _skillTile(
           title: 'My materials',
@@ -417,13 +417,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Widget _buildStatsSection(TextTheme textTheme) {
     if (_teacherStats == null) return const SizedBox.shrink();
 
-    // Obtenemos los valores de las estadísticas
+    // Obtenemos los valores de las estadÃ­sticas
     final int total = _teacherStats!['total_calificaciones'] ?? 0;
     final int calificadas = _teacherStats!['calificadas'] ?? 0;
     final int pendientes = _teacherStats!['pendientes'] ?? 0;
     final double promedio = (_teacherStats!['promedio_puntuacion'] ?? 0.0).toDouble();
 
-    // Calculamos los porcentajes (manejando división por cero)
+    // Calculamos los porcentajes (manejando divisiÃ³n por cero)
     final double calificadasPct = (total == 0) ? 0.0 : calificadas / total;
     final double pendientesPct = (total == 0) ? 0.0 : pendientes / total;
     // Asumimos que el promedio es sobre 10.0
@@ -499,15 +499,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     // Usamos TweenAnimationBuilder para animar la barra
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: percentage.isNaN ? 0.0 : percentage),
-      duration: const Duration(milliseconds: 1000), // 1 segundo de animación
-      curve: Curves.easeOutCubic, // Curva de animación suave
+      duration: const Duration(milliseconds: 1000), // 1 segundo de animaciÃ³n
+      curve: Curves.easeOutCubic, // Curva de animaciÃ³n suave
       builder: (context, animatedPercentage, child) {
         return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Fila para el Título y el Valor
+              // Fila para el TÃ­tulo y el Valor
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -533,7 +533,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       ),
                     ],
                   ),
-                  // Valor (número)
+                  // Valor (nÃºmero)
                   Text(
                     value,
                     style: textTheme.titleMedium?.copyWith(
@@ -659,7 +659,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Revisión $tipoRespuesta (Pregunta #$preguntaId)',
+                    'RevisiÃ³n $tipoRespuesta (Pregunta #$preguntaId)',
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,

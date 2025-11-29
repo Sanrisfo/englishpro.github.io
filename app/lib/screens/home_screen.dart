@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'courses/toefl_screen.dart';
@@ -7,7 +7,9 @@ import 'courses/business_english_screen.dart';
 import 'courses/english_in_action_screen.dart';
 import 'courses_list_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../config/supabase_config.dart';
+import '../providers/auth_provider.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -58,24 +60,7 @@ class HomeScreen extends StatelessWidget {
                 // Saludo y nombre del usuario
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      "¡Welcome!",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "Matthew", // <-- luego se puede hacer dinámico
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF23408E),
-                      ),
-                    ),
-                  ],
+                  children: [const Text("Welcome!", style: TextStyle(fontSize: 16, color: Colors.grey)), const SizedBox(height: 4), Text(context.watch<AuthProvider>().user?.nombreCompleto ?? "Student", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF23408E)))],
                 ),
 
                 // Logito con el avatar
@@ -101,7 +86,7 @@ class HomeScreen extends StatelessWidget {
                         children: const [
                           Icon(Icons.logout, color: Color(0xFFD9232A)),
                           SizedBox(width: 8),
-                          Text("Sign Out", style: TextStyle(color: Color(0xFFD9232A))),
+                          Text('Sign Out', style: TextStyle(color: Color(0xFFD9232A))),
                         ],
                       ),
                     ),

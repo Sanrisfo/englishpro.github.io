@@ -792,11 +792,28 @@ class ApiService {
     int? quizId,
   }) async {
     try {
+      // Para planes Pro/Premium (>=3), encolamos a revisión manual
+      bool requiresReview = false;
+      try {
+        final u = await supabase
+            .from('usuarios')
+            .select('id_plan')
+            .eq('id_usuario', userId)
+            .single();
+        final planId = (u['id_plan'] as num?)?.toInt() ?? 1;
+        if (planId >= 3) requiresReview = true;
+      } catch (_) {}
+
+      final extra = <String, dynamic>{
+        'texto_ensayo': text,
+        if (requiresReview) 'requiere_revision': true,
+      };
+
       final rid = await _createRespuestaBase(
         userId: userId,
         preguntaId: preguntaId,
         quizId: quizId,
-        extra: {'texto_ensayo': text},
+        extra: extra,
       );
       return {'success': true, 'id_respuesta': rid};
     } catch (e) {
@@ -812,11 +829,28 @@ class ApiService {
     int? quizId,
   }) async {
     try {
+      // Determinar si requiere revisión manual según plan
+      bool requiresReview = false;
+      try {
+        final u = await supabase
+            .from('usuarios')
+            .select('id_plan')
+            .eq('id_usuario', userId)
+            .single();
+        final planId = (u['id_plan'] as num?)?.toInt() ?? 1;
+        if (planId >= 3) requiresReview = true;
+      } catch (_) {}
+
+      final extra = <String, dynamic>{
+        'url_grabacion': audioUrl,
+        if (requiresReview) 'requiere_revision': true,
+      };
+
       final rid = await _createRespuestaBase(
         userId: userId,
         preguntaId: preguntaId,
         quizId: quizId,
-        extra: {'url_grabacion': audioUrl},
+        extra: extra,
       );
       return {'success': true, 'id_respuesta': rid};
     } catch (e) {

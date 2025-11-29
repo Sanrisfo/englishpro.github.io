@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+﻿ort 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener esto importado
 import '../config/supabase_config.dart';
 import 'package:provider/provider.dart';

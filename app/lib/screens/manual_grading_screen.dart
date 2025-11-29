@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../config/supabase_config.dart';
 
 class ManualGradingScreen extends StatefulWidget {
   final Map<String, dynamic> feedback;
@@ -78,7 +79,7 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // Get teacher data
+      // Obtener datos del docente
       final teacherResponse = await ApiService.getTeacherByUserId(userId);
       if (teacherResponse['success'] != true || teacherResponse['teacher'] == null) {
         throw Exception('No se encontró información de docente');
@@ -87,7 +88,7 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
       final teacherData = teacherResponse['teacher'] as Map<String, dynamic>;
       final teacherId = teacherData['id_docente'] as int;
 
-      // Submit grade
+      // Enviar calificación
       final feedbackId = widget.feedback['id_feedback'] as int;
       final puntuacion = double.parse(_puntuacionController.text);
       final comentarios = _comentariosController.text.trim();
@@ -133,36 +134,44 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tipoRespuesta = widget.feedback['tipo_respuesta'] as String?;
-    final respuestaTexto = widget.feedback['respuesta_texto'] as String?;
-    final respuestaAudioUrl = widget.feedback['respuesta_audio_url'] as String?;
+    // Derivar tipo y contenido
+    final Map<String, dynamic>? q = (widget.feedback['preguntas'] as Map?)?.cast<String, dynamic>();
+    final tipoPreguntaDb = (q?['tipo_pregunta'] as String?)?.toLowerCase();
+
+    final String? tipoRespuesta = widget.feedback['tipo_respuesta'] as String? ?? (
+        tipoPreguntaDb == 'write_text' ? 'Writing' : tipoPreguntaDb == 'record_audio' ? 'Speaking' : null
+    );
+
+    final String? respuestaTexto = (widget.feedback['respuesta_texto'] as String?) ?? (widget.feedback['texto_ensayo'] as String?);
+    final String? respuestaAudioUrl = (widget.feedback['respuesta_audio_url'] as String?) ?? (widget.feedback['url_grabacion'] as String?);
     final preguntaId = widget.feedback['id_pregunta'] as int?;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calificar Respuesta'),
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoCard(tipoRespuesta, preguntaId),
-                    const SizedBox(height: 20),
-                    _buildResponseSection(tipoRespuesta, respuestaTexto, respuestaAudioUrl),
-                    const SizedBox(height: 20),
-                    _buildGradingForm(),
-                    const SizedBox(height: 24),
-                    _buildSubmitButton(),
-                  ],
-                ),
-              ),
-            ),
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInfoCard(tipoRespuesta, preguntaId),
+              const SizedBox(height: 20),
+              _buildResponseSection(tipoRespuesta, respuestaTexto, respuestaAudioUrl),
+              const SizedBox(height: 20),
+              _buildStudentInfo(), // Aquí está la función corregida
+              const SizedBox(height: 24),
+              _buildReviewedButton(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -194,7 +203,7 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pregunta #$preguntaId',
+                    'Pregunta #${preguntaId ?? "?"}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -289,64 +298,45 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
     );
   }
 
-  Widget _buildGradingForm() {
+  // --- FUNCIÓN CORREGIDA ---
+  Widget _buildStudentInfo() {
+    final u = (widget.feedback['usuarios'] as Map?)?.cast<String, dynamic>();
+    final nombre = (u?['nombre_completo'] as String?) ?? 'Estudiante';
+    final email = (u?['email'] as String?) ?? '';
+    final bc = widget.feedback['path_breadcrumb'] as String?;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            const Text(
-              'Calificación',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _puntuacionController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Puntuación (0-100)',
-                hintText: 'Ingrese la puntuación',
-                prefixIcon: const Icon(Icons.grade),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Por favor ingrese una puntuación';
-                }
-                final puntuacion = double.tryParse(value);
-                if (puntuacion == null) {
-                  return 'Ingrese un número válido';
-                }
-                if (puntuacion < 0 || puntuacion > 100) {
-                  return 'La puntuación debe estar entre 0 y 100';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _comentariosController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                labelText: 'Comentarios (opcional)',
-                hintText: 'Ingrese sus comentarios y retroalimentación',
-                prefixIcon: const Icon(Icons.comment),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                alignLabelWithHint: true,
+            const Icon(Icons.person, color: Color(0xFF23408E)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8.0,
+                    children: [
+                      if (email.isNotEmpty)
+                        Text(email, style: TextStyle(color: Colors.grey[700])),
+                      _buildPlanChip(u), // Chip del plan
+                    ],
+                  ),
+                  if (bc != null && bc.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      bc,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -355,33 +345,74 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _submitGrade,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : const Text(
-                'Guardar Calificación',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+  // --- NUEVA FUNCIÓN PARA EL CHIP DEL PLAN ---
+  Widget _buildPlanChip(Map<String, dynamic>? user) {
+    // Lógica simple para mostrar el plan. Ajusta los IDs según tu DB.
+    final planId = user?['id_plan'];
+    String label = 'Plan';
+    Color color = Colors.grey;
+
+    if (planId == 1) { label = 'Freemium'; color = Colors.grey; }
+    else if (planId == 2) { label = 'Básico'; color = Colors.blue; }
+    else if (planId == 3) { label = 'Pro'; color = Colors.orange; }
+    else if (planId == 4) { label = 'Premium'; color = Colors.purple; }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
       ),
     );
   }
+
+  Widget _buildReviewedButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _markReviewed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF23408E),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+        )
+            : const Text('Marcar como revisado'),
+      ),
+    );
+  }
+
+  Future<void> _markReviewed() async {
+    setState(() => _isLoading = true);
+    try {
+      final responseId = (widget.feedback['id_respuesta'] as num?)?.toInt();
+      if (responseId == null) throw Exception('ID de respuesta no disponible');
+
+      await supabase
+          .from('respuestas_usuario')
+          .update({'requiere_revision': false})
+          .eq('id_respuesta', responseId);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marcado como revisado')));
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ' + e.toString())));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
 }

@@ -1,4 +1,4 @@
-import '../config/supabase_config.dart';
+﻿import '../config/supabase_config.dart';
 
 /// Supabase Teacher Service
 /// Handles all teacher-related database queries
@@ -8,7 +8,7 @@ class SupabaseTeacherService {
   /// Returns teacher data or null if user is not a teacher
   static Future<Map<String, dynamic>?> getTeacherByUserId(int userId) async {
     try {
-      print('🔍 DEBUG: Buscando docente con id_usuario = $userId');
+      print('ðŸ” DEBUG: Buscando docente con id_usuario = $userId');
 
       // First, let's verify the user exists
       final userCheck = await supabase
@@ -17,7 +17,7 @@ class SupabaseTeacherService {
           .eq('id_usuario', userId)
           .maybeSingle();
 
-      print('🔍 DEBUG: Usuario encontrado: $userCheck');
+      print('ðŸ” DEBUG: Usuario encontrado: $userCheck');
 
       // Now check for teacher record
       final response = await supabase
@@ -26,11 +26,11 @@ class SupabaseTeacherService {
           .eq('id_usuario', userId)
           .maybeSingle();
 
-      print('🔍 DEBUG: Docente encontrado: $response');
+      print('ðŸ” DEBUG: Docente encontrado: $response');
 
       return response;
     } catch (e) {
-      print('❌ ERROR getting teacher by user ID: $e');
+      print('âŒ ERROR getting teacher by user ID: $e');
       return null;
     }
   }
@@ -108,8 +108,8 @@ class SupabaseTeacherService {
           .from('respuestas_usuario')
           .select('''
             *,
-            preguntas:id_pregunta(texto_pregunta, tipo_pregunta),
-            usuarios:id_usuario(nombre_completo, email)
+            preguntas:id_pregunta(id_habilidad, texto_pregunta, tipo_pregunta),
+            usuarios:id_usuario(nombre_completo, email, id_plan)
           ''')
           .eq('requiere_revision', true)
           .order('fecha_respuesta', ascending: true);
@@ -137,6 +137,110 @@ class SupabaseTeacherService {
       final filtered = list
           .where((row) => !feedbackIds.contains(row['id_respuesta']))
           .toList();
+
+      // Enriquecer con breadcrumb: Curso > Skill > Tipo de Actividad > Actividad
+      try {
+        // 1) Juntar IDs necesarios
+        final skillIds = <int>{};
+        final quizIds = <int>{};
+        for (final row in filtered) {
+          final pq = (row['preguntas'] as Map?)?.cast<String, dynamic>();
+          final sid = (pq?['id_habilidad'] as num?)?.toInt();
+          if (sid != null) skillIds.add(sid);
+          final qid = (row['id_cuestionario'] as num?)?.toInt();
+          if (qid != null) quizIds.add(qid);
+        }
+
+        // 2) Cargar habilidades -> {id: {nombre, curso_id}}
+        final skillsById = <int, Map<String, dynamic>>{};
+        if (skillIds.isNotEmpty) {
+          final rs = await supabase
+              .from('habilidades')
+              .select('id, nombre, curso_id')
+              .inFilter('id', skillIds.toList());
+          for (final s in (rs as List)) {
+            final id = (s['id'] as num).toInt();
+            skillsById[id] = {
+              'nombre': s['nombre'],
+              'curso_id': (s['curso_id'] as num?)?.toInt(),
+            };
+          }
+        }
+
+        // 3) Cargar cursos -> {id: nombre}
+        final courseIds = <int>{};
+        for (final v in skillsById.values) {
+          final cid = v['curso_id'] as int?;
+          if (cid != null) courseIds.add(cid);
+        }
+        final coursesById = <int, String>{};
+        if (courseIds.isNotEmpty) {
+          final rc = await supabase
+              .from('cursos')
+              .select('id, nombre')
+              .inFilter('id', courseIds.toList());
+          for (final c in (rc as List)) {
+            coursesById[(c['id'] as num).toInt()] = c['nombre'] as String;
+          }
+        }
+
+        // 4) Cargar cuestionarios -> {id: {titulo, id_tipo_actividad}}
+        final quizzesById = <int, Map<String, dynamic>>{};
+        if (quizIds.isNotEmpty) {
+          final rq = await supabase
+              .from('cuestionarios')
+              .select('id_cuestionario, titulo, id_tipo_actividad')
+              .inFilter('id_cuestionario', quizIds.toList());
+          for (final q in (rq as List)) {
+            final id = (q['id_cuestionario'] as num).toInt();
+            quizzesById[id] = {
+              'titulo': q['titulo'],
+              'id_tipo_actividad': (q['id_tipo_actividad'] as num?)?.toInt(),
+            };
+          }
+        }
+
+        // 5) Cargar tipos de actividad -> {id: nombre}
+        final typeIds = <int>{};
+        for (final v in quizzesById.values) {
+          final tid = v['id_tipo_actividad'] as int?;
+          if (tid != null) typeIds.add(tid);
+        }
+        final typesById = <int, String>{};
+        if (typeIds.isNotEmpty) {
+          final rt = await supabase
+              .from('tipos_actividad')
+              .select('id, nombre')
+              .inFilter('id', typeIds.toList());
+          for (final t in (rt as List)) {
+            typesById[(t['id'] as num).toInt()] = t['nombre'] as String;
+          }
+        }
+
+        // 6) Armar breadcrumb por fila y adjuntar
+        for (final row in filtered) {
+          final pq = (row['preguntas'] as Map?)?.cast<String, dynamic>();
+          final sid = (pq?['id_habilidad'] as num?)?.toInt();
+          final s = sid != null ? skillsById[sid] : null;
+          final courseName = s != null && s['curso_id'] != null
+              ? (coursesById[s['curso_id'] as int] ?? '')
+              : '';
+          final skillName = (s != null ? (s['nombre'] as String? ?? '') : '');
+          final qid = (row['id_cuestionario'] as num?)?.toInt();
+          final qz = (qid != null) ? quizzesById[qid] : null;
+          final typeName = (qz != null && qz['id_tipo_actividad'] != null)
+              ? (typesById[qz['id_tipo_actividad'] as int] ?? '')
+              : '';
+          final activityTitle = (qz != null ? (qz['titulo'] as String? ?? '') : '');
+
+          final parts = <String>[];
+          if (courseName.isNotEmpty) parts.add(courseName);
+          if (skillName.isNotEmpty) parts.add(skillName);
+          if (typeName.isNotEmpty) parts.add(typeName);
+          if (activityTitle.isNotEmpty) parts.add(activityTitle);
+          row['path_breadcrumb'] = parts.join(' > ');
+        }
+      } catch (_) {}
 
       return filtered;
     } catch (e) {
@@ -220,7 +324,7 @@ class SupabaseTeacherService {
           .select('''
             *,
             preguntas:id_pregunta(*),
-            usuarios:id_usuario(nombre_completo, email)
+            usuarios:id_usuario(nombre_completo, email, id_plan)
           ''')
           .eq('id_respuesta', responseId)
           .single();

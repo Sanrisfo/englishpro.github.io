@@ -761,8 +761,10 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   }
 
   Widget _buildRecordAudio(QuestionModel q) {
-    final think = q.thinkTimeSeconds ?? 10;
-    final max = q.maxRecordSeconds ?? 45;
+    // Se eliminan los tiempos de preparación y límite de grabación
+    // Ignoramos valores provenientes de DB para deshabilitar tiempos
+    final think = 0;
+    final max = 0;
     final url = _audioUrlByQuestion[q.id];
     return _RecordAudioWidget(
       thinkSeconds: think,
@@ -819,6 +821,18 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
   }
 
   Future<void> _start() async {
+    // Si no hay tiempo de preparación, comenzar a grabar de inmediato
+    if (widget.thinkSeconds <= 0) {
+      setState(() {
+        _isThinking = false;
+        _isRecording = true;
+        _remaining = widget.maxRecordSeconds;
+      });
+      await _startRecording();
+      return;
+    }
+
+    // Mantener cuenta regresiva de preparación solo si es > 0
     setState(() { _isThinking = true; _remaining = widget.thinkSeconds; });
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
@@ -838,14 +852,18 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
     final filePath = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
     await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000), path: filePath);
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
-      if (_remaining > 0) {
-        setState(() => _remaining--);
-      } else {
-        await _stopRecording();
-        t.cancel();
-      }
-    });
+
+    // Si hay límite de grabación (>0), iniciar countdown; si no, grabación sin límite hasta detener manualmente
+    if (widget.maxRecordSeconds > 0) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
+        if (_remaining > 0) {
+          setState(() => _remaining--);
+        } else {
+          await _stopRecording();
+          t.cancel();
+        }
+      });
+    }
   }
 
   Future<void> _stopRecording() async {
@@ -897,7 +915,11 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
           children: [
             const Icon(Icons.mic_rounded, color: Color(0xFFD9232A), size: 32),
             const SizedBox(height: 8),
-            Text("Recording... $_remaining s", style: const TextStyle(color: Color(0xFFD9232A), fontWeight: FontWeight.bold)),
+            // Si no hay límite, no mostramos cuenta regresiva
+            if (widget.maxRecordSeconds > 0)
+              Text("Recording... $_remaining s", style: const TextStyle(color: Color(0xFFD9232A), fontWeight: FontWeight.bold))
+            else
+              const Text("Recording...", style: TextStyle(color: Color(0xFFD9232A), fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             OutlinedButton(onPressed: _stopRecording, child: const Text("Stop Recording"))
           ],

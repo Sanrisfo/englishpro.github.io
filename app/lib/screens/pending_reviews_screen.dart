@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
 
@@ -42,7 +42,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // Boton flotante rojo (Estándar)
+      // Boton flotante rojo (EstÃ¡ndar)
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context).pop(),
         backgroundColor: const Color(0xFFD9232A),
@@ -86,7 +86,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
           onRefresh: _load,
           color: const Color(0xFFD9232A),
           child: _pending.isEmpty
-              ? _buildEmptyState(textTheme) // Nuevo estado vacío
+              ? _buildEmptyState(textTheme) // Nuevo estado vacÃ­o
               : ListView.builder(
             padding: const EdgeInsets.all(24.0), // Padding consistente
             itemCount: _pending.length,
@@ -100,7 +100,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     );
   }
 
-  // --- WIDGET: Estado Vacío Estilizado ---
+  // --- WIDGET: Estado VacÃ­o Estilizado ---
   Widget _buildEmptyState(TextTheme textTheme) {
     return ListView(
       children: [
@@ -142,17 +142,20 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     );
   }
 
-  // --- WIDGET: Tarjeta de Feedback Estilizada (Estándar Dashboard) ---
+  // --- WIDGET: Tarjeta de Feedback Estilizada (EstÃ¡ndar Dashboard) ---
   Widget _buildFeedbackCard(Map<String, dynamic> feedback, TextTheme textTheme) {
-    final tipoRespuesta = feedback['tipo_respuesta'] as String?;
+    final q = (feedback['preguntas'] as Map?)?.cast<String, dynamic>();
+final tipoDb = (q?['tipo_pregunta'] as String?)?.toLowerCase();
+final tipoRespuesta = (feedback['tipo_respuesta'] as String?) ?? (tipoDb == 'write_text' ? 'Writing' : tipoDb == 'record_audio' ? 'Speaking' : null);
     final preguntaId = feedback['id_pregunta'] as int?;
     final fechaRespuesta = feedback['fecha_respuesta'] as String?;
     final bool isWriting = tipoRespuesta == 'Writing';
 
-    // Colores estándar: Writing = Azul, Speaking = Rojo
+    // Colores estÃ¡ndar: Writing = Azul, Speaking = Rojo
     final color = isWriting ? const Color(0xFF23408E) : const Color(0xFFD9232A);
     final icon = isWriting ? Icons.edit : Icons.mic;
-    final subtitle = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
+    final breadcrumb = (feedback['path_breadcrumb'] as String?) ?? '';
+    final sent = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
 
     return InkWell(
       onTap: () => _navigateToGrading(feedback),
@@ -184,7 +187,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Revisión $tipoRespuesta (#$preguntaId)',
+                    'Revision $tipoRespuesta (#$preguntaId)',
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -192,13 +195,9 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
+                  if (breadcrumb.isNotEmpty) Text(breadcrumb, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  Text(sent, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+
                 ],
               ),
             ),
@@ -239,3 +238,6 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     ).then((_) => _load());
   }
 }
+
+
+

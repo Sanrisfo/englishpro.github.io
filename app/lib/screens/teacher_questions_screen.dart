@@ -231,7 +231,7 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                         TextField(controller: maxWordsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Max Words')),
                       ]
                       else if (type == 'record_audio') ...[
-                          const Text('The student will record audio (up to 45s).'),
+                          const Text('The student will record audio (no time limit).'),
                         ],
                 ],
               ),
