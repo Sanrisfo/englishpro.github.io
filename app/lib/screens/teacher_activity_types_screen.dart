@@ -99,7 +99,7 @@ class _TeacherActivityTypesScreenState
       barrierColor: Colors.white38, // evita oscurecer el fondo de la pantalla
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent, // fondo transparente del dialogo
-        insetPadding: const EdgeInsets.all(16),
+        insetPadding: const EdgeInsets.all(30),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white, //fondo del recuadro
@@ -115,6 +115,7 @@ class _TeacherActivityTypesScreenState
                 style: GoogleFonts.ptSans(
                   color: _mainBlue,
                   fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -186,75 +187,97 @@ class _TeacherActivityTypesScreenState
   }
 
   Future<void> _renameTypeDialog(Map<String, dynamic> t) async {
-    final nameCtrl =
-    TextEditingController(text: (t['nombre'] as String?) ?? '');
-    final descCtrl =
-    TextEditingController(text: (t['descripcion'] as String?) ?? '');
+    final nameCtrl = TextEditingController(text: (t['nombre'] as String?) ?? '');
+    final descCtrl = TextEditingController(text: (t['descripcion'] as String?) ?? '');
 
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Edit activity type',
-          style: GoogleFonts.ptSans(
-            color: _mainBlue,
-            fontSize: 20,
+      barrierColor: Colors.white38, // evita oscurecer el fondo de la pantalla
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent, // fondo transparente del dialogo
+        insetPadding: const EdgeInsets.all(30), // Margen exterior
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white, // fondo del recuadro
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!, width: 1.5),
           ),
-          textAlign: TextAlign.center,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // --- TÍTULO ---
+              Text(
+                'Edit activity type',
+                style: GoogleFonts.ptSans(
+                  color: _mainBlue, // Asegúrate de tener definida esta variable o usa el color directo
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+
+              // --- CAMPOS DE TEXTO ---
+              TextField(
                 controller: nameCtrl,
-                decoration: _dialogTextFieldDecoration('Name')),
-            const SizedBox(height: 8),
-            TextField(
-              controller: descCtrl,
-              decoration: _dialogTextFieldDecoration('Description'),
-              maxLines: 3,
-            ),
-          ],
+                decoration: _dialogTextFieldDecoration('Name'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: descCtrl,
+                decoration: _dialogTextFieldDecoration('Description'),
+                maxLines: 3,
+              ),
+
+              const SizedBox(height: 20),
+
+              // --- BOTONES DE ACCIÓN ---
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: _textButtonStyle,
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: _softButtonStyle,
+                    onPressed: () async {
+                      final nombre = nameCtrl.text.trim();
+                      // Lógica de ID original
+                      final id = (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
+
+                      final r = await ApiService.updateActivityType(
+                        id: id,
+                        nombre: nombre.isEmpty ? null : nombre,
+                        descripcion: descCtrl.text.trim(),
+                      );
+
+                      if (!mounted) return;
+
+                      Navigator.pop(context); // Cierra el diálogo
+                      if (r['success'] == true) {
+                        await _load();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Type updated')),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(r['message'] ?? 'Error updating type'),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            style: _textButtonStyle,
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: _softButtonStyle,
-            onPressed: () async {
-              final nombre = nameCtrl.text.trim();
-              final id =
-                  (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
-
-              final r = await ApiService.updateActivityType(
-                id: id,
-                nombre: nombre.isEmpty ? null : nombre,
-                descripcion: descCtrl.text.trim(),
-              );
-
-              if (!mounted) return;
-
-              Navigator.pop(context);
-              if (r['success'] == true) {
-                await _load();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Type updated')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(
-                          r['message'] ?? 'Error updating type')),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
@@ -530,55 +553,134 @@ class _TeacherActivityTypesScreenState
     final current = await ApiService.getAllowedQuestionTypes(activityTypeId);
     final selected = {...current};
 
+    final Color mainColor = const Color(0xFF23408E);
+
+    if (!mounted) return;
+
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Allowed Question Types\n$title', textAlign: TextAlign.center),
-        content: StatefulBuilder(builder: (context, setStateDialog) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: all
-                .map((t) => CheckboxListTile(
-                      value: selected.contains(t),
-                      onChanged: (v) => setStateDialog(() {
-                        if (v == true) {
-                          selected.add(t);
-                        } else {
-                          selected.remove(t);
-                        }
-                      }),
-                      title: Text(t.replaceAll('_', ' ')),
-                    ))
-                .toList(),
-          );
-        }),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      barrierColor: Colors.white38, // Evita oscurecer demasiado el fondo
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent, // Fondo transparente
+        insetPadding: const EdgeInsets.all(50),
+        child: Container(
+          // Decoración del recuadro (Bordes, Sombra, Fondo Blanco)
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final r = await ApiService.setAllowedQuestionTypes(
-                activityTypeId: activityTypeId,
-                allowed: selected.toList(),
+          padding: const EdgeInsets.fromLTRB(40,20,40,30),
+          child: StatefulBuilder(
+            // StatefulBuilder es necesario para redibujar los checkboxes dentro del Dialog
+            builder: (context, setStateDialog) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Título Estilizado
+                  Text.rich(
+                    TextSpan(
+                      text: 'Allowed question types\n', // Parte 1 (Título principal)
+                      style: GoogleFonts.ptSans(
+                        color: mainColor, // El azul principal (0xFF23408E)
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: title, // Parte 2 (La variable con estilo diferente)
+                          style: GoogleFonts.ptSans(
+                            color: Colors.grey[600], // Color diferente (ej. gris)
+                            fontSize: 16,            // Tamaño más pequeño
+                            fontWeight: FontWeight.normal, // Letra normal (no bold)
+                            height: 1.5,             // Un poco de espacio vertical
+                          ),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Lista de Checkboxes
+                  // Usamos Flexible por si la lista es muy larga en pantallas pequeñas
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: all.map((t) => CheckboxListTile(
+                          activeColor: mainColor,
+                          contentPadding: EdgeInsets.zero, // Más compacto
+                          value: selected.contains(t),
+                          title: Text(
+                            t.replaceAll('_', ' '),
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          onChanged: (v) => setStateDialog(() {
+                            if (v == true) {
+                              selected.add(t);
+                            } else {
+                              selected.remove(t);
+                            }
+                          }),
+                        )).toList(),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Botones de Acción
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: mainColor.withOpacity(0.1), // Fondo suave
+                          foregroundColor: mainColor, // Texto color principal
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        onPressed: () async {
+                          final r = await ApiService.setAllowedQuestionTypes(
+                            activityTypeId: activityTypeId,
+                            allowed: selected.toList(),
+                          );
+
+                          if (!mounted) return;
+                          Navigator.pop(context);
+
+                          if (r['success'] == true) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: const Text('Allowed types saved'), backgroundColor: mainColor),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(r['message'] ?? 'Error saving allowed types')),
+                            );
+                          }
+                        },
+                        child: const Text('Save'),
+                      ),
+                    ],
+                  ),
+                ],
               );
-              if (!mounted) return;
-              Navigator.pop(context);
-              if (r['success'] == true) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Allowed types saved')),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(r['message'] ?? 'Error saving allowed types')),
-                );
-              }
             },
-            child: const Text('Save'),
           ),
-        ],
+        ),
       ),
     );
   }

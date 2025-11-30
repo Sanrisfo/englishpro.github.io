@@ -90,44 +90,60 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. ENCABEZADO ESTÁNDAR
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
-                      decoration: BoxDecoration(
-                        color: _courseColor,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Text(
-                        widget.skillName,
-                        style: GoogleFonts.ptSans(
-                          color: Colors.white,
-                          fontSize: 20,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Image.asset(
+                      'assets/images/logo_completo.png',
+                      height: 40,
+                      fit: BoxFit.contain,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    breadcrumb,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
+                    decoration: BoxDecoration(
+                      color: _courseColor,
+                      borderRadius: BorderRadius.circular(10.0),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    child: Text(
+                      widget.skillName,
+                      style: GoogleFonts.ptSans(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
               ),
-            ),
 
-            // 2. LISTA ESTÁNDAR
+              const SizedBox(height: 16),
+
+              Text(
+                breadcrumb,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+
+
+      // 2. LISTA ESTÁNDAR
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _load,

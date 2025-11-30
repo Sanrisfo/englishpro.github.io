@@ -56,7 +56,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 .single();
             userId = data['id_usuario'] as int?;
 
-            // Optional: if not a teacher, show a more specific message
             final isTeacher = (data['es_docente'] as bool?) ?? false;
             if (userId == null) {
               setState(() {
@@ -73,9 +72,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               return;
             }
           }
-        } catch (_) {
-          // ignore and fall through to error handling below
-        }
+        } catch (_) {}
       }
       if (userId == null) {
         setState(() {
@@ -94,7 +91,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _teacherStats = await SupabaseTeacherService.getTeacherStats(teacherId);
         _pendingFeedbacks = await SupabaseTeacherService.getPendingFeedbacks();
       } else {
-        _errorMessage = 'No se encontrÃ³ informaciÃ³n de docente para este usuario. '
+        _errorMessage = 'No se encontró información de docente para este usuario. '
             'Por favor contacte al administrador para que lo registre como docente.';
       }
     } catch (e) {
@@ -128,7 +125,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      // SIN APPBAR
       body: SafeArea(
         child: _isLoading
             ? Center(
@@ -138,16 +134,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
         )
             : _errorMessage != null
-            ? _buildErrorView() // UI de Error
+            ? _buildErrorView()
             : RefreshIndicator(
           onRefresh: _loadTeacherData,
           color: const Color(0xFFD9232A),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(24.0),
-
-            // Esta parte imprime lo que se muestra segun el orden de aparicion
-
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -155,16 +148,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 _buildTeacherHeader(context, textTheme),
                 const SizedBox(height: 32),
 
-                // Tareas pendientes
-                // // _buildPendingFeedbacksSection(textTheme), // oculto: ver en Manual Review
-
                 // Modulos
                 _buildModulesSection(context, textTheme),
                 const SizedBox(height: 32),
 
-                // Acciones rapidas
-                _buildQuickActionsSection(context, textTheme),
-                const SizedBox(height: 32),
+                // --- SECCIÓN "MY MATERIALS" COMENTADA PARA V1 ---
+                /*
+                          // Acciones rapidas
+                          _buildQuickActionsSection(context, textTheme),
+                          const SizedBox(height: 32),
+                          */
+                // -----------------------------------------------
 
                 // Estadisticas
                 _buildStatsSection(textTheme),
@@ -210,15 +204,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 _logout();
               }
             },
-
-            //esto cambia el boton de sign out
             offset: const Offset(0, 60),
             color: Color(0xFFFBFBFB),
             elevation: 3,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
             ),
-
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'logout',
@@ -231,14 +222,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 ),
               ),
             ],
-
             child: const CircleAvatar(
               radius: 22,
-              child: const CircleAvatar(
-                radius: 22,
-                backgroundColor: Color(0xFFF9E8E8),
-                backgroundImage: AssetImage('assets/images/avatar_teacher.png'),
-              ),
+              backgroundColor: Color(0xFFF9E8E8),
+              backgroundImage: AssetImage('assets/images/avatar_teacher.png'),
             ),
           ),
         ],
@@ -268,7 +255,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               style: GoogleFonts.ptSans(
                 color: Colors.white,
                 fontSize: 20,
-                //fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -279,7 +265,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _skillTile(
           title: 'My courses',
           subtitle: 'Manage modules and materials',
-          icon: Icons.dashboard_customize,
+          icon: Icons.dashboard_customize_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherCoursesScreen()));
@@ -299,7 +285,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _skillTile(
           title: 'Student roster',
           subtitle: 'View student list and progress',
-          icon: Icons.group,
+          icon: Icons.group_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentRosterScreen()));
@@ -309,12 +295,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  // Acciones rapidas
+  // Acciones rapidas (Mantenemos la función por si se reactiva en V2, pero no se llama)
   Widget _buildQuickActionsSection(BuildContext context, TextTheme textTheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         //Barra
         Center(
           child: Container(
@@ -331,13 +316,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               style: GoogleFonts.ptSans(
                 color: Colors.white,
                 fontSize: 20,
-                //fontWeight: FontWeight.bold,
               ),
             ),
           ),
         ),
 
-        // PestaÃ±a
+        // Pestaña
         const SizedBox(height: 16),
         _skillTile(
           title: 'My materials',
@@ -352,83 +336,18 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  // Tareas pendientes
-  Widget _buildPendingFeedbacksSection(TextTheme textTheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (_pendingFeedbacks.isNotEmpty)
-              Chip(
-                label: Text('${_pendingFeedbacks.length}'),
-                backgroundColor: const Color(0xFFD9232A),
-                labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-          ],
-        ),
-        _pendingFeedbacks.isEmpty
-        // cuando esta vacia las tareas
-            ? Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              // Icono de completado
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.check_circle, color: Colors.indigo, size: 28),
-              ),
-              const SizedBox(width: 16),
-              // Texto
-              Expanded(
-                child: Text(
-                  'No pending submissions',
-                  style: textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )
-        // Estado con items
-            : ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _pendingFeedbacks.length,
-          itemBuilder: (context, index) {
-            final feedback = _pendingFeedbacks[index] as Map<String, dynamic>;
-            return _buildFeedbackCard(feedback, textTheme);
-          },
-        ),
-      ],
-    );
-  }
-
-// stats
+  // stats
   Widget _buildStatsSection(TextTheme textTheme) {
     if (_teacherStats == null) return const SizedBox.shrink();
 
-    // Obtenemos los valores de las estadÃ­sticas
+    // Obtenemos los valores de las estadísticas
     final int total = _teacherStats!['total_calificaciones'] ?? 0;
     final int calificadas = _teacherStats!['calificadas'] ?? 0;
     final int pendientes = _teacherStats!['pendientes'] ?? 0;
     final double promedio = (_teacherStats!['promedio_puntuacion'] ?? 0.0).toDouble();
 
-    // Calculamos los porcentajes (manejando divisiÃ³n por cero)
     final double calificadasPct = (total == 0) ? 0.0 : calificadas / total;
     final double pendientesPct = (total == 0) ? 0.0 : pendientes / total;
-    // Asumimos que el promedio es sobre 10.0
     final double promedioPct = (promedio == 0) ? 0.0 : promedio / 10.0;
 
     return Column(
@@ -474,8 +393,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         const SizedBox(height: 16),
         _buildStatProgressBar(
           label: 'Average',
-          value: promedio.toStringAsFixed(1), // Muestra "8.5"
-          percentage: promedioPct, // El % (ej. 8.5 / 10.0 = 0.85)
+          value: promedio.toStringAsFixed(1),
+          percentage: promedioPct,
           color: const Color(0xFFD9232A),
           textTheme: textTheme,
         ),
@@ -483,7 +402,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _buildStatProgressBar(
           label: 'Total',
           value: total.toString(),
-          percentage: 1.0, // El total es siempre 100%
+          percentage: 1.0,
           color: const Color(0xFF23408E),
           textTheme: textTheme,
         ),
@@ -498,24 +417,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     required Color color,
     required TextTheme textTheme,
   }) {
-    // Usamos TweenAnimationBuilder para animar la barra
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0, end: percentage.isNaN ? 0.0 : percentage),
-      duration: const Duration(milliseconds: 1000), // 1 segundo de animaciÃ³n
-      curve: Curves.easeOutCubic, // Curva de animaciÃ³n suave
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutCubic,
       builder: (context, animatedPercentage, child) {
         return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Fila para el TÃ­tulo y el Valor
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      // Punto de color
                       Container(
                         width: 20,
                         height: 10,
@@ -525,7 +441,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Label
                       Text(
                         label,
                         style: textTheme.titleMedium?.copyWith(
@@ -535,7 +450,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       ),
                     ],
                   ),
-                  // Valor (nÃºmero)
                   Text(
                     value,
                     style: textTheme.titleMedium?.copyWith(
@@ -546,15 +460,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-
-              // Barra de Progreso
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
-                  value: animatedPercentage, // El valor animado
-                  minHeight: 10, // Grosor de la barra
-                  backgroundColor: Colors.grey[200], // Color de fondo de la barra
-                  color: color, // Color de la barra (rojo o azul)
+                  value: animatedPercentage,
+                  minHeight: 10,
+                  backgroundColor: Colors.grey[200],
+                  color: color,
                 ),
               ),
             ],
@@ -609,68 +521,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeedbackCard(Map<String, dynamic> feedback, TextTheme textTheme) {
-    final tipoRespuesta = feedback['tipo_respuesta'] as String?;
-    final preguntaId = feedback['id_pregunta'] as int?;
-    final fechaRespuesta = feedback['fecha_respuesta'] as String?;
-    final bool isWriting = tipoRespuesta == 'Writing';
-
-    final color = isWriting ? const Color(0xFF23408E) : const Color(0xFFD9232A);
-    final icon = isWriting ? Icons.edit : Icons.mic;
-    final subtitle = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
-
-    return InkWell(
-      onTap: () => _navigateToGrading(feedback),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'RevisiÃ³n $tipoRespuesta (Pregunta #$preguntaId)',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
               ),

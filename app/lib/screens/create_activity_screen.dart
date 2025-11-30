@@ -35,7 +35,7 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   bool _addMaterial = false;
   final _materialTitleCtrl = TextEditingController();
   final _materialTextCtrl = TextEditingController();
-  String _materialType = 'pdf'; // pdf | text | image | audio
+  String _materialType = 'pdf';
   File? _selectedFile;
 
   bool _submitting = false;
@@ -43,14 +43,13 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   Color get _courseColor => _getCourseColor(widget.courseName);
 
   InputDecoration _fieldDeco(String label) => InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: const Color(0xFF23408E).withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-      );
+    labelText: label,
+    filled: true,
+    fillColor: _courseColor.withOpacity(0.05),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _courseColor, width: 2)),
+  );
 
   @override
   void dispose() {
@@ -172,101 +171,181 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final headerTitle = widget.activityTypeName ?? widget.skillName;
+    final headerTitle = widget.activityTypeName ?? 'New Activity';
     final breadcrumb = widget.activityTypeName != null
-        ? '... > ${widget.skillName} > ${widget.activityTypeName} > New Activity'
-        : '... > ${widget.courseName} > ${widget.skillName} > New Activity';
+        ? '... > ${widget.skillName} > ${widget.activityTypeName}'
+        : '... > ${widget.courseName} > ${widget.skillName}';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Activity'),
-        backgroundColor: _courseColor,
-        foregroundColor: Colors.white,
+      backgroundColor: Colors.white,
+
+      // 3. BOTÓN INFERIOR RECTANGULAR
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: ElevatedButton(
+            onPressed: _submitting ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _courseColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Rectangular con ligero borde
+              elevation: 0,
+            ),
+            child: _submitting
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Create activity', style: TextStyle(fontSize: 16), textAlign: TextAlign.center),
+          ),
+        ),
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 8.0),
-                  decoration: BoxDecoration(color: _courseColor, borderRadius: BorderRadius.circular(10.0)),
-                  child: Text(headerTitle, style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20)),
+              // 1. BOTÓN ATRÁS (X GRIS)
+              Padding(
+                padding: const EdgeInsets.only(left: 16, top: 16),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey, size: 28),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(breadcrumb, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-              const SizedBox(height: 16),
 
-              TextField(controller: _titleCtrl, decoration: _fieldDeco('Title')),
-              const SizedBox(height: 8),
-              TextField(controller: _descCtrl, decoration: _fieldDeco('Description'), maxLines: 3),
-              const SizedBox(height: 8),
-              TextField(controller: _timeCtrl, decoration: _fieldDeco('Time limit (minutes)'), keyboardType: TextInputType.number),
-              const SizedBox(height: 8),
-
-              DropdownButtonFormField<String>(
-                value: _tipo,
-                decoration: const InputDecoration(labelText: 'Type'),
-                items: const [
-                  DropdownMenuItem(value: 'Practica', child: Text('Practica')),
-                  DropdownMenuItem(value: 'Simulacro', child: Text('Simulacro')),
-                ],
-                onChanged: (v) => setState(() => _tipo = v ?? 'Practica'),
-              ),
-
-              const SizedBox(height: 16),
-              SwitchListTile(
-                value: _addMaterial,
-                onChanged: (v) => setState(() => _addMaterial = v),
-                title: const Text('Add Material'),
-              ),
-
-              if (_addMaterial) ...[
-                TextField(controller: _materialTitleCtrl, decoration: _fieldDeco('Material title (optional)')),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _materialType,
-                  decoration: const InputDecoration(labelText: 'Material type'),
-                  items: const [
-                    DropdownMenuItem(value: 'pdf', child: Text('PDF')),
-                    DropdownMenuItem(value: 'text', child: Text('Text')),
-                    DropdownMenuItem(value: 'image', child: Text('Image')),
-                    DropdownMenuItem(value: 'audio', child: Text('Audio')),
-                  ],
-                  onChanged: (v) => setState(() => _materialType = v ?? 'pdf'),
-                ),
-                const SizedBox(height: 8),
-                if (_materialType == 'text')
-                  TextField(controller: _materialTextCtrl, decoration: _fieldDeco('Text content'), maxLines: 6)
-                else
-                  Row(
-                    children: [
-                      Expanded(
+              // 2. ENCABEZADO
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: _courseColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
                         child: Text(
-                          _selectedFile?.path.split(Platform.pathSeparator).last ?? 'No file selected',
-                          overflow: TextOverflow.ellipsis,
+                          headerTitle,
+                          style: GoogleFonts.ptSans(
+                            color: _courseColor,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      IconButton(onPressed: _pickFile, icon: const Icon(Icons.attach_file)),
-                    ],
-                  ),
-              ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      breadcrumb,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
 
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: _submitting ? null : _submit,
-                    style: ElevatedButton.styleFrom(backgroundColor: _courseColor.withOpacity(0.1), foregroundColor: _courseColor),
-                    child: _submitting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Create'),
-                  ),
-                ],
-              )
+              const SizedBox(height: 32),
+
+              // 4. FORMULARIO
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    TextField(controller: _titleCtrl, decoration: _fieldDeco('Title')),
+                    const SizedBox(height: 16),
+                    TextField(controller: _descCtrl, decoration: _fieldDeco('Description'), maxLines: 3),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      children: [
+                        Expanded(child: TextField(controller: _timeCtrl, decoration: _fieldDeco('Time limit (min)'), keyboardType: TextInputType.number)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _tipo,
+                            decoration: _fieldDeco('Evaluation Type'),
+                            items: const [
+                              DropdownMenuItem(value: 'Practica', child: Text('Practice')),
+                              DropdownMenuItem(value: 'Simulacro', child: Text('Mock Test')),
+                              DropdownMenuItem(value: 'Examen', child: Text('Exam')),
+                            ],
+                            onChanged: (v) => setState(() => _tipo = v ?? 'Practica'),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+
+                    // MATERIAL
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: _courseColor,
+                      value: _addMaterial,
+                      onChanged: (v) => setState(() => _addMaterial = v),
+                      title: Text('Add Study Material', style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      subtitle: const Text('Attach PDF, Audio, Image or Text'),
+                    ),
+
+                    if (_addMaterial) ...[
+                      const SizedBox(height: 16),
+                      TextField(controller: _materialTitleCtrl, decoration: _fieldDeco('Material Title')),
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        value: _materialType,
+                        decoration: _fieldDeco('Material Type'),
+                        items: const [
+                          DropdownMenuItem(value: 'pdf', child: Text('PDF Document')),
+                          DropdownMenuItem(value: 'text', child: Text('Reading Text')),
+                          DropdownMenuItem(value: 'image', child: Text('Image')),
+                          DropdownMenuItem(value: 'audio', child: Text('Audio File')),
+                        ],
+                        onChanged: (v) => setState(() => _materialType = v ?? 'pdf'),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      if (_materialType == 'text')
+                        TextField(controller: _materialTextCtrl, decoration: _fieldDeco('Content'), maxLines: 6)
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.attach_file, color: _courseColor),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _selectedFile?.path.split(Platform.pathSeparator).last ?? 'No file selected',
+                                  style: TextStyle(color: _selectedFile != null ? Colors.black87 : Colors.grey),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _pickFile,
+                                style: TextButton.styleFrom(foregroundColor: _courseColor),
+                                child: const Text('Choose File'),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+
+                    const SizedBox(height: 40), // Espacio extra para que no se pegue abajo
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -276,15 +355,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
 
   Color _getCourseColor(String courseName) {
     String lower = courseName.toLowerCase();
-    if (lower.contains('toefl')) {
-      return const Color(0xFFD9232A);
-    } else if (lower.contains('ielts')) {
-      return const Color(0xFF23408E);
-    } else if (lower.contains('business')) {
-      return const Color(0xFFB02224);
-    } else {
-      return const Color(0xFF1F3A89);
-    }
+    if (lower.contains('toefl')) return const Color(0xFFD9232A);
+    if (lower.contains('ielts')) return const Color(0xFF23408E);
+    if (lower.contains('business')) return const Color(0xFFB02224);
+    return const Color(0xFF1F3A89);
   }
 }
-

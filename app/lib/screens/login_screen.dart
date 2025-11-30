@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email),
+                    prefixIcon: const Icon(Icons.email_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -147,12 +147,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock),
+                    prefixIcon: const Icon(Icons.lock_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                            ? Icons.visibility_rounded
+                            : Icons.visibility_off_rounded,
                       ),
                       onPressed: () {
                         setState(() => _obscurePassword = !_obscurePassword);

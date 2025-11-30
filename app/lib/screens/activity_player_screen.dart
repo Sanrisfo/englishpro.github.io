@@ -474,56 +474,134 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   }
 
   Widget _buildMaterialCard() {
-    final m = _material!;
+    final m = _material;
+    if (m == null) return const SizedBox.shrink();
+
     final type = m.tipoMaterial.toLowerCase();
-    IconData icon = Icons.description;
-    if (type == 'audio') icon = Icons.audiotrack;
-    if (type == 'image') icon = Icons.image;
+
+    // Configuración visual según tipo
+    IconData icon = Icons.description_rounded;
+    String typeLabel = 'Resource';
+
+    if (type.contains('audio')) {
+      icon = Icons.audiotrack_rounded;
+      typeLabel = 'Audio Clip';
+    } else if (type.contains('image') || type.contains('imagen')) {
+      icon = Icons.image_rounded;
+      typeLabel = 'Visual Reference';
+    } else if (type.contains('pdf')) {
+      icon = Icons.picture_as_pdf_rounded;
+      typeLabel = 'PDF Document';
+    } else if (type.contains('text') || type.contains('texto')) {
+      icon = Icons.text_snippet_rounded;
+      typeLabel = 'Reading Passage';
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: Colors.white, // Fondo blanco como en el feedback
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.grey[200]!, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- ENCABEZADO (Estilo Feedback Card) ---
           Row(
             children: [
-              Icon(icon, color: _courseColor, size: 20),
-              const SizedBox(width: 8),
-              Text('Study Material', style: TextStyle(color: _courseColor, fontWeight: FontWeight.bold)),
+              // Icono con fondo de color
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _courseColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: _courseColor, size: 28),
+              ),
+              const SizedBox(width: 16),
+
+              // Textos
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      m.titulo,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      typeLabel,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Acciones a la derecha (Play o Abrir PDF)
+              if (type.contains('audio') && (m.archivoUrl?.isNotEmpty ?? false))
+                IconButton(
+                  icon: Icon(Icons.play_circle_fill_rounded, color: _courseColor, size: 36),
+                  onPressed: () async {
+                    try {
+                      await _audioPlayer.stop();
+                      await _audioPlayer.play(UrlSource(m.archivoUrl!));
+                    } catch (_) {}
+                  },
+                )
+              else if (type.contains('pdf') && (m.archivoUrl?.isNotEmpty ?? false))
+                IconButton(
+                  icon: const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PDFViewerWidget(pdfUrl: m.archivoUrl!, title: m.titulo),
+                    ),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(m.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 8),
 
-          if (type == 'text' || type == 'texto')
-            Text(m.contenidoTexto ?? '', style: TextStyle(color: Colors.grey[800], height: 1.5))
-          else if ((type == 'image' || type == 'imagen') && (m.archivoUrl?.isNotEmpty ?? false))
-            ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(m.archivoUrl!))
-          else if (type == 'audio' && (m.archivoUrl?.isNotEmpty ?? false))
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Play Audio'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.play_circle_filled, size: 32),
-                  color: _courseColor,
-                  onPressed: () async {
-                    try { await _audioPlayer.stop(); await _audioPlayer.play(UrlSource(m.archivoUrl!)); } catch (_) {}
-                  },
-                ),
-              )
-            else if (type == 'pdf' && (m.archivoUrl?.isNotEmpty ?? false))
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0, side: BorderSide(color: Colors.grey[300]!)),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PDFViewerWidget(pdfUrl: m.archivoUrl!, title: m.titulo))),
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('View PDF'),
-                ),
+          // --- CONTENIDO EXPANDIDO (Para Texto e Imágenes) ---
+
+          if (type.contains('text') || type.contains('texto')) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              m.contenidoTexto ?? '',
+              style: TextStyle(color: Colors.grey[800], height: 1.5, fontSize: 15),
+            ),
+          ] else if ((type.contains('image') || type.contains('imagen')) && (m.archivoUrl?.isNotEmpty ?? false)) ...[
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                m.archivoUrl!,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: _courseColor,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -612,20 +690,61 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
               border: Border.all(color: _allSubmitted ? (isCorrect ? Color(0xFF1A3075) : Color(
                   0xFFD9232A)) : Colors.grey[200]!),
             ),
-            child: Row(
-              children: [
-                Expanded(child: Text(s.texto, style: const TextStyle(fontWeight: FontWeight.w500))),
-                const SizedBox(width: 12),
-                DropdownButton<int>(
-                  value: selectedVal,
-                  hint: Text('Select', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
-                  underline: const SizedBox(), // Quitar línea fea
-                  icon: Icon(Icons.arrow_drop_down, color: _courseColor),
-                  items: answers.map((a) => DropdownMenuItem(value: a.id, child: Text(a.texto, style: const TextStyle(fontSize: 14)))).toList(),
-                  onChanged: _allSubmitted ? null : (v) => setState(() => map[s.id] = v!),
-                ),
-              ],
-            ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      s.texto,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  SizedBox(
+                    width: 100,
+                    child: DropdownMenu<int>(
+                      initialSelection: selectedVal,
+
+                      hintText: 'Select',
+
+                      textStyle: const TextStyle(
+                        fontSize: 14, // texto cuando hay un valor seleccionado
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF1A3075),
+                      ),
+
+                      inputDecorationTheme: const InputDecorationTheme(
+                        hintStyle: TextStyle(
+                          fontSize: 14, // 🔥 tamaño del texto "Select"
+                          color: Colors.grey,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+
+                      menuStyle: MenuStyle(
+                        backgroundColor: MaterialStatePropertyAll(Colors.white),
+                        elevation: const MaterialStatePropertyAll(8),
+                        shadowColor: MaterialStatePropertyAll(Colors.black26),
+                        padding: MaterialStatePropertyAll(const EdgeInsets.symmetric(vertical: 6)),
+                        shape: MaterialStatePropertyAll(
+                          RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+
+                      trailingIcon: Icon(Icons.arrow_drop_down_rounded, color: _courseColor),
+
+                      dropdownMenuEntries: answers
+                          .map((a) => DropdownMenuEntry(value: a.id, label: a.texto,),).toList(),
+                      onSelected: _allSubmitted ? null : (v) {
+                        setState(() => map[s.id] = v!);
+                      },
+                    ),
+                  ),
+                ],
+              ),
           );
         }).toList(),
       );

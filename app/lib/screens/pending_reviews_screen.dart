@@ -154,9 +154,9 @@ final tipoRespuesta = (feedback['tipo_respuesta'] as String?) ?? (tipoDb == 'wri
 
     // Colores estÃ¡ndar: Writing = Azul, Speaking = Rojo
     final color = isWriting ? const Color(0xFF23408E) : const Color(0xFFD9232A);
-    final icon = isWriting ? Icons.edit : Icons.mic;
+    final icon = isWriting ? Icons.text_snippet_rounded : Icons.mic_rounded;
     final breadcrumb = (feedback['path_breadcrumb'] as String?) ?? '';
-    final sent = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
+    final sent = 'Sent: ${_formatDate(fechaRespuesta ?? '')}';
 
     return InkWell(
       onTap: () => _navigateToGrading(feedback),
