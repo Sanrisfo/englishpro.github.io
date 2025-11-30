@@ -1,3 +1,4 @@
+/// Modelo de tipo de actividad para una habilidad (tabla `tipos_actividad`).
 class ActivityTypeModel {
   final int id;
   final int habilidadId;
@@ -15,6 +16,7 @@ class ActivityTypeModel {
     this.activo = true,
   });
 
+  /// Construye el modelo a partir de un mapa JSON con claves variables.
   factory ActivityTypeModel.fromJson(Map<String, dynamic> json) {
     int toInt(dynamic v, {int d = 0}) {
       if (v == null) return d;
@@ -34,6 +36,7 @@ class ActivityTypeModel {
     );
   }
 
+  /// Serializa el modelo al formato estándar utilizado en la app/BD.
   Map<String, dynamic> toJson() => {
         'id': id,
         'id_habilidad': habilidadId,
@@ -43,4 +46,3 @@ class ActivityTypeModel {
         'activo': activo,
       };
 }
-

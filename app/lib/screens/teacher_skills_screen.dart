@@ -3,6 +3,7 @@ import '../config/supabase_config.dart';
 import 'teacher_activity_types_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Habilidades del curso para flujos de gestión docente.
 class TeacherSkillsScreen extends StatefulWidget {
   final int courseId;
   final String courseName;

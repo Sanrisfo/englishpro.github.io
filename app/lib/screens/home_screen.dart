@@ -11,10 +11,11 @@ import 'package:provider/provider.dart';
 import '../config/supabase_config.dart';
 import '../providers/auth_provider.dart';
 
-
+/// Pantalla principal del estudiante con acceso rápido a módulos y cursos.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  /// Cierra la sesión local y redirige al inicio de sesión.
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
@@ -44,34 +45,26 @@ class HomeScreen extends StatelessWidget {
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body:
-
-      //Too esto era el appbar (encabezado) Ahora tiene Hello, nombre, icono
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 50),
 
-          // Este es el nuevo encabezado
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Saludo y nombre del usuario
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [const Text("Welcome!", style: TextStyle(fontSize: 16, color: Colors.grey)), const SizedBox(height: 4), Text(context.watch<AuthProvider>().user?.nombreCompleto ?? "Student", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF23408E)))],
                 ),
-
-                // Logito con el avatar
                 PopupMenuButton(
                   onSelected: (value) {
                     if (value == 'logout') {
                       _logout(context);
                     }
                   },
-
-                  //esto cambia el boton de sign out
                   offset: const Offset(0, 60),
                   color: Color(0xFFFBFBFB),
                   elevation: 3,
@@ -105,8 +98,6 @@ class HomeScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 10),
-
-          // CONTENIDO PRINCIPAL
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -127,8 +118,6 @@ class HomeScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 40),
-
-                // Course Cards. Todo lo que son los cursos
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: GridView.count(
@@ -169,6 +158,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  /// Tarjeta de curso con imagen y navegación hacia la pantalla del curso.
   Widget _buildCourseCard(String title, String imagePath, Color color) {
     return Builder(
       builder: (context) {
@@ -212,6 +202,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  /// Enruta a la pantalla correspondiente según el nombre del curso.
   void _navigateToCourse(BuildContext context, String courseTitle) {
     Widget screen;
 

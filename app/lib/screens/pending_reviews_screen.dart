@@ -2,6 +2,7 @@
 import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
 
+/// Listado de envíos pendientes de revisión manual (docente).
 class PendingReviewsScreen extends StatefulWidget {
   const PendingReviewsScreen({Key? key}) : super(key: key);
 
@@ -238,6 +239,5 @@ final tipoRespuesta = (feedback['tipo_respuesta'] as String?) ?? (tipoDb == 'wri
     ).then((_) => _load());
   }
 }
-
 
 

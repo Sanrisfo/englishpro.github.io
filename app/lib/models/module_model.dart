@@ -1,3 +1,4 @@
+/// Módulo de contenido perteneciente a una habilidad.
 class ModuleModel {
   final int id;
   final int habilidadId;
@@ -17,6 +18,7 @@ class ModuleModel {
     required this.fechaCreacion,
   });
 
+  /// Construye el módulo a partir de JSON con claves alternativas.
   factory ModuleModel.fromJson(Map<String, dynamic> json) {
     int toInt(dynamic v, {int def = 0}) {
       if (v == null) return def;
@@ -49,4 +51,3 @@ class ModuleModel {
     );
   }
 }
-

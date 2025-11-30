@@ -4,6 +4,7 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
+/// Visor de PDFs que admite archivo remoto o local.
 class PDFViewerWidget extends StatefulWidget {
   final String pdfUrl;
   final String title;
@@ -174,6 +175,7 @@ class _PDFViewerWidgetState extends State<PDFViewerWidget> {
 }
 
 /// Widget simple para mostrar un botón que abre el PDF en pantalla completa
+/// Botón que abre el visor de PDF en pantalla completa.
 class PDFViewerButton extends StatelessWidget {
   final String pdfUrl;
   final String title;

@@ -10,7 +10,7 @@ import '../config/supabase_config.dart';
 class SupabaseStorageService {
   final _supabase = supabase;
 
-  // ==================== UPLOAD FILES ====================
+  
 
   /// Upload audio file for Speaking exercises
   /// Path: audios/recordings/{userId}/{fileName}
@@ -195,7 +195,7 @@ class SupabaseStorageService {
     }
   }
 
-  // ==================== DOWNLOAD URLs ====================
+  
 
   /// Get download URL for a file
   /// Note: For Supabase public buckets, files are already accessible via getPublicUrl
@@ -218,7 +218,7 @@ class SupabaseStorageService {
     }
   }
 
-  // ==================== DELETE FILES ====================
+  
 
   /// Delete a file from Supabase Storage
   Future<Map<String, dynamic>> deleteFile(String bucket, String path) async {
@@ -293,7 +293,7 @@ class SupabaseStorageService {
     }
   }
 
-  // ==================== LIST FILES ====================
+  
 
   /// List all files in a bucket directory
   Future<Map<String, dynamic>> listFiles(String bucket, {String? path}) async {
@@ -344,7 +344,7 @@ class SupabaseStorageService {
     return listFiles('audios', path: 'recordings/$userId');
   }
 
-  // ==================== FILE INFO ====================
+  
 
   /// Get file info/metadata
   Future<Map<String, dynamic>> getFileInfo(String bucket, String path) async {

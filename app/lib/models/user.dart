@@ -1,3 +1,4 @@
+/// Modelo de usuario de la plataforma (tabla `usuarios`).
 class User {
   final int idUsuario;
   final String nombreCompleto;
@@ -25,6 +26,7 @@ class User {
     this.emailVerificado = false,
   });
 
+  /// Crea una instancia a partir de un mapa JSON proveniente de Supabase.
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       // Supabase usa mayúsculas en columnas (Nombre_Completo)
@@ -47,6 +49,7 @@ class User {
     );
   }
 
+  /// Serializa la entidad al formato esperado por la API/BD.
   Map<String, dynamic> toJson() {
     return {
       'id_usuario': idUsuario,

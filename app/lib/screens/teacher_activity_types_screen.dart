@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import 'teacher_activities_screen.dart';
 
+/// Tipos de actividad para una habilidad (vista docente).
 class TeacherActivityTypesScreen extends StatefulWidget {
   final int skillId;
   final String skillName;

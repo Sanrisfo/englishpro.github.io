@@ -8,6 +8,11 @@ import 'screens/splash_screen.dart';
 import 'providers/auth_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Punto de entrada de la aplicación EnglishPro.
+///
+/// - Carga variables de entorno desde `.env`.
+/// - Inicializa Supabase.
+/// - Configura la UI del sistema (solo status bar visible).
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -29,6 +34,7 @@ void main() async {
   runApp(const MyApp());
 }
 
+/// Widget raíz de la aplicación EnglishPro.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

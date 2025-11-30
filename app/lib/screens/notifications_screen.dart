@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../models/notification.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+/// Bandeja de notificaciones del usuario con lectura/borrado.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 

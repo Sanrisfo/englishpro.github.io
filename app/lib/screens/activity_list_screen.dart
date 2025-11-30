@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'activity_player_screen.dart';
 
+/// Lista de cuestionarios disponibles para un tipo de actividad.
 class ActivityListScreen extends StatefulWidget {
   final int skillId;
   final int activityTypeId;
@@ -281,4 +282,3 @@ final locked = index >= limit;
     );
   }
 }
-

@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 
+/// Servicio de almacenamiento en Firebase (legado).
+/// En la app actual se prefiere Supabase Storage.
 class StorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // ==================== UPLOAD FILES ====================
+  
 
   /// Upload audio file for Speaking exercises
   /// Path: /audio/{userId}/{fileName}
@@ -180,7 +182,7 @@ class StorageService {
     }
   }
 
-  // ==================== DELETE FILES ====================
+  
 
   /// Delete a file from Firebase Storage
   Future<Map<String, dynamic>> deleteFile(String path) async {
@@ -229,7 +231,7 @@ class StorageService {
     }
   }
 
-  // ==================== LIST FILES ====================
+  
 
   /// List all files in a directory
   Future<Map<String, dynamic>> listFiles(String path) async {
@@ -268,7 +270,7 @@ class StorageService {
     return listFiles('audio/$userId');
   }
 
-  // ==================== METADATA ====================
+  
 
   /// Get file metadata
   Future<Map<String, dynamic>> getMetadata(String path) async {

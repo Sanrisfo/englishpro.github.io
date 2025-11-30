@@ -1,3 +1,4 @@
+/// Respuesta posible en ejercicios de relación (Matching).
 class MatchingAnswer {
   final int id;
   final int preguntaId;
@@ -11,6 +12,7 @@ class MatchingAnswer {
     required this.orden,
   });
 
+  /// Construye a partir de JSON; acepta claves alternativas.
   factory MatchingAnswer.fromJson(Map<String, dynamic> json) => MatchingAnswer(
         id: json['id'] as int,
         preguntaId: (json['id_pregunta'] ?? json['pregunta_id']) as int,
@@ -18,6 +20,7 @@ class MatchingAnswer {
         orden: (json['orden'] as num?)?.toInt() ?? 1,
       );
 
+  /// Serializa la respuesta al formato estándar.
   Map<String, dynamic> toJson() => {
         'id': id,
         'id_pregunta': preguntaId,
@@ -26,6 +29,7 @@ class MatchingAnswer {
       };
 }
 
+/// Enunciado a relacionar con una respuesta correcta.
 class MatchingStatement {
   final int id;
   final int preguntaId;
@@ -41,6 +45,7 @@ class MatchingStatement {
     required this.correctAnswerId,
   });
 
+  /// Construye a partir de JSON; acepta claves alternativas.
   factory MatchingStatement.fromJson(Map<String, dynamic> json) => MatchingStatement(
         id: json['id'] as int,
         preguntaId: (json['id_pregunta'] ?? json['pregunta_id']) as int,
@@ -49,6 +54,7 @@ class MatchingStatement {
         correctAnswerId: (json['correct_answer_id'] ?? json['id_respuesta_correcta']) as int,
       );
 
+  /// Serializa el enunciado al formato estándar.
   Map<String, dynamic> toJson() => {
         'id': id,
         'id_pregunta': preguntaId,
@@ -57,4 +63,3 @@ class MatchingStatement {
         'correct_answer_id': correctAnswerId,
       };
 }
-

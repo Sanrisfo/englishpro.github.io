@@ -1,3 +1,4 @@
+/// Oración con espacios en blanco (Completion) asociada a una pregunta.
 class CompletionSentence {
   final int id;
   final int preguntaId;
@@ -13,6 +14,7 @@ class CompletionSentence {
     required this.gaps,
   });
 
+  /// Construye a partir de JSON; acepta claves alternativas para compatibilidad.
   factory CompletionSentence.fromJson(Map<String, dynamic> json) => CompletionSentence(
         id: json['id'] as int,
         preguntaId: (json['id_pregunta'] ?? json['pregunta_id']) as int,
@@ -24,6 +26,7 @@ class CompletionSentence {
             const [],
       );
 
+  /// Serializa la oración de completion incluyendo sus gaps.
   Map<String, dynamic> toJson() => {
         'id': id,
         'id_pregunta': preguntaId,
@@ -33,6 +36,7 @@ class CompletionSentence {
       };
 }
 
+/// Gap de una oración de completion con el texto correcto.
 class CompletionGap {
   final int id;
   final int sentenceId;
@@ -46,6 +50,7 @@ class CompletionGap {
     required this.correctText,
   });
 
+  /// Construye a partir de JSON con claves alternativas.
   factory CompletionGap.fromJson(Map<String, dynamic> json) => CompletionGap(
         id: json['id'] as int,
         sentenceId: (json['sentence_id'] ?? json['id_oracion']) as int,
@@ -53,6 +58,7 @@ class CompletionGap {
         correctText: (json['correct_text'] ?? json['texto_correcto']) as String,
       );
 
+  /// Serializa el gap al formato estándar.
   Map<String, dynamic> toJson() => {
         'id': id,
         'sentence_id': sentenceId,
@@ -60,4 +66,3 @@ class CompletionGap {
         'correct_text': correctText,
       };
 }
-

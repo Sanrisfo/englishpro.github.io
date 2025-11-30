@@ -7,9 +7,11 @@ import '../models/user.dart' as models;
 /// Handles user registration, login, logout, and session management
 /// using Supabase Auth and PostgreSQL database.
 class SupabaseAuthService {
-  final _supabase = supabase;
+  final SupabaseClient _supabase;
 
-  // ==================== REGISTRATION ====================
+  /// Permite inyectar un `SupabaseClient` para pruebas.
+  SupabaseAuthService({SupabaseClient? client}) : _supabase = client ?? supabase;
+
 
   /// Register a new user with Supabase
   ///
@@ -22,7 +24,6 @@ class SupabaseAuthService {
     String? profesion,
   }) async {
     try {
-      // 1. Create user in Supabase Auth
       final authResponse = await _supabase.auth.signUp(
         email: email,
         password: password,
@@ -39,17 +40,14 @@ class SupabaseAuthService {
         };
       }
 
-      // 2. Wait a moment for trigger to execute
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // 3. Get user data from usuarios table (lowercase in Supabase)
       final userData = await _supabase
           .from('usuarios')
           .select()
           .eq('supabase_uid', authResponse.user!.id)
           .single();
 
-      // 4. Convert to User model using fromJson
       final user = models.User.fromJson(userData);
 
       return {
@@ -69,16 +67,12 @@ class SupabaseAuthService {
       };
     }
   }
-
-  // ==================== LOGIN ====================
-
   /// Login user with email and password
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
     try {
-      // 1. Sign in with Supabase Auth
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
@@ -91,14 +85,12 @@ class SupabaseAuthService {
         };
       }
 
-      // 2. Get user data from usuarios table (lowercase in Supabase)
       final userData = await _supabase
           .from('usuarios')
           .select()
           .eq('supabase_uid', response.user!.id)
           .single();
 
-      // 3. Convert to User model using fromJson
       final user = models.User.fromJson(userData);
 
       return {
@@ -119,14 +111,10 @@ class SupabaseAuthService {
     }
   }
 
-  // ==================== LOGOUT ====================
-
   /// Logout current user
   Future<void> logout() async {
     await _supabase.auth.signOut();
   }
-
-  // ==================== CURRENT USER ====================
 
   /// Get current authenticated user
   User? get currentUser => _supabase.auth.currentUser;
@@ -137,12 +125,8 @@ class SupabaseAuthService {
   /// Get current session
   Session? get currentSession => _supabase.auth.currentSession;
 
-  // ==================== AUTH STATE CHANGES ====================
-
   /// Stream of authentication state changes
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
-
-  // ==================== PASSWORD RECOVERY ====================
 
   /// Send password recovery email
   Future<Map<String, dynamic>> resetPassword(String email) async {
@@ -189,8 +173,6 @@ class SupabaseAuthService {
       };
     }
   }
-
-  // ==================== HELPER METHODS ====================
 
   /// Translate error messages to Spanish
   String _getErrorMessage(String error) {

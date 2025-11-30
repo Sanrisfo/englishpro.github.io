@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import 'activity_player_screen.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+/// Materiales y actividades disponibles para una habilidad concreta.
 class SkillMaterialsScreen extends StatefulWidget {
   final int skillId;
   final String skillName;

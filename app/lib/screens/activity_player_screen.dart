@@ -18,6 +18,7 @@ import '../services/api_service.dart';
 import '../services/supabase_storage_service.dart';
 import '../widgets/pdf_viewer_widget.dart';
 
+/// Reproductor de actividades: muestra material, preguntas y manejo de respuestas.
 class ActivityPlayerScreen extends StatefulWidget {
   final int quizId;
   final int skillId;

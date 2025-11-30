@@ -8,6 +8,7 @@ import 'teacher_questions_screen.dart';
 import 'create_activity_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Gestión de actividades/cuestionarios por parte del docente.
 class TeacherActivitiesScreen extends StatefulWidget {
   final int skillId;
   final String skillName;

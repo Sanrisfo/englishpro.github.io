@@ -1,3 +1,5 @@
+/// Pantalla de arranque que muestra el logotipo y resuelve navegación
+/// inicial según la existencia de sesión y el rol del usuario.
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
@@ -5,6 +7,7 @@ import 'home_screen.dart';
 import 'teacher_dashboard_screen.dart';
 import '../config/supabase_config.dart';
 
+/// Splash con animación breve y enrutamiento condicional.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -40,6 +43,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     });
   }
 
+  /// Verifica sesión y rol para decidir la primera pantalla.
   Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(milliseconds: 0));
 
@@ -104,12 +108,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           animation: _fillAnimation,
           builder: (context, child) {
             return SizedBox(
-              width: 250, // Ancho
-              height: 100, // Alto
+              width: 250,
+              height: 100,
               child: Stack(
                 children: [
                   ClipRect(
-                    //Imagen que baja
                     child: Align(
                       alignment: Alignment.bottomCenter,
                       heightFactor: _fillAnimation.value,

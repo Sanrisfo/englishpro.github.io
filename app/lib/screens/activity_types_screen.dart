@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener esto imp
 import '../services/api_service.dart';
 import 'activity_list_screen.dart';
 
+/// Tipos de actividad disponibles para una habilidad.
 class ActivityTypesScreen extends StatefulWidget {
   final int skillId;
   final String skillName;

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../config/supabase_config.dart';
 import 'create_question_screen.dart';
 
+/// Gestión de preguntas de un cuestionario (docente).
 class TeacherQuestionsScreen extends StatefulWidget {
   final int quizId;
   final int skillId;

@@ -5,6 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../services/storage_service.dart';
 
+/// Widget de grabación de audio con reproducción y subida opcional.
+///
+/// Expone callbacks al completar la grabación y/o la subida.
 class AudioRecorderWidget extends StatefulWidget {
   final Function(String audioPath) onRecordingComplete;
   final Function(String firebaseUrl)? onUploadComplete;

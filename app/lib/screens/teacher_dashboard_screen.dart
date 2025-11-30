@@ -12,6 +12,7 @@ import 'student_roster_screen.dart';
 import 'teacher_courses_screen.dart';
 import 'login_screen.dart';
 
+/// Panel principal para docentes: métricas, acciones rápidas y pendientes.
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({Key? key}) : super(key: key);
 
@@ -32,6 +33,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     _loadTeacherData();
   }
 
+  /// Carga datos del docente, estadísticas y pendientes desde Supabase.
   Future<void> _loadTeacherData() async {
     setState(() {
       _isLoading = true;
@@ -104,6 +106,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     }
   }
 
+  /// Cierra sesión y retorna a la pantalla de login.
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
@@ -118,7 +121,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  //Frontend
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;

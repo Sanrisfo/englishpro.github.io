@@ -9,6 +9,7 @@ import '../services/supabase_storage_service.dart';
 import '../models/material_model.dart';
 import '../models/skill_model.dart';
 
+/// Gestión de materiales (PDF, video, audio) por parte del docente.
 class TeacherMaterialsScreen extends StatefulWidget {
   const TeacherMaterialsScreen({Key? key}) : super(key: key);
 

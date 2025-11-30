@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../config/supabase_config.dart';
 
+/// Revisión manual de respuestas (docente) con calificación y comentarios.
 class ManualGradingScreen extends StatefulWidget {
   final Map<String, dynamic> feedback;
 

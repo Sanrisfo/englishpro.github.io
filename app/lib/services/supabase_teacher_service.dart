@@ -1,7 +1,7 @@
 ﻿import '../config/supabase_config.dart';
 
-/// Supabase Teacher Service
-/// Handles all teacher-related database queries
+/// Servicio de docentes en Supabase.
+/// Gestiona consultas de datos para perfiles, métricas y pendientes.
 class SupabaseTeacherService {
 
   /// Get teacher information by user ID

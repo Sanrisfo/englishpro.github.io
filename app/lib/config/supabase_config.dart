@@ -18,7 +18,7 @@ class SupabaseConfig {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
-      debug: false, // Set to true for debugging
+      debug: false,
     );
   }
 }

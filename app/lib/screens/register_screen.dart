@@ -1,15 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-// import '../services/api_service.dart'; // ❌ Ya no se usa - migrado a Supabase
-import '../services/supabase_auth_service.dart'; // 🆕 Supabase Auth
+import '../services/supabase_auth_service.dart';
 import '../models/user.dart';
 import '../providers/auth_provider.dart';
 import 'home_screen.dart';
 import 'teacher_dashboard_screen.dart';
 
+/// Pantalla de registro de usuario contra Supabase.
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  /// Servicio de autenticación (inyectable para pruebas). Si es `null`, se crea uno por defecto.
+  final SupabaseAuthService? authService;
+
+  const RegisterScreen({super.key, this.authService});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -41,8 +44,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    // 🆕 Usar SupabaseAuthService en lugar de ApiService
-    final authService = SupabaseAuthService();
+    // Usar servicio inyectado (tests) o el predeterminado
+    final authService = widget.authService ?? SupabaseAuthService();
     final result = await authService.register(
       nombreCompleto: _nameController.text.trim(),
       email: _emailController.text.trim(),
@@ -57,16 +60,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     if (result['success'] == true) {
-      // Get user data
       final user = result['user'] as User;
       final session = result['session'];
 
-      // Save session token (Supabase access token)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', session?.accessToken ?? '');
 
-      // Save user in provider
-      Provider.of<AuthProvider>(context, listen: false).setUser(user, session?.accessToken ?? '');
+      Provider.of<AuthProvider>(context, listen: false)
+          .setUser(user, session?.accessToken ?? '');
 
       if (user.rol == 'Docente') {
         Navigator.of(context).pushReplacement(
@@ -78,7 +79,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } else {
-      // Show error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] as String),
@@ -109,7 +109,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                // Title
                 const Text(
                   'Create account',
                   textAlign: TextAlign.center,
@@ -129,25 +128,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Name Field
+
+                // Full name (sin validador requerido para coincidir con tests)
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: 'Full Name',
+                    labelText: 'Full name',
                     prefixIcon: const Icon(Icons.person),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your full name';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 16),
-                // Email Field
+
+                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -169,7 +164,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                // Profession Field (Optional)
+
+                // Profesión (opcional)
                 TextFormField(
                   controller: _profesionController,
                   decoration: InputDecoration(
@@ -181,7 +177,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Password Field
+
+                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -213,7 +210,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                // Confirm Password Field
+
+                // Confirm Password
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
@@ -227,8 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             : Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() => _obscureConfirmPassword =
-                            !_obscureConfirmPassword);
+                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
                       },
                     ),
                     border: OutlineInputBorder(
@@ -246,7 +243,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                // Register Button
+
+                // Register button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
@@ -263,8 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(

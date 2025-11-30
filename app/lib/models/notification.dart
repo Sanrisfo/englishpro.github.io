@@ -1,3 +1,4 @@
+/// Notificación dirigida a un usuario con estado de lectura.
 class NotificationModel {
   final int idNotificacion;
   final int idUsuario;
@@ -17,6 +18,7 @@ class NotificationModel {
     this.fechaCreacion,
   });
 
+  /// Construye a partir de un mapa JSON.
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
       idNotificacion: json['id_notificacion'] as int,
@@ -31,6 +33,7 @@ class NotificationModel {
     );
   }
 
+  /// Serializa la notificación a JSON.
   Map<String, dynamic> toJson() {
     return {
       'id_notificacion': idNotificacion,

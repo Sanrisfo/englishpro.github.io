@@ -11,6 +11,10 @@ import '../models/material_model.dart';
 import '../models/module_model.dart';
 import '../models/question_model.dart';
 
+/// API HTTP tradicional (opcional) para operaciones fuera de Supabase.
+///
+/// En proyectos actuales gran parte de la funcionalidad se sirve desde
+/// Supabase; esta capa se mantiene para endpoints propios cuando aplique.
 class ApiService {
   static String get baseUrl => dotenv.env['API_URL'] ?? 'http://localhost:8080';
 
@@ -124,7 +128,7 @@ class ApiService {
     }
   }
 
-  // ==================== COURSES ====================
+  
 
   /// Get all courses
   static Future<Map<String, dynamic>> getCourses() async {
@@ -189,7 +193,7 @@ class ApiService {
     }
   }
 
-  // ==================== SKILLS ====================
+  
 
   /// Get all skills
   static Future<Map<String, dynamic>> getSkills() async {

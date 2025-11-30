@@ -1,3 +1,7 @@
+/// Pantalla de inicio de sesión.
+///
+/// Autentica al usuario contra Supabase y, al completar el login, persiste
+/// la sesión localmente y redirige según el rol (Docente/Estudiante).
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +14,10 @@ import 'home_screen.dart';
 import 'teacher_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  /// Servicio de autenticación (inyectable para pruebas). Si es `null`, se crea uno por defecto.
+  final SupabaseAuthService? authService;
+
+  const LoginScreen({super.key, this.authService});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -30,16 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Ejecuta el flujo de autenticación con Supabase y enruta según el rol.
   Future<void> _login() async {
-
-    FocusScope.of(context).unfocus(); //esto cierra el teclado para evitar errores
+    FocusScope.of(context).unfocus();
 
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // Usar SupabaseAuthService en lugar de ApiService
-    final authService = SupabaseAuthService();
+    // Usar servicio inyectado (tests) o el predeterminado
+    final authService = widget.authService ?? SupabaseAuthService();
     final result = await authService.login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
@@ -100,7 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 60),
-                // Logo/Title
                 Image.asset(
                   'assets/images/logo_completo.png',
                   height: 120,
@@ -115,7 +121,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 48),
-                // Email Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -137,7 +142,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -166,7 +170,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                // Login Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
@@ -196,7 +199,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
                 const SizedBox(height: 16),
-                // Register Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

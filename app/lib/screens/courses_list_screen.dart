@@ -3,6 +3,7 @@ import '../models/course_model.dart';
 import '../services/api_service.dart';
 import 'activity_types_screen.dart';
 
+/// Lista de cursos disponibles y navegación a habilidades.
 class CoursesListScreen extends StatefulWidget {
   const CoursesListScreen({Key? key}) : super(key: key);
 
@@ -107,6 +108,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     );
   }
 
+  /// Tarjeta de curso con estilo y navegación al detalle.
   Widget _buildCourseCard(CourseModel course) {
     final color = _hexToColor(course.colorHex);
 
@@ -212,7 +214,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   }
 }
 
-// Course Details Screen with Skills
+/// Pantalla de detalle de curso con lista de habilidades.
 class CourseDetailsScreen extends StatefulWidget {
   final CourseModel course;
 
