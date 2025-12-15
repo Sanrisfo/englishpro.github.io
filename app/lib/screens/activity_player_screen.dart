@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener google_fonts
 import 'package:audioplayers/audioplayers.dart';
 import 'package:record/record.dart';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Importaciones de tu proyecto (ajusta las rutas si es necesario)
@@ -18,14 +18,24 @@ import '../services/api_service.dart';
 import '../services/supabase_storage_service.dart';
 import '../widgets/pdf_viewer_widget.dart';
 
-/// Reproductor de actividades: muestra material, preguntas y manejo de respuestas.
+/// Pantalla principal para la realización de una actividad por parte del estudiante.
+///
+/// Este widget `Stateful` gestiona el ciclo de vida completo de una actividad (cuestionario),
+/// incluyendo la visualización de material de estudio, la presentación de diferentes
+/// tipos de preguntas, la gestión de las respuestas en memoria y su envío final.
 class ActivityPlayerScreen extends StatefulWidget {
+  /// El ID del cuestionario a reproducir.
   final int quizId;
+  /// El ID de la habilidad asociada.
   final int skillId;
+  /// El nombre de la habilidad, para la UI.
   final String skillName;
+  /// El título de la actividad, para la UI.
   final String quizTitle;
+  /// El nombre del curso, para tematización.
   final String courseName;
 
+  /// Crea una instancia del reproductor de actividades.
   const ActivityPlayerScreen({
     Key? key,
     required this.quizId,
@@ -41,26 +51,46 @@ class ActivityPlayerScreen extends StatefulWidget {
 
 class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   // --- VARIABLES DE ESTADO ---
+  /// Indica si los datos iniciales de la actividad se están cargando.
   bool _isLoading = true;
+  /// Almacena un mensaje de error si ocurre un problema durante la carga.
   String? _errorMessage;
+  /// El material de estudio asociado a esta actividad, si existe.
   MaterialModel? _material;
+  /// La lista de preguntas que componen la actividad.
   List<QuestionModel> _questions = [];
 
-  // Respuestas en memoria
+  // --- MAPAS PARA ALMACENAR RESPUESTAS DEL USUARIO EN MEMORIA ---
+  /// Almacena las opciones seleccionadas para preguntas de opción múltiple.
+  /// La clave es el ID de la pregunta.
   final Map<int, Set<int>> _selectedOptionsByQuestion = {};
+  /// Almacena las parejas seleccionadas para preguntas de emparejamiento.
+  /// La clave es el ID de la pregunta.
   final Map<int, Map<int, int>> _matchingByQuestion = {};
+  /// Almacena el texto introducido para preguntas de completar espacios.
+  /// La clave es el ID de la pregunta.
   final Map<int, Map<int, String>> _completionByQuestion = {};
+  /// Almacena los controladores de texto para las preguntas de completar.
   final Map<int, Map<int, TextEditingController>> _completionControllers = {};
+  /// Almacena el texto para preguntas de escritura libre.
   final Map<int, String> _writeTextByQuestion = {};
+  /// Almacena los controladores de texto para las preguntas de escritura.
   final Map<int, TextEditingController> _writeTextControllers = {};
+  /// Almacena la URL del audio grabado para preguntas de grabación.
   final Map<int, String?> _audioUrlByQuestion = {};
 
+  /// Indica si todas las respuestas ya han sido enviadas al servidor.
   bool _allSubmitted = false;
+  /// Controlador para la reproducción de audio (ej. del material de estudio).
   final _audioPlayer = AudioPlayer();
+  /// Segundos restantes si la actividad tiene un límite de tiempo.
   int _secondsRemaining = 0;
+  /// El temporizador para la cuenta regresiva.
   Timer? _timer;
+  /// Límite de tiempo de la actividad en minutos, si se especifica.
   int? _quizTimeMinutes;
 
+  /// Color temático del curso, usado para estilizar la UI.
   late final Color _courseColor; // Color del tema
 
   @override
@@ -74,7 +104,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   void dispose() {
     _audioPlayer.dispose();
     _timer?.cancel();
-    // Limpiar controladores
+    // Limpieza de todos los controladores de texto para evitar fugas de memoria.
     for (var map in _completionControllers.values) {
       for (var ctrl in map.values) ctrl.dispose();
     }

@@ -1,6 +1,6 @@
 /// Pantalla de arranque que muestra el logotipo y resuelve navegación
-/// inicial según la existencia de sesión y el rol del usuario.
 import 'package:flutter/material.dart';
+import 'package:englishpro_app/screens/student_dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';

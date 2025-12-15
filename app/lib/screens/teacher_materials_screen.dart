@@ -1,5 +1,7 @@
-import 'dart:io';
+import 'package:universal_io/io.dart';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -120,6 +122,7 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
     String selectedType = 'pdf';
     String selectedLevel = 'Freemium';
     bool isPremium = false;
+    bool isUploading = false; // Estado local para carga
 
     await showDialog(
       context: context,
@@ -213,7 +216,11 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton.icon(
-                          onPressed: () async {
+                          icon: isUploading 
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                              : const Icon(Icons.cloud_upload),
+                          label: Text(isUploading ? 'Subiendo...' : 'Subir'),
+                          onPressed: isUploading ? null : () async {
                             // Seleccionar archivo según tipo
                             List<String> exts;
                             String bucket;
@@ -241,50 +248,88 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                               return;
                             }
 
-                            final result = await FilePicker.platform.pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: exts,
-                            );
-                            if (result == null || result.files.single.path == null) return;
-                            final file = File(result.files.single.path!);
-                            final fileName = '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
-
-                            String? publicUrl;
                             try {
+                              final result = await FilePicker.platform.pickFiles(
+                                type: FileType.custom,
+                                allowedExtensions: exts,
+                                withData: true, // Necesario para Web
+                              );
+                              
+                              if (result == null) return;
+
+                              print('Archivo seleccionado: ${result.files.single.name}');
+                              
+                              // Validar path solo en móvil
+                              if (!kIsWeb && result.files.single.path == null) {
+                                print('Error: Path es null en móvil');
+                                return;
+                              }
+
+                              setDialogState(() {
+                                isUploading = true;
+                              });
+
+                              File? file;
+                              Uint8List? bytes;
+                              
+                              if (kIsWeb) {
+                                bytes = result.files.single.bytes;
+                                print('Web Bytes length: ${bytes?.length}');
+                                if (bytes == null) {
+                                  throw Exception('No se pudieron leer los bytes del archivo (Web).');
+                                }
+                              } else {
+                                file = File(result.files.single.path!);
+                                print('Mobile File Path: ${file.path}');
+                              }
+                              
+                              final fileName = '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
+
+                              String? publicUrl;
                               final storage = SupabaseStorageService();
+                              
+                              Map<String, dynamic> r;
                               if (selectedType == 'pdf') {
-                                final r = await storage.uploadPDF(pdfFile: file, fileName: fileName);
-                                if (r['success'] == true) publicUrl = r['url'] as String;
+                                r = await storage.uploadPDF(pdfFile: file, bytes: bytes, fileName: fileName);
                               } else if (selectedType == 'image' || selectedType == 'imagen') {
-                                final r = await storage.uploadImage(imageFile: file, fileName: fileName);
-                                if (r['success'] == true) publicUrl = r['url'] as String;
+                                r = await storage.uploadImage(imageFile: file, bytes: bytes, fileName: fileName);
                               } else if (selectedType == 'audio') {
-                                // Subir a bucket audios/materials/
-                                final path = folder.isNotEmpty ? '$folder/$fileName' : fileName;
-                                await supabase.storage.from(bucket).upload(path, file);
-                                publicUrl = supabase.storage.from(bucket).getPublicUrl(path);
+                                r = await storage.uploadAudio(userId: teacherId.toString(), audioFile: file, bytes: bytes, fileName: fileName);
                               } else if (selectedType == 'video') {
-                                final r = await storage.uploadVideo(videoFile: file, fileName: fileName);
-                                if (r['success'] == true) publicUrl = r['url'] as String;
+                                r = await storage.uploadVideo(videoFile: file, bytes: bytes, fileName: fileName);
+                              } else {
+                                r = {'success': false, 'message': 'Tipo desconocido'};
+                              }
+
+                              if (r['success'] == true) {
+                                publicUrl = r['url'] as String;
+                                print('Upload success: $publicUrl');
+                              } else {
+                                throw Exception(r['error'] ?? 'Error desconocido en subida');
+                              }
+                            
+                              if (publicUrl != null) {
+                                setDialogState(() {
+                                  urlController.text = publicUrl!;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Archivo subido exitosamente')),
+                                );
                               }
                             } catch (e) {
+                              print('Error upload: $e');
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error subiendo archivo: $e')),
+                                SnackBar(
+                                  content: Text('Error subiendo archivo: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
                               );
-                              return;
-                            }
-
-                            if (publicUrl != null) {
+                            } finally {
                               setDialogState(() {
-                                urlController.text = publicUrl!;
+                                isUploading = false;
                               });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Archivo subido')),
-                              );
                             }
                           },
-                          icon: const Icon(Icons.cloud_upload),
-                          label: const Text('Subir'),
                         ),
                       ],
                     ),

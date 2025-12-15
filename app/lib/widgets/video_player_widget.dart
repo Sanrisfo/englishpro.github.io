@@ -2,12 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
 
-/// Reproductor de video simple con Chewie/VideoPlayer.
+/// Un widget para reproducir video desde una URL de red o un asset local.
+///
+/// Utiliza los paquetes `video_player` para la reproducción base y `chewie`
+/// para proporcionar una interfaz de usuario completa con controles de
+/// reproducción, pausa, volumen, pantalla completa, etc.
+///
+/// El widget es `Stateful` para poder gestionar el ciclo de vida del
+/// [VideoPlayerController] y el [ChewieController], incluyendo su inicialización
+/// y liberación de recursos.
 class VideoPlayerWidget extends StatefulWidget {
+  /// La URL del video. Puede ser una URL remota (`http` o `https`) o una
+  /// ruta a un asset local (ej. `assets/videos/intro.mp4`).
   final String videoUrl;
+
+  /// Si es `true`, el video comenzará a reproducirse automáticamente.
+  /// Por defecto es `false`.
   final bool autoPlay;
+
+  /// Si es `true`, el video se repetirá en un bucle infinito.
+  /// Por defecto es `false`.
   final bool looping;
 
+  /// Crea una instancia del reproductor de video.
   const VideoPlayerWidget({
     Key? key,
     required this.videoUrl,
@@ -20,9 +37,17 @@ class VideoPlayerWidget extends StatefulWidget {
 }
 
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+  /// Controlador del paquete `video_player` para la gestión del video base.
   late VideoPlayerController _videoPlayerController;
+
+  /// Controlador del paquete `chewie` que envuelve a `_videoPlayerController`
+  /// para añadirle una interfaz de usuario.
   ChewieController? _chewieController;
+
+  /// Indica si el video se está inicializando.
   bool _isLoading = true;
+
+  /// Almacena un mensaje de error si la inicialización falla.
   String? _error;
 
   @override
@@ -31,9 +56,13 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     _initializePlayer();
   }
 
+  /// Inicializa los controladores de video.
+  ///
+  /// Determina si la URL es de red o de un asset, inicializa el
+  /// [VideoPlayerController] correspondiente y luego configura el
+  /// [ChewieController] con las opciones deseadas.
   Future<void> _initializePlayer() async {
     try {
-      // Determine if it's a network or asset video
       if (widget.videoUrl.startsWith('http')) {
         _videoPlayerController =
             VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
@@ -65,19 +94,24 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         },
       );
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
   @override
   void dispose() {
+    // Es crucial liberar los recursos de los controladores para evitar fugas de memoria.
     _videoPlayerController.dispose();
     _chewieController?.dispose();
     super.dispose();

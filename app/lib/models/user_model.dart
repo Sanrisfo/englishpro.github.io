@@ -1,14 +1,44 @@
-/// User Model - Representa un usuario en el sistema
+/// [LEGACY] Representa un usuario en el sistema.
+///
+/// **Nota:** Este modelo es considerado *legacy* y, en la implementación actual,
+/// se prefiere el uso de [User] (definido en `user.dart`) para la compatibilidad
+/// directa con Supabase. Sin embargo, se mantiene aquí por motivos de
+/// compatibilidad con versiones anteriores o módulos específicos.
 class UserModel {
+  /// El identificador único del usuario.
   final int id;
+
+  /// El nombre completo del usuario.
   final String nombre;
+
+  /// El correo electrónico del usuario.
   final String email;
+
+  /// La profesión del usuario (opcional).
   final String? profesion;
+
+  /// El ID del plan de suscripción al que pertenece el usuario.
   final int planId;
+
+  /// La fecha de registro del usuario en el sistema.
   final DateTime fechaRegistro;
+
+  /// La URL de la foto de perfil del usuario (opcional).
   final String? photoUrl;
+
+  /// Indica si el usuario tiene rol de docente.
   final bool esDocente;
 
+  /// Crea una instancia de [UserModel].
+  ///
+  /// @param id El identificador único del usuario.
+  /// @param nombre El nombre completo del usuario.
+  /// @param email El correo electrónico del usuario.
+  /// @param profesion La profesión del usuario (opcional).
+  /// @param planId El ID del plan de suscripción.
+  /// @param fechaRegistro La fecha de registro.
+  /// @param photoUrl La URL de la foto de perfil (opcional).
+  /// @param esDocente Indica si es docente (por defecto `false`).
   UserModel({
     required this.id,
     required this.nombre,
@@ -20,7 +50,10 @@ class UserModel {
     this.esDocente = false,
   });
 
-  /// Crear UserModel desde JSON
+  /// Crea un [UserModel] a partir de un mapa JSON.
+  ///
+  /// @param json Un mapa que contiene los datos del usuario.
+  /// @return Una nueva instancia de [UserModel].
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as int,
@@ -34,7 +67,9 @@ class UserModel {
     );
   }
 
-  /// Convertir UserModel a JSON
+  /// Convierte esta instancia de [UserModel] en un mapa JSON.
+  ///
+  /// @return Una representación en mapa del usuario.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -48,7 +83,18 @@ class UserModel {
     };
   }
 
-  /// Crear copia del modelo con cambios
+  /// Crea una copia de este [UserModel] con los valores especificados
+  /// reemplazando los valores actuales.
+  ///
+  /// @param id Nuevo ID del usuario.
+  /// @param nombre Nuevo nombre.
+  /// @param email Nuevo email.
+  /// @param profesion Nueva profesión.
+  /// @param planId Nuevo ID del plan.
+  /// @param fechaRegistro Nueva fecha de registro.
+  /// @param photoUrl Nueva URL de la foto.
+  /// @param esDocente Nuevo estado de docente.
+  /// @return Una nueva instancia de [UserModel] con los valores actualizados.
   UserModel copyWith({
     int? id,
     String? nombre,
@@ -72,11 +118,16 @@ class UserModel {
   }
 
   @override
+  /// Devuelve una representación en cadena de este [UserModel].
   String toString() {
     return 'UserModel(id: $id, nombre: $nombre, email: $email, planId: $planId, esDocente: $esDocente)';
   }
 
   @override
+  /// Compara si este [UserModel] es igual a otro objeto.
+  ///
+  /// @param other El otro objeto a comparar.
+  /// @return `true` si los objetos son idénticos o tienen los mismos valores en todas sus propiedades, `false` en caso contrario.
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
@@ -92,6 +143,9 @@ class UserModel {
   }
 
   @override
+  /// Devuelve el código hash para este [UserModel].
+  ///
+  /// @return Un entero que representa el código hash.
   int get hashCode {
     return id.hashCode ^
         nombre.hashCode ^

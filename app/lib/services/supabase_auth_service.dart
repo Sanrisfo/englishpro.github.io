@@ -2,21 +2,53 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/user.dart' as models;
 
-/// Supabase Authentication Service for EnglishPro
+/// Servicio de Autenticación basado en Supabase para EnglishPro.
 ///
-/// Handles user registration, login, logout, and session management
-/// using Supabase Auth and PostgreSQL database.
+/// Expone operaciones de alto nivel para registrar, iniciar/cerrar sesión y
+/// administrar el estado del usuario contra [SupabaseAuth]. Este servicio
+/// también interactúa con la tabla `usuarios` para obtener y actualizar
+/// información del perfil del usuario.
+///
+/// ### Ejemplo de uso:
+///
+/// ```dart
+/// final auth = SupabaseAuthService();
+/// final result = await auth.login(email: 'user@mail.com', password: 'secret');
+/// if (result['success'] == true) {
+///   final user = result['user'] as models.User;
+///   // Navegar a la pantalla principal
+/// }
+/// ```
 class SupabaseAuthService {
   final SupabaseClient _supabase;
 
-  /// Permite inyectar un `SupabaseClient` para pruebas.
+  /// Crea una instancia del servicio de autenticación.
+  ///
+  /// Permite inyectar un `SupabaseClient` personalizado para facilitar
+  /// las pruebas. Si no se proporciona un cliente, utiliza la instancia
+  /// global de Supabase.
   SupabaseAuthService({SupabaseClient? client}) : _supabase = client ?? supabase;
 
 
-  /// Register a new user with Supabase
+  /// Registra un nuevo usuario en Supabase Auth y en la tabla `usuarios`.
   ///
-  /// The trigger `handle_new_user()` in Supabase will automatically
-  /// create a record in the Usuarios table when a user signs up.
+  /// El proceso consiste en:
+  /// 1. Crear el usuario en `SupabaseAuth` con email y contraseña.
+  /// 2. Los datos adicionales (`nombre_completo`, `profesion`) se pasan a `data`.
+  /// 3. Un trigger en la base de datos se encarga de crear el registro correspondiente en la tabla `usuarios`.
+  /// 4. Se obtiene el perfil recién creado de la tabla `usuarios` para devolverlo.
+  ///
+  /// @param nombreCompleto Nombre y apellidos del usuario.
+  /// @param email Correo electrónico único del usuario.
+  /// @param password Contraseña del usuario (mínimo 6 caracteres).
+  /// @param profesion La profesión del usuario (opcional).
+  /// @return Un `Future<Map<String, dynamic>>` que contiene:
+  ///         - `success` (bool): `true` si el registro fue exitoso.
+  ///         - `user` ([models.User]): El perfil del usuario desde la tabla `usuarios`.
+  ///         - `session` ([Session]): La sesión de autenticación.
+  ///         o en caso de error:
+  ///         - `success` (bool): `false`.
+  ///         - `message` (String): Un mensaje descriptivo del error.
   Future<Map<String, dynamic>> register({
     required String nombreCompleto,
     required String email,
@@ -67,7 +99,21 @@ class SupabaseAuthService {
       };
     }
   }
-  /// Login user with email and password
+
+  /// Inicia sesión de un usuario existente mediante email y contraseña.
+  ///
+  /// Después de una autenticación exitosa, obtiene los datos del perfil
+  /// del usuario desde la tabla `usuarios`.
+  ///
+  /// @param email El correo electrónico del usuario.
+  /// @param password La contraseña del usuario.
+  /// @return Un `Future<Map<String, dynamic>>` que contiene:
+  ///         - `success` (bool): `true` si el inicio de sesión fue exitoso.
+  ///         - `user` ([models.User]): El perfil del usuario.
+  ///         - `session` ([Session]): La sesión de autenticación.
+  ///         o en caso de error:
+  ///         - `success` (bool): `false`.
+  ///         - `message` (String): Un mensaje descriptivo del error.
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -81,7 +127,7 @@ class SupabaseAuthService {
       if (response.user == null) {
         return {
           'success': false,
-          'message': 'Invalid credentials',
+          'message': 'Credenciales inválidas',
         };
       }
 
@@ -111,24 +157,35 @@ class SupabaseAuthService {
     }
   }
 
-  /// Logout current user
+  /// Cierra la sesión del usuario actual en el dispositivo.
+  ///
+  /// Invalida la sesión actual y elimina las credenciales almacenadas localmente.
   Future<void> logout() async {
     await _supabase.auth.signOut();
   }
 
-  /// Get current authenticated user
+  /// Devuelve el usuario de Supabase Auth actualmente autenticado.
+  ///
+  /// Puede ser `null` si no hay una sesión activa.
   User? get currentUser => _supabase.auth.currentUser;
 
-  /// Check if user is authenticated
+  /// Indica si existe un usuario autenticado en la sesión actual.
   bool get isAuthenticated => _supabase.auth.currentUser != null;
 
-  /// Get current session
+  /// Devuelve la sesión actual de Supabase, si existe.
+  ///
+  /// Contiene los tokens de acceso y de refresco.
   Session? get currentSession => _supabase.auth.currentSession;
 
-  /// Stream of authentication state changes
+  /// Un stream que emite eventos sobre cambios en el estado de autenticación.
+  ///
+  /// Útil para escuchar cambios de sesión (login, logout) en tiempo real.
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;
 
-  /// Send password recovery email
+  /// Envía un correo electrónico al usuario para restablecer su contraseña.
+  ///
+  /// @param email El correo electrónico del usuario.
+  /// @return Un mapa indicando el resultado de la operación.
   Future<Map<String, dynamic>> resetPassword(String email) async {
     try {
       await _supabase.auth.resetPasswordForEmail(email);
@@ -150,7 +207,10 @@ class SupabaseAuthService {
     }
   }
 
-  /// Update user password
+  /// Actualiza la contraseña del usuario actualmente autenticado.
+  ///
+  /// @param newPassword La nueva contraseña.
+  /// @return Un mapa indicando el resultado de la operación.
   Future<Map<String, dynamic>> updatePassword(String newPassword) async {
     try {
       await _supabase.auth.updateUser(
@@ -174,10 +234,13 @@ class SupabaseAuthService {
     }
   }
 
-  /// Translate error messages to Spanish
+  /// Traduce mensajes de error comunes de Supabase a un formato más claro en español.
+  ///
+  /// @param error El mensaje de error original de [AuthException].
+  /// @return Un mensaje de error simplificado y traducido.
   String _getErrorMessage(String error) {
     if (error.contains('Invalid login credentials')) {
-      return 'Invalid credentials';
+      return 'Credenciales inválidas';
     } else if (error.contains('Email not confirmed')) {
       return 'Email no confirmado. Revisa tu bandeja de entrada.';
     } else if (error.contains('User already registered')) {
@@ -193,7 +256,10 @@ class SupabaseAuthService {
     return error;
   }
 
-  /// Get user by ID from database
+  /// Obtiene los datos de un usuario de la tabla `usuarios` por su `id_usuario`.
+  ///
+  /// @param userId El ID del usuario en la tabla `usuarios`.
+  /// @return Un mapa con los datos del perfil del usuario, o `null` si no se encuentra.
   Future<Map<String, dynamic>?> getUserById(int userId) async {
     try {
       final data = await _supabase
@@ -208,7 +274,14 @@ class SupabaseAuthService {
     }
   }
 
-  /// Update user profile in database
+  /// Actualiza campos básicos del perfil de un usuario en la tabla `usuarios`.
+  ///
+  /// Solo envía los campos no nulos proporcionados en los parámetros.
+  ///
+  /// @param userId El ID del usuario a actualizar.
+  /// @param nombreCompleto El nuevo nombre completo del usuario (opcional).
+  /// @param profesion La nueva profesión del usuario (opcional).
+  /// @return Un mapa indicando el resultado de la operación.
   Future<Map<String, dynamic>> updateUserProfile({
     required int userId,
     String? nombreCompleto,

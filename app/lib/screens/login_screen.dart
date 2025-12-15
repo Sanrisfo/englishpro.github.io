@@ -1,22 +1,26 @@
-/// Pantalla de inicio de sesión.
-///
-/// Autentica al usuario contra Supabase y, al completar el login, persiste
-/// la sesión localmente y redirige según el rol (Docente/Estudiante).
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-// import '../services/api_service.dart'; // ❌ Ya no se usa - migrado a Supabase
-import '../services/supabase_auth_service.dart'; // 🆕 Supabase Auth
+import '../services/supabase_auth_service.dart';
 import '../models/user.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
 import 'teacher_dashboard_screen.dart';
 
+/// Pantalla de inicio de sesión para la aplicación.
+///
+/// Este widget `Stateful` presenta un formulario para que el usuario ingrese
+/// su correo electrónico y contraseña. Utiliza [SupabaseAuthService] para
+/// autenticar al usuario y, en caso de éxito, persiste la sesión y redirige
+/// al panel correspondiente según el rol del usuario (Docente o Estudiante).
 class LoginScreen extends StatefulWidget {
-  /// Servicio de autenticación (inyectable para pruebas). Si es `null`, se crea uno por defecto.
+  /// Un servicio de autenticación que puede ser inyectado para facilitar las pruebas.
+  ///
+  /// Si se deja en `null`, se crea una instancia por defecto de [SupabaseAuthService].
   final SupabaseAuthService? authService;
 
+  /// Crea una instancia de la pantalla de inicio de sesión.
   const LoginScreen({super.key, this.authService});
 
   @override
@@ -24,10 +28,19 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  /// Clave global para el `Form` que permite la validación de los campos.
   final _formKey = GlobalKey<FormState>();
+
+  /// Controlador para el campo de texto del correo electrónico.
   final _emailController = TextEditingController();
+
+  /// Controlador para el campo de texto de la contraseña.
   final _passwordController = TextEditingController();
+
+  /// Indica si una operación de inicio de sesión está en progreso.
   bool _isLoading = false;
+
+  /// Controla la visibilidad de la contraseña en su campo de texto.
   bool _obscurePassword = true;
 
   @override
@@ -37,7 +50,16 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  /// Ejecuta el flujo de autenticación con Supabase y enruta según el rol.
+  /// Gestiona el proceso completo de inicio de sesión.
+  ///
+  /// 1.  Valida el formulario.
+  /// 2.  Muestra un indicador de carga.
+  /// 3.  Llama al método `login` de [SupabaseAuthService].
+  /// 4.  Si el inicio de sesión es exitoso:
+  ///     a. Persiste el token de sesión y el rol del usuario en [SharedPreferences].
+  ///     b. Actualiza el [AuthProvider] con los datos del usuario y el token.
+  ///     c. Navega a [TeacherDashboardScreen] si el rol es 'Docente' o a [HomeScreen] en caso contrario.
+  /// 5.  Si falla, muestra un `SnackBar` con el mensaje de error.
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
 
@@ -45,35 +67,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // Usar servicio inyectado (tests) o el predeterminado
     final authService = widget.authService ?? SupabaseAuthService();
     final result = await authService.login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
-    setState(() => _isLoading = false);
-
-    if (!mounted) return;
+    if (!mounted) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
     if (result['success'] == true) {
-      // Get user data
       final user = result['user'] as User;
       final session = result['session'];
 
-      // Save session token (Supabase access token)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', session?.accessToken ?? '');
-      // Persist role information for startup routing
       await prefs.setString('user_role', user.rol);
       await prefs.setBool('user_is_teacher', user.rol == 'Docente' || user.esDocente);
 
-      // Save user in provider
       Provider.of<AuthProvider>(context, listen: false).setUser(user, session?.accessToken ?? '');
 
-      // Debug: verify user is saved
-      print('DEBUG: User saved to provider - ID: ${user.idUsuario}, Rol: ${user.rol}, Nombre: ${user.nombreCompleto}');
-
+      // Redirigir según el rol del usuario.
       if (user.rol == 'Docente') {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const TeacherDashboardScreen()),
@@ -84,11 +100,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } else {
-      // Show error
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] as String),
-          backgroundColor: Color(0xFFD9232A),
+          backgroundColor: const Color(0xFFD9232A),
         ),
       );
     }
@@ -113,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Welcome Back!',
+                  '¡Bienvenido de vuelta!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
@@ -133,10 +149,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
+                      return 'Por favor, ingresa tu email';
                     }
                     if (!value.contains('@')) {
-                      return 'Please enter a valid email';
+                      return 'Por favor, ingresa un email válido';
                     }
                     return null;
                   },
@@ -146,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: 'Contraseña',
                     prefixIcon: const Icon(Icons.lock_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -164,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
+                      return 'Por favor, ingresa tu contraseña';
                     }
                     return null;
                   },
@@ -191,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         )
                       : const Text(
-                          'Login',
+                          'Iniciar Sesión',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -202,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("¿Don't have an account? "),
+                    const Text("¿No tienes una cuenta?"),
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
@@ -212,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        'Sign up',
+                        'Regístrate',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E3A8A),

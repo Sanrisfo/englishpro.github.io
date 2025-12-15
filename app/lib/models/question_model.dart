@@ -1,32 +1,68 @@
-import 'matching_models.dart';
+﻿import 'matching_models.dart';
 import 'completion_models.dart';
 
-/// Question Model - Representa una pregunta multimedia
+/// Representa una pregunta multimedia con distintos tipos y contenidos asociados.
+///
+/// Este modelo centraliza la definición de preguntas para diferentes tipos de actividades,
+/// incluyendo selección múltiple, emparejamiento, completar, grabación de audio y texto.
 class QuestionModel {
+  /// El identificador único de la pregunta.
   final int id;
-  final int habilidadId;
-  final String textoPregunta;
-  final String tipoPregunta; // 'multiple_choice', 'matching', 'completion', 'record_audio', 'write_text'
-  final String? audioUrl;
-  final String? videoUrl;
-  final String? imagenUrl;
-  final String nivelDificultad; // 'easy', 'medium', 'hard'
-  final int puntaje;
-  final int? tiempoLimiteSegundos;
-  // Multiple Choice
-  final List<AnswerOptionModel>? opciones; // Para multiple_choice (multi-select)
-  // Matching
-  final List<MatchingAnswer>? matchingAnswers;
-  final List<MatchingStatement>? matchingStatements;
-  // Completion
-  final List<CompletionSentence>? completionSentences;
-  // Write Text
-  final int? maxWords;
-  // Record Audio
-  final int? thinkTimeSeconds; // esperado 10
-  final int? maxRecordSeconds; // esperado 45
-  final String? explicacionGeneral; // Retroalimentación general para la pregunta
 
+  /// El ID de la habilidad a la que pertenece esta pregunta.
+  final int habilidadId;
+
+  /// El texto principal de la pregunta.
+  final String textoPregunta;
+
+  /// El tipo de pregunta, que determina cómo se presenta y se responde.
+  /// Valores posibles: 'multiple_choice', 'matching', 'completion', 'record_audio', 'write_text'.
+  final String tipoPregunta;
+
+  /// URL de un recurso de audio asociado a la pregunta (opcional).
+  final String? audioUrl;
+
+  /// URL de un recurso de video asociado a la pregunta (opcional).
+  final String? videoUrl;
+
+  /// URL de un recurso de imagen asociado a la pregunta (opcional).
+  final String? imagenUrl;
+
+  /// El nivel de dificultad de la pregunta.
+  /// Valores posibles: 'easy', 'medium', 'hard'.
+  final String nivelDificultad;
+
+  /// El puntaje que se otorga al responder correctamente la pregunta.
+  final int puntaje;
+
+  /// El tiempo límite en segundos para responder la pregunta (opcional).
+  final int? tiempoLimiteSegundos;
+
+  /// Lista de opciones de respuesta para preguntas de tipo 'multiple_choice' (opcional).
+  final List<AnswerOptionModel>? opciones;
+
+  /// Lista de respuestas posibles para preguntas de tipo 'matching' (opcional).
+  final List<MatchingAnswer>? matchingAnswers;
+
+  /// Lista de enunciados para preguntas de tipo 'matching' (opcional).
+  final List<MatchingStatement>? matchingStatements;
+
+  /// Lista de oraciones con espacios en blanco para preguntas de tipo 'completion' (opcional).
+  final List<CompletionSentence>? completionSentences;
+
+  /// El número máximo de palabras permitidas para preguntas de tipo 'write_text' (opcional).
+  final int? maxWords;
+
+  /// Tiempo en segundos que se le da al usuario para pensar antes de grabar (solo 'record_audio').
+  final int? thinkTimeSeconds;
+
+  /// Tiempo máximo de grabación en segundos para 'record_audio'.
+  final int? maxRecordSeconds;
+
+  /// Explicación general o retroalimentación para la pregunta (opcional).
+  final String? explicacionGeneral;
+
+  /// Crea una instancia de [QuestionModel].
   QuestionModel({
     required this.id,
     required this.habilidadId,
@@ -48,7 +84,10 @@ class QuestionModel {
     this.explicacionGeneral,
   });
 
-  /// Crear QuestionModel desde JSON
+  /// Crea un [QuestionModel] a partir de un mapa JSON.
+  ///
+  /// @param json Un mapa que contiene los datos de la pregunta.
+  /// @return Una nueva instancia de [QuestionModel].
   factory QuestionModel.fromJson(Map<String, dynamic> json) {
     return QuestionModel(
       id: json['id'] as int,
@@ -88,7 +127,10 @@ class QuestionModel {
     );
   }
 
-  /// Convertir QuestionModel a JSON
+  /// Convierte esta instancia de [QuestionModel] en un mapa JSON
+  /// compatible con la API/base de datos.
+  ///
+  /// @return Una representación en mapa de la pregunta.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -113,23 +155,44 @@ class QuestionModel {
     };
   }
 
-  /// Verificar si es pregunta de selección múltiple
+  /// Verifica si la pregunta es de tipo 'multiple_choice'.
   bool get isMultipleChoice => tipoPregunta == 'multiple_choice';
 
-  /// Tipos adicionales
+  /// Verifica si la pregunta es de tipo 'matching'.
   bool get isMatching => tipoPregunta == 'matching';
+
+  /// Verifica si la pregunta es de tipo 'completion'.
   bool get isCompletion => tipoPregunta == 'completion';
+
+  /// Verifica si la pregunta es de tipo 'record_audio'.
   bool get isRecordAudio => tipoPregunta == 'record_audio';
+
+  /// Verifica si la pregunta es de tipo 'write_text'.
   bool get isWriteText => tipoPregunta == 'write_text';
 
-  /// Verificar si tiene contenido multimedia
+  /// Verifica si la pregunta tiene algún contenido multimedia (audio, video o imagen).
   bool get hasMultimedia =>
       audioUrl != null || videoUrl != null || imagenUrl != null;
 
-  /// Verificar si tiene límite de tiempo
+  /// Verifica si la pregunta tiene un tiempo límite establecido.
   bool get hasTimeLimit => tiempoLimiteSegundos != null;
 
-  /// Crear copia del modelo con cambios
+  /// Crea una copia de este [QuestionModel] con los valores especificados
+  /// reemplazando los valores actuales.
+  ///
+  /// @param id Nuevo ID de la pregunta.
+  /// @param habilidadId Nuevo ID de la habilidad.
+  /// @param textoPregunta Nuevo texto de la pregunta.
+  /// @param tipoPregunta Nuevo tipo de pregunta.
+  /// @param audioUrl Nueva URL de audio.
+  /// @param videoUrl Nueva URL de video.
+  /// @param imagenUrl Nueva URL de imagen.
+  /// @param nivelDificultad Nuevo nivel de dificultad.
+  /// @param puntaje Nuevo puntaje.
+  /// @param tiempoLimiteSegundos Nuevo tiempo límite en segundos.
+  /// @param opciones Nuevas opciones de respuesta.
+  /// @param explicacionGeneral Nueva explicación general.
+  /// @return Una nueva instancia de [QuestionModel] con los valores actualizados.
   QuestionModel copyWith({
     int? id,
     int? habilidadId,
@@ -161,19 +224,36 @@ class QuestionModel {
   }
 
   @override
+  /// Devuelve una representación en cadena de este [QuestionModel].
   String toString() {
     return 'QuestionModel(id: $id, tipo: $tipoPregunta, dificultad: $nivelDificultad)';
   }
 }
 
-/// Answer Option Model - Representa una opción de respuesta para preguntas de selección múltiple
+/// Representa una opción de respuesta para preguntas de selección múltiple.
 class AnswerOptionModel {
+  /// El identificador único de la opción de respuesta.
   final int id;
+
+  /// El ID de la pregunta a la que pertenece esta opción.
   final int preguntaId;
+
+  /// El texto de la opción de respuesta.
   final String textoOpcion;
+
+  /// Indica si esta opción es la respuesta correcta.
   final bool esCorrecta;
+
+  /// Una explicación opcional sobre por qué esta opción es correcta o incorrecta.
   final String? explicacion;
 
+  /// Crea una instancia de [AnswerOptionModel].
+  ///
+  /// @param id El identificador único.
+  /// @param preguntaId El ID de la pregunta asociada.
+  /// @param textoOpcion El texto de la opción.
+  /// @param esCorrecta Indica si es la opción correcta.
+  /// @param explicacion Una explicación opcional.
   AnswerOptionModel({
     required this.id,
     required this.preguntaId,
@@ -182,7 +262,10 @@ class AnswerOptionModel {
     this.explicacion,
   });
 
-  /// Crear AnswerOptionModel desde JSON
+  /// Crea un [AnswerOptionModel] a partir de un mapa JSON.
+  ///
+  /// @param json Un mapa que contiene los datos de la opción de respuesta.
+  /// @return Una nueva instancia de [AnswerOptionModel].
   factory AnswerOptionModel.fromJson(Map<String, dynamic> json) {
     return AnswerOptionModel(
       id: json['id'] as int,
@@ -193,7 +276,9 @@ class AnswerOptionModel {
     );
   }
 
-  /// Convertir AnswerOptionModel a JSON
+  /// Convierte esta instancia de [AnswerOptionModel] en un mapa JSON.
+  ///
+  /// @return Una representación en mapa de la opción de respuesta.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -205,7 +290,9 @@ class AnswerOptionModel {
   }
 
   @override
+  /// Devuelve una representación en cadena de este [AnswerOptionModel].
   String toString() {
     return 'AnswerOptionModel(id: $id, correcta: $esCorrecta)';
   }
 }
+

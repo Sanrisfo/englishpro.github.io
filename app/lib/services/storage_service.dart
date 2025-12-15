@@ -1,16 +1,19 @@
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 
-/// Servicio de almacenamiento en Firebase (legado).
-/// En la app actual se prefiere Supabase Storage.
+/// [DEPRECATED] Servicio de almacenamiento legado para Firebase.
+///
+/// **Atención:** Esta clase está obsoleta y no debe ser utilizada en nuevo código.
+/// La funcionalidad de almacenamiento ha sido migrada a `SupabaseStorageService`.
+/// Se mantiene únicamente como referencia de la implementación anterior.
+///
+/// @nodoc
+@deprecated
 class StorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  
-
-  /// Upload audio file for Speaking exercises
-  /// Path: /audio/{userId}/{fileName}
+  /// [DEPRECATED] Sube un archivo de audio a Firebase Storage.
   Future<Map<String, dynamic>> uploadAudio({
     required String userId,
     required File audioFile,
@@ -21,7 +24,6 @@ class StorageService {
       final ref = _storage.ref().child('audio/$userId/$fileName');
       final uploadTask = ref.putFile(audioFile);
 
-      // Track upload progress
       if (onProgress != null) {
         uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
           final progress = snapshot.bytesTransferred / snapshot.totalBytes;
@@ -48,8 +50,7 @@ class StorageService {
     }
   }
 
-  /// Upload video material
-  /// Path: /videos/{fileName}
+  /// [DEPRECATED] Sube un archivo de video a Firebase Storage.
   Future<Map<String, dynamic>> uploadVideo({
     required File videoFile,
     required String fileName,
@@ -85,8 +86,7 @@ class StorageService {
     }
   }
 
-  /// Upload PDF material
-  /// Path: /pdfs/{fileName}
+  /// [DEPRECATED] Sube un archivo PDF a Firebase Storage.
   Future<Map<String, dynamic>> uploadPDF({
     required File pdfFile,
     required String fileName,
@@ -122,8 +122,7 @@ class StorageService {
     }
   }
 
-  /// Upload image
-  /// Path: /images/{fileName}
+  /// [DEPRECATED] Sube una imagen a Firebase Storage.
   Future<Map<String, dynamic>> uploadImage({
     required File imageFile,
     required String fileName,
@@ -159,9 +158,7 @@ class StorageService {
     }
   }
 
-  // ==================== DOWNLOAD URLs ====================
-
-  /// Get download URL for a file
+  /// [DEPRECATED] Obtiene la URL de descarga de un archivo.
   Future<Map<String, dynamic>> getDownloadUrl(String path) async {
     try {
       final ref = _storage.ref().child(path);
@@ -182,9 +179,7 @@ class StorageService {
     }
   }
 
-  
-
-  /// Delete a file from Firebase Storage
+  /// [DEPRECATED] Elimina un archivo de Firebase Storage.
   Future<Map<String, dynamic>> deleteFile(String path) async {
     try {
       final ref = _storage.ref().child(path);
@@ -205,7 +200,7 @@ class StorageService {
     }
   }
 
-  /// Delete user's audio files
+  /// [DEPRECATED] Elimina los archivos de audio de un usuario.
   Future<Map<String, dynamic>> deleteUserAudios(String userId) async {
     try {
       final ref = _storage.ref().child('audio/$userId');
@@ -231,9 +226,7 @@ class StorageService {
     }
   }
 
-  
-
-  /// List all files in a directory
+  /// [DEPRECATED] Lista los archivos en un directorio.
   Future<Map<String, dynamic>> listFiles(String path) async {
     try {
       final ref = _storage.ref().child(path);
@@ -265,14 +258,12 @@ class StorageService {
     }
   }
 
-  /// List user's audio files
+  /// [DEPRECATED] Lista los archivos de audio de un usuario.
   Future<Map<String, dynamic>> listUserAudios(String userId) async {
     return listFiles('audio/$userId');
   }
 
-  
-
-  /// Get file metadata
+  /// [DEPRECATED] Obtiene los metadatos de un archivo.
   Future<Map<String, dynamic>> getMetadata(String path) async {
     try {
       final ref = _storage.ref().child(path);

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,8 +12,13 @@ import 'student_roster_screen.dart';
 import 'teacher_courses_screen.dart';
 import 'login_screen.dart';
 
-/// Panel principal para docentes: métricas, acciones rápidas y pendientes.
+/// Pantalla principal del panel de control para docentes.
+///
+/// Este widget `Stateful` actúa como el centro de operaciones para los usuarios
+/// con rol de docente, mostrando métricas clave, acciones rápidas y
+/// notificaciones sobre tareas pendientes.
 class TeacherDashboardScreen extends StatefulWidget {
+  /// Crea una instancia de la pantalla del panel de control del docente.
   const TeacherDashboardScreen({Key? key}) : super(key: key);
 
   @override
@@ -21,10 +26,19 @@ class TeacherDashboardScreen extends StatefulWidget {
 }
 
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
+  /// Indica si los datos se están cargando.
   bool _isLoading = true;
+
+  /// Almacena los datos del perfil del docente.
   Map<String, dynamic>? _teacherData;
+
+  /// Almacena las estadísticas del docente (calificaciones, pendientes, etc.).
   Map<String, dynamic>? _teacherStats;
+
+  /// Lista de retroalimentaciones pendientes de revisión.
   List<dynamic> _pendingFeedbacks = [];
+
+  /// Mensaje de error a mostrar si la carga de datos falla.
   String? _errorMessage;
 
   @override
@@ -33,7 +47,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     _loadTeacherData();
   }
 
-  /// Carga datos del docente, estadísticas y pendientes desde Supabase.
+  /// Carga todos los datos necesarios para el panel del docente.
+  ///
+  /// Obtiene el ID del usuario del [AuthProvider] y lo utiliza para
+  /// obtener el perfil del docente, sus estadísticas y la lista de
+  /// revisiones pendientes a través de [SupabaseTeacherService].
+  /// Maneja los estados de carga y error.
   Future<void> _loadTeacherData() async {
     setState(() {
       _isLoading = true;
@@ -44,7 +63,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       int? userId = authProvider.user?.idUsuario;
 
-      // Fallback: recover userId from Supabase session if provider is empty
+      // Fallback: recupera el userId de la sesión de Supabase si el provider está vacío.
       if (userId == null) {
         try {
           final current = supabase.auth.currentUser;
@@ -97,13 +116,18 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     } catch (e) {
       _errorMessage = 'Error al cargar datos: $e';
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if(mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  /// Cierra sesión y retorna a la pantalla de login.
+  /// Cierra la sesión del usuario.
+  ///
+  /// Limpia los datos de sesión de `SharedPreferences` y navega a la
+  /// [LoginScreen], eliminando todas las rutas anteriores.
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
@@ -144,23 +168,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Encabezado (saludo y burbuja)
                 _buildTeacherHeader(context, textTheme),
                 const SizedBox(height: 32),
-
-                // Modulos
                 _buildModulesSection(context, textTheme),
                 const SizedBox(height: 32),
-
-                // --- SECCIÓN "MY MATERIALS" COMENTADA PARA V1 ---
-                /*
-                          // Acciones rapidas
-                          _buildQuickActionsSection(context, textTheme),
-                          const SizedBox(height: 32),
-                          */
-                // -----------------------------------------------
-
-                // Estadisticas
                 _buildStatsSection(textTheme),
                 const SizedBox(height: 32),
               ],
@@ -171,7 +182,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  // Encabezado (saludo y burbuja)
+  /// Construye el encabezado de la pantalla con el saludo y el avatar del docente.
   Widget _buildTeacherHeader(BuildContext context, TextTheme textTheme) {
     return Padding(
       padding: const EdgeInsets.only(top: 16.0),
@@ -182,14 +193,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "¡Welcome!",
+                "¡Bienvenido!",
                 style: textTheme.titleMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                "Teacher",
+                "Docente",
                 style: GoogleFonts.ptSans(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -205,7 +216,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               }
             },
             offset: const Offset(0, 60),
-            color: Color(0xFFFBFBFB),
+            color: const Color(0xFFFBFBFB),
             elevation: 3,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16.0),
@@ -217,7 +228,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   children: const [
                     Icon(Icons.logout, color: Color(0xFFD9232A)),
                     SizedBox(width: 8),
-                    Text("Sign Out", style: TextStyle(color: Color(0xFFD9232A))),
+                    Text("Cerrar Sesión", style: TextStyle(color: Color(0xFFD9232A))),
                   ],
                 ),
               ),
@@ -233,13 +244,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  // Modulos
+  /// Construye la sección de "Módulos de Control" con accesos directos.
   Widget _buildModulesSection(BuildContext context, TextTheme textTheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        // Barra
         Center(
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -251,7 +261,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
-              'Control measures',
+              'Módulos de Control',
               style: GoogleFonts.ptSans(
                 color: Colors.white,
                 fontSize: 20,
@@ -259,12 +269,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ),
         ),
-
-        //Tarjetas
         const SizedBox(height: 16),
         _skillTile(
-          title: 'My courses',
-          subtitle: 'Manage modules and materials',
+          title: 'Mis Cursos',
+          subtitle: 'Gestionar módulos y materiales',
           icon: Icons.dashboard_customize_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
@@ -273,8 +281,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 12),
         _skillTile(
-          title: 'Manual review',
-          subtitle: 'View pending submissions',
+          title: 'Revisión Manual',
+          subtitle: 'Ver envíos pendientes',
           icon: Icons.remove_red_eye_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
@@ -283,8 +291,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 12),
         _skillTile(
-          title: 'Student roster',
-          subtitle: 'View student list and progress',
+          title: 'Lista de Estudiantes',
+          subtitle: 'Ver lista y progreso de estudiantes',
           icon: Icons.group_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
@@ -295,52 +303,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  // Acciones rapidas (Mantenemos la función por si se reactiva en V2, pero no se llama)
-  Widget _buildQuickActionsSection(BuildContext context, TextTheme textTheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        //Barra
-        Center(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 50.0,
-              vertical: 0.0,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD9232A),
-              borderRadius: BorderRadius.circular(10.0),
-            ),
-            child: Text(
-              'Quick actions',
-              style: GoogleFonts.ptSans(
-                color: Colors.white,
-                fontSize: 20,
-              ),
-            ),
-          ),
-        ),
-
-        // Pestaña
-        const SizedBox(height: 16),
-        _skillTile(
-          title: 'My materials',
-          subtitle: 'Manage files and resources',
-          icon: Icons.folder_copy,
-          color: const Color(0xFFD9232A),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherMaterialsScreen()));
-          },
-        ),
-      ],
-    );
-  }
-
-  // stats
+  /// Construye la sección de estadísticas del docente con barras de progreso.
   Widget _buildStatsSection(TextTheme textTheme) {
     if (_teacherStats == null) return const SizedBox.shrink();
 
-    // Obtenemos los valores de las estadísticas
     final int total = _teacherStats!['total_calificaciones'] ?? 0;
     final int calificadas = _teacherStats!['calificadas'] ?? 0;
     final int pendientes = _teacherStats!['pendientes'] ?? 0;
@@ -364,7 +330,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
-              'Stats',
+              'Estadísticas',
               style: GoogleFonts.ptSans(
                 color: Colors.white,
                 fontSize: 20,
@@ -373,10 +339,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-
-        // Barras de progreso
         _buildStatProgressBar(
-          label: 'Pending',
+          label: 'Pendientes',
           value: pendientes.toString(),
           percentage: pendientesPct,
           color: const Color(0xFFD9232A),
@@ -384,7 +348,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 16),
         _buildStatProgressBar(
-          label: 'Graded',
+          label: 'Calificadas',
           value: calificadas.toString(),
           percentage: calificadasPct,
           color: const Color(0xFF23408E),
@@ -392,7 +356,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 16),
         _buildStatProgressBar(
-          label: 'Average',
+          label: 'Promedio',
           value: promedio.toStringAsFixed(1),
           percentage: promedioPct,
           color: const Color(0xFFD9232A),
@@ -410,6 +374,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  /// Construye una barra de progreso individual para una estadística.
   Widget _buildStatProgressBar({
     required String label,
     required String value,
@@ -476,6 +441,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  /// Construye una tarjeta de navegación para las secciones del panel.
   Widget _skillTile({
     required String title,
     required String subtitle,
@@ -533,6 +499,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  /// Construye la vista de error que se muestra cuando falla la carga de datos.
   Widget _buildErrorView() {
     return Center(
       child: Padding(
@@ -562,6 +529,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  /// Formatea una fecha para mostrar el tiempo transcurrido.
   String _formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
@@ -582,6 +550,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     }
   }
 
+  /// Navega a la pantalla de calificación manual.
   void _navigateToGrading(Map<String, dynamic> feedback) {
     Navigator.push(
       context,

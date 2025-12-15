@@ -3,12 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
 import 'teacher_activities_screen.dart';
 
-/// Tipos de actividad para una habilidad (vista docente).
+/// Pantalla para que los docentes gestionen los tipos de actividad de una habilidad específica.
+///
+/// Un "tipo de actividad" es una categoría dentro de una habilidad, por ejemplo,
+/// para la habilidad de "Writing", los tipos podrían ser "Ensayo" o "Email".
+/// Esta pantalla permite ver, crear, editar y eliminar dichos tipos.
 class TeacherActivityTypesScreen extends StatefulWidget {
+  /// El ID de la habilidad a la que pertenecen los tipos de actividad.
   final int skillId;
+
+  /// El nombre de la habilidad, para mostrar en la UI.
   final String skillName;
+
+  /// El nombre del curso, para mostrar en el "breadcrumb".
   final String courseName;
 
+  /// Crea una instancia de la pantalla de gestión de tipos de actividad.
   const TeacherActivityTypesScreen({
     super.key,
     required this.skillId,
@@ -23,13 +33,21 @@ class TeacherActivityTypesScreen extends StatefulWidget {
 
 class _TeacherActivityTypesScreenState
     extends State<TeacherActivityTypesScreen> {
+  /// Indica si los datos se están cargando.
   bool _loading = true;
+
+  /// Almacena un mensaje de error si la carga falla.
   String? _error;
+
+  /// Lista de los tipos de actividad obtenidos del [ApiService].
   List<Map<String, dynamic>> _types = [];
+
+  /// Color representativo del curso, usado para tematizar la UI.
   late final Color _courseColor;
 
   final Color _mainBlue = const Color(0xFF23408E);
 
+  /// Estilo para botones con fondo suave.
   ButtonStyle get _softButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: _mainBlue.withOpacity(0.1),
     foregroundColor: _mainBlue,
@@ -39,6 +57,7 @@ class _TeacherActivityTypesScreenState
     ),
   );
 
+  /// Estilo para botones de texto.
   ButtonStyle get _textButtonStyle =>
       TextButton.styleFrom(foregroundColor: _mainBlue);
 
@@ -49,6 +68,9 @@ class _TeacherActivityTypesScreenState
     _load();
   }
 
+  /// Carga la lista de tipos de actividad desde [ApiService].
+  ///
+  /// Maneja los estados de carga y error para la UI.
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -64,7 +86,7 @@ class _TeacherActivityTypesScreenState
             : (e as dynamic).toJson() as Map<String, dynamic>)
             .toList();
       } else {
-        _error = res['message'] ?? 'Could not load activity types';
+        _error = res['message'] ?? 'No se pudieron cargar los tipos de actividad';
       }
     } catch (e) {
       _error = 'Error: $e';
@@ -77,6 +99,7 @@ class _TeacherActivityTypesScreenState
     }
   }
 
+  /// Decoración estándar para los campos de texto en los diálogos.
   InputDecoration _dialogTextFieldDecoration(String label) {
     return InputDecoration(
       labelText: label,
@@ -89,6 +112,7 @@ class _TeacherActivityTypesScreenState
     );
   }
 
+  /// Muestra un diálogo para crear un nuevo tipo de actividad.
   Future<void> _createTypeDialog() async {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -96,13 +120,13 @@ class _TeacherActivityTypesScreenState
 
     await showDialog(
       context: context,
-      barrierColor: Colors.white38, // evita oscurecer el fondo de la pantalla
+      barrierColor: Colors.white38,
       builder: (_) => Dialog(
-        backgroundColor: Colors.transparent, // fondo transparente del dialogo
+        backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(30),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white, //fondo del recuadro
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey[200]!, width: 1.5),
           ),
@@ -111,7 +135,7 @@ class _TeacherActivityTypesScreenState
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Create activity type',
+                'Crear Tipo de Actividad',
                 style: GoogleFonts.ptSans(
                   color: _mainBlue,
                   fontSize: 20,
@@ -123,13 +147,13 @@ class _TeacherActivityTypesScreenState
 
               TextField(
                 controller: nameCtrl,
-                decoration: _dialogTextFieldDecoration('Name'),
+                decoration: _dialogTextFieldDecoration('Nombre'),
               ),
               const SizedBox(height: 8),
 
               TextField(
                 controller: descCtrl,
-                decoration: _dialogTextFieldDecoration('Description'),
+                decoration: _dialogTextFieldDecoration('Descripción'),
                 maxLines: 3,
               ),
 
@@ -141,7 +165,7 @@ class _TeacherActivityTypesScreenState
                   TextButton(
                     style: _textButtonStyle,
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
@@ -163,19 +187,19 @@ class _TeacherActivityTypesScreenState
                       if (r['success'] == true) {
                         await _load();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Type created')),
+                          const SnackBar(content: Text('Tipo creado')),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              r['message'] ?? 'Error creating type',
+                              r['message'] ?? 'Error al crear el tipo',
                             ),
                           ),
                         );
                       }
                     },
-                    child: const Text('Create'),
+                    child: const Text('Crear'),
                   ),
                 ],
               )
@@ -186,67 +210,62 @@ class _TeacherActivityTypesScreenState
     );
   }
 
+  /// Muestra un diálogo para renombrar un tipo de actividad existente.
+  /// @param t El mapa de datos del tipo de actividad a editar.
   Future<void> _renameTypeDialog(Map<String, dynamic> t) async {
     final nameCtrl = TextEditingController(text: (t['nombre'] as String?) ?? '');
     final descCtrl = TextEditingController(text: (t['descripcion'] as String?) ?? '');
 
     await showDialog(
       context: context,
-      barrierColor: Colors.white38, // evita oscurecer el fondo de la pantalla
+      barrierColor: Colors.white38,
       builder: (_) => Dialog(
-        backgroundColor: Colors.transparent, // fondo transparente del dialogo
-        insetPadding: const EdgeInsets.all(30), // Margen exterior
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(30),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white, // fondo del recuadro
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey[200]!, width: 1.5),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // --- TÍTULO ---
               Text(
-                'Edit activity type',
+                'Editar Tipo de Actividad',
                 style: GoogleFonts.ptSans(
-                  color: _mainBlue, // Asegúrate de tener definida esta variable o usa el color directo
+                  color: _mainBlue,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-
-              // --- CAMPOS DE TEXTO ---
               TextField(
                 controller: nameCtrl,
-                decoration: _dialogTextFieldDecoration('Name'),
+                decoration: _dialogTextFieldDecoration('Nombre'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: descCtrl,
-                decoration: _dialogTextFieldDecoration('Description'),
+                decoration: _dialogTextFieldDecoration('Descripción'),
                 maxLines: 3,
               ),
-
               const SizedBox(height: 20),
-
-              // --- BOTONES DE ACCIÓN ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
                     style: _textButtonStyle,
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: _softButtonStyle,
                     onPressed: () async {
                       final nombre = nameCtrl.text.trim();
-                      // Lógica de ID original
                       final id = (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
 
                       final r = await ApiService.updateActivityType(
@@ -257,21 +276,21 @@ class _TeacherActivityTypesScreenState
 
                       if (!mounted) return;
 
-                      Navigator.pop(context); // Cierra el diálogo
+                      Navigator.pop(context);
                       if (r['success'] == true) {
                         await _load();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Type updated')),
+                          const SnackBar(content: Text('Tipo actualizado')),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(r['message'] ?? 'Error updating type'),
+                            content: Text(r['message'] ?? 'Error al actualizar el tipo'),
                           ),
                         );
                       }
                     },
-                    child: const Text('Save'),
+                    child: const Text('Guardar'),
                   ),
                 ],
               )
@@ -282,27 +301,28 @@ class _TeacherActivityTypesScreenState
     );
   }
 
+  /// Muestra un diálogo de confirmación para eliminar un tipo de actividad.
+  /// @param id El ID del tipo de actividad a eliminar.
   Future<void> _deleteType(int id) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Delete activity type',
+          'Eliminar Tipo de Actividad',
           style: GoogleFonts.ptSans(
-            color: Color(0xFFD9232A),
+            color: const Color(0xFFD9232A),
             fontSize: 20,
           ),
           textAlign: TextAlign.center,
         ),
         content: const Text(
-            '¿Delete this activity type? This will also delete all its activities.'),
-
+            '¿Eliminar este tipo de actividad? Esto también eliminará todas sus actividades asociadas.'),
         actions: [
           TextButton(
             style: _textButtonStyle,
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: const Text('Cancelar'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -312,7 +332,7 @@ class _TeacherActivityTypesScreenState
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: const Text('Eliminar'),
           ),
         ],
       ),
@@ -325,12 +345,12 @@ class _TeacherActivityTypesScreenState
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Type deleted')));
+            const SnackBar(content: Text('Tipo eliminado')));
       }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(r['message'] ?? 'Error deleting type')),
+          SnackBar(content: Text(r['message'] ?? 'Error al eliminar el tipo')),
         );
       }
     }
@@ -340,7 +360,6 @@ class _TeacherActivityTypesScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -348,7 +367,7 @@ class _TeacherActivityTypesScreenState
           FloatingActionButton.extended(
             onPressed: _loading ? null : _createTypeDialog,
             icon: const Icon(Icons.add),
-            label: const Text('New type'),
+            label: const Text('Nuevo Tipo'),
             heroTag: null,
             backgroundColor: _mainBlue.withOpacity(0.1),
             foregroundColor: _mainBlue,
@@ -364,94 +383,89 @@ class _TeacherActivityTypesScreenState
           ),
         ],
       ),
-
       body: SafeArea(
         child: _loading
             ? Center(
-          child: CircularProgressIndicator(
-            color: _courseColor,
-            strokeWidth: 5,
-          ),
-        )
-            : _error != null
-            ? Center(child: Text(_error!))
-            : _types.isEmpty
-            ? const Center(child: Text('No activity types found'))
-            : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding:
-              const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
-                children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 40, vertical: 0),
-                      decoration: BoxDecoration(
-                        color: _courseColor,
-                        borderRadius:
-                        BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        widget.skillName,
-                        style: GoogleFonts.ptSans(
-                          color: Colors.white,
-                          fontSize: 20,
-
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "My courses > ${widget.courseName} > ${widget.skillName} > Types",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                color: _courseColor,
-                child: ListView.separated(
-                  padding: const EdgeInsets.only(
-                    left: 16.0,
-                    right: 16.0,
-                    top: 0,
-                    bottom: 150.0, //espacio para los botones
-                  ),
-                  itemCount: _types.length,
-                  separatorBuilder: (_, __) =>
-                  const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return _buildTypeTile(
-                      _types[index],
-                      _courseColor,
-                    );
-                  },
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5,
                 ),
-              ),
-            ),
-          ],
-        ),
+              )
+            : _error != null
+                ? Center(child: Text(_error!))
+                : _types.isEmpty
+                    ? const Center(child: Text('No se encontraron tipos de actividad'))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                            child: Column(
+                              children: [
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 40, vertical: 0),
+                                    decoration: BoxDecoration(
+                                      color: _courseColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      widget.skillName,
+                                      style: GoogleFonts.ptSans(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: _load,
+                              color: _courseColor,
+                              child: ListView.separated(
+                                padding: const EdgeInsets.only(
+                                  left: 16.0,
+                                  right: 16.0,
+                                  top: 0,
+                                  bottom: 150.0,
+                                ),
+                                itemCount: _types.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  return _buildTypeTile(
+                                    _types[index],
+                                    _courseColor,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
       ),
     );
   }
 
+  /// Construye una tarjeta (tile) para un tipo de actividad.
   Widget _buildTypeTile(Map<String, dynamic> t, Color color) {
-    final nombre = (t['nombre'] as String?) ?? 'Type';
-    final id =
-        (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
+    final nombre = (t['nombre'] as String?) ?? 'Tipo';
+    final id = (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
     final desc = (t['descripcion'] as String?) ?? '';
 
     return InkWell(
@@ -475,8 +489,7 @@ class _TeacherActivityTypesScreenState
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border:
-          Border.all(color: Colors.grey[200]!, width: 1.5),
+          border: Border.all(color: Colors.grey[200]!, width: 1.5),
         ),
         child: Row(
           children: [
@@ -486,11 +499,9 @@ class _TeacherActivityTypesScreenState
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.category_rounded,
-                  color: color, size: 28),
+              child: Icon(Icons.category_rounded, color: color, size: 28),
             ),
             const SizedBox(width: 16),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,27 +524,23 @@ class _TeacherActivityTypesScreenState
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
-
                         ),
                       ),
                     ),
                 ],
               ),
             ),
-
             IconButton(
-              icon: Icon(Icons.mode_edit_outlined,
-                  color: Color(0xFF23408E)),
+              icon: Icon(Icons.mode_edit_outlined, color: Color(0xFF23408E)),
               onPressed: () => _renameTypeDialog(t),
             ),
             IconButton(
               icon: const Icon(Icons.rule, color: Color(0xFF23408E)),
-              tooltip: 'Allowed question types',
+              tooltip: 'Tipos de pregunta permitidos',
               onPressed: () => _editAllowedTypesDialog((t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0), nombre),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  color: Color(0xFFD9232A)),
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
               onPressed: () => _deleteType(id),
             ),
           ],
@@ -542,8 +549,11 @@ class _TeacherActivityTypesScreenState
     );
   }
 
+  /// Muestra un diálogo para editar los tipos de pregunta permitidos para un tipo de actividad.
+  /// @param activityTypeId El ID del tipo de actividad a configurar.
+  /// @param title El nombre del tipo de actividad para mostrar en el título del diálogo.
   Future<void> _editAllowedTypesDialog(int activityTypeId, String title) async {
-    final all = const [
+    const all = [
       'multiple_choice',
       'matching',
       'completion',
@@ -553,18 +563,17 @@ class _TeacherActivityTypesScreenState
     final current = await ApiService.getAllowedQuestionTypes(activityTypeId);
     final selected = {...current};
 
-    final Color mainColor = const Color(0xFF23408E);
+    const Color mainColor = Color(0xFF23408E);
 
     if (!mounted) return;
 
     await showDialog(
       context: context,
-      barrierColor: Colors.white38, // Evita oscurecer demasiado el fondo
+      barrierColor: Colors.white38,
       builder: (_) => Dialog(
-        backgroundColor: Colors.transparent, // Fondo transparente
+        backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(50),
         child: Container(
-          // Decoración del recuadro (Bordes, Sombra, Fondo Blanco)
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -577,30 +586,28 @@ class _TeacherActivityTypesScreenState
               )
             ],
           ),
-          padding: const EdgeInsets.fromLTRB(40,20,40,30),
+          padding: const EdgeInsets.fromLTRB(40, 20, 40, 30),
           child: StatefulBuilder(
-            // StatefulBuilder es necesario para redibujar los checkboxes dentro del Dialog
             builder: (context, setStateDialog) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Título Estilizado
                   Text.rich(
                     TextSpan(
-                      text: 'Allowed question types\n', // Parte 1 (Título principal)
+                      text: 'Tipos de pregunta permitidos\n',
                       style: GoogleFonts.ptSans(
-                        color: mainColor, // El azul principal (0xFF23408E)
+                        color: mainColor,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                       children: [
                         TextSpan(
-                          text: title, // Parte 2 (La variable con estilo diferente)
+                          text: title,
                           style: GoogleFonts.ptSans(
-                            color: Colors.grey[600], // Color diferente (ej. gris)
-                            fontSize: 16,            // Tamaño más pequeño
-                            fontWeight: FontWeight.normal, // Letra normal (no bold)
-                            height: 1.5,             // Un poco de espacio vertical
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                            fontWeight: FontWeight.normal,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -608,15 +615,12 @@ class _TeacherActivityTypesScreenState
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-
-                  // Lista de Checkboxes
-                  // Usamos Flexible por si la lista es muy larga en pantallas pequeñas
                   Flexible(
                     child: SingleChildScrollView(
                       child: Column(
                         children: all.map((t) => CheckboxListTile(
                           activeColor: mainColor,
-                          contentPadding: EdgeInsets.zero, // Más compacto
+                          contentPadding: EdgeInsets.zero,
                           value: selected.contains(t),
                           title: Text(
                             t.replaceAll('_', ' '),
@@ -633,22 +637,19 @@ class _TeacherActivityTypesScreenState
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Botones de Acción
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                        child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: mainColor.withOpacity(0.1), // Fondo suave
-                          foregroundColor: mainColor, // Texto color principal
+                          backgroundColor: mainColor.withOpacity(0.1),
+                          foregroundColor: mainColor,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -664,15 +665,15 @@ class _TeacherActivityTypesScreenState
 
                           if (r['success'] == true) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: const Text('Allowed types saved'), backgroundColor: mainColor),
+                              SnackBar(content: const Text('Tipos permitidos guardados'), backgroundColor: mainColor),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(r['message'] ?? 'Error saving allowed types')),
+                              SnackBar(content: Text(r['message'] ?? 'Error al guardar los tipos')),
                             );
                           }
                         },
-                        child: const Text('Save'),
+                        child: const Text('Guardar'),
                       ),
                     ],
                   ),
@@ -685,6 +686,7 @@ class _TeacherActivityTypesScreenState
     );
   }
 
+  /// Determina el color a usar basado en el nombre del curso.
   Color _getCourseColor(String courseName) {
     String lower = courseName.toLowerCase();
     if (lower.contains('toefl')) {

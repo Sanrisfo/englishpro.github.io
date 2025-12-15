@@ -1,11 +1,18 @@
 ﻿import '../config/supabase_config.dart';
 
-/// Servicio de docentes en Supabase.
-/// Gestiona consultas de datos para perfiles, métricas y pendientes.
+/// Servicio para la gestión de docentes y funcionalidades relacionadas en Supabase.
+///
+/// Provee métodos estáticos para consultar y manipular datos de perfiles de docentes,
+/// métricas, retroalimentaciones pendientes y creación/actualización de perfiles de docentes.
 class SupabaseTeacherService {
-
-  /// Get teacher information by user ID
-  /// Returns teacher data or null if user is not a teacher
+  /// Obtiene la información de un docente buscando por su `id_usuario`.
+  ///
+  /// Primero verifica la existencia del usuario y su rol.
+  /// Luego busca el registro del docente en la tabla `docentes`.
+  ///
+  /// @param userId El ID del usuario asociado al docente.
+  /// @return Un mapa con los datos del docente si se encuentra, o `null` si el usuario
+  ///         no es docente o no existe el registro de docente.
   static Future<Map<String, dynamic>?> getTeacherByUserId(int userId) async {
     try {
       print('ðŸ” DEBUG: Buscando docente con id_usuario = $userId');
@@ -35,8 +42,13 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Get teacher statistics
-  /// Returns stats like total feedbacks, average rating, pending reviews
+  /// Obtiene estadísticas clave para un docente específico.
+  ///
+  /// Incluye el total de retroalimentaciones realizadas, las calificadas,
+  /// las pendientes de revisión y la calificación promedio del docente.
+  ///
+  /// @param teacherId El ID del docente.
+  /// @return Un mapa que contiene las estadísticas del docente.
   static Future<Map<String, dynamic>> getTeacherStats(int teacherId) async {
     try {
       // Get teacher basic info
@@ -46,14 +58,14 @@ class SupabaseTeacherService {
           .eq('id_docente', teacherId)
           .single();
 
-      // Get total feedbacks count
+      // Total de retroalimentaciones registradas
       final feedbackCountResult = await supabase
           .from('retroalimentacion_docente')
           .select('id_retroalimentacion')
           .eq('id_docente', teacherId)
           .count();
 
-      // Get pending feedbacks (responses that need review and have no feedback yet)
+      // Pendientes: respuestas que requieren revisión sin feedback
       final pendingResponses = await supabase
           .from('respuestas_usuario')
           .select('id_respuesta')
@@ -78,7 +90,7 @@ class SupabaseTeacherService {
         pendingCount = ids.where((id) => !feedbackIds.contains(id)).length;
       }
 
-      // Get graded feedbacks count
+      // Cantidad de revisiones realizadas
       final gradedCount = feedbackCountResult.count ?? 0;
 
       final totalFeedbacks = teacher['total_retroalimentaciones'] ?? 0;
@@ -101,7 +113,14 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Get pending feedbacks (responses that require manual review)
+  /// Obtiene una lista de retroalimentaciones pendientes de revisión por parte de los docentes.
+  ///
+  /// Filtra las respuestas de usuario que requieren revisión y que aún no han recibido
+  /// una retroalimentación. Enriquecer los resultados con información de curso, habilidad,
+  /// tipo de actividad y título de la actividad para mostrar un "breadcrumb" en la UI.
+  ///
+  /// @return Una lista de mapas, donde cada mapa representa una respuesta de usuario
+  ///         pendiente de retroalimentación, con detalles adicionales.
   static Future<List<Map<String, dynamic>>> getPendingFeedbacks() async {
     try {
       final response = await supabase
@@ -249,7 +268,13 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Get all feedbacks by teacher
+  /// Obtiene todas las retroalimentaciones realizadas por un docente específico.
+  ///
+  /// Incluye detalles de las respuestas de los usuarios, la pregunta asociada
+  /// y el nombre del usuario.
+  ///
+  /// @param teacherId El ID del docente.
+  /// @return Una lista de mapas, donde cada mapa representa una retroalimentación.
   static Future<List<Map<String, dynamic>>> getFeedbacksByTeacher(int teacherId) async {
     try {
       final response = await supabase
@@ -272,7 +297,17 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Create feedback for a student response
+  /// Crea una nueva retroalimentación para una respuesta de un estudiante.
+  ///
+  /// Después de crear la retroalimentación, actualiza el estado de la respuesta del
+  /// usuario para marcarla como revisada y opcionalmente asigna puntos obtenidos.
+  ///
+  /// @param responseId El ID de la respuesta del usuario a la que se le dará retroalimentación.
+  /// @param teacherId El ID del docente que está creando la retroalimentación.
+  /// @param comment El comentario de retroalimentación.
+  /// @param grade La calificación asignada (0-100).
+  /// @param pointsAssigned Los puntos que se asignan al estudiante por esta respuesta (opcional).
+  /// @return Un mapa indicando el éxito de la operación y los datos de la retroalimentación.
   static Future<Map<String, dynamic>> createFeedback({
     required int responseId,
     required int teacherId,
@@ -316,7 +351,12 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Get response by ID with question details
+  /// Obtiene los detalles de una respuesta de usuario específica por su ID.
+  ///
+  /// Incluye información anidada de la pregunta asociada y el usuario que realizó la respuesta.
+  ///
+  /// @param responseId El ID de la respuesta del usuario.
+  /// @return Un mapa con los detalles de la respuesta si se encuentra, o `null` si no existe.
   static Future<Map<String, dynamic>?> getResponseById(int responseId) async {
     try {
       final response = await supabase
@@ -336,7 +376,15 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Create a new teacher profile
+  /// Crea un nuevo perfil de docente asociado a un usuario existente.
+  ///
+  /// También actualiza el rol del usuario a 'Docente' en la tabla `usuarios`.
+  ///
+  /// @param userId El ID del usuario que se convertirá en docente.
+  /// @param especialidad La especialidad del docente.
+  /// @param certificaciones Las certificaciones del docente (opcional).
+  /// @param anosExperiencia Los años de experiencia del docente (opcional).
+  /// @return Un mapa indicando el éxito de la operación y los datos del nuevo docente.
   static Future<Map<String, dynamic>> createTeacher({
     required String userId,
     required String especialidad,
@@ -374,7 +422,15 @@ class SupabaseTeacherService {
     }
   }
 
-  /// Update teacher profile
+  /// Actualiza el perfil de un docente existente.
+  ///
+  /// Permite modificar la especialidad, certificaciones y años de experiencia del docente.
+  ///
+  /// @param teacherId El ID del docente a actualizar.
+  /// @param especialidad La nueva especialidad (opcional).
+  /// @param certificaciones Las nuevas certificaciones (opcional).
+  /// @param anosExperiencia Los nuevos años de experiencia (opcional).
+  /// @return Un mapa indicando el éxito de la operación y los datos actualizados del docente.
   static Future<Map<String, dynamic>> updateTeacher({
     required int teacherId,
     String? especialidad,
@@ -407,3 +463,4 @@ class SupabaseTeacherService {
     }
   }
 }
+

@@ -1,0 +1,23 @@
+dartdoc:
+  linkToSource:
+    root: ".."
+    uriTemplate: "https://github.com/<org>/<repo>/blob/main/{path}#L{line}"
+  showUndocumentedCategories: true
+  categories:
+    Modelos:
+      name: "Modelos"
+      markdown: "Modelos de datos de dominio."
+      packageOrder: [englishpro_app]
+    Servicios:
+      name: "Servicios"
+      markdown: "Servicios de acceso a datos y plataformas (Supabase, Storage)."
+    Estado:
+      name: "Estado"
+      markdown: "Gestión de estado y proveedores."
+    Widgets:
+      name: "Widgets"
+      markdown: "Componentes de UI reutilizables."
+    Configuración:
+      name: "Configuración"
+      markdown: "Inicialización y configuración de SDKs."
+  categorizeLibraries: true

@@ -7,6 +7,7 @@ class CreateQuestionScreen extends StatefulWidget {
   final int skillId;
   final String courseName;
   final List<String>? allowedTypes;
+  final Map<String, dynamic>? questionToEdit;
 
   const CreateQuestionScreen({
     super.key,
@@ -14,6 +15,7 @@ class CreateQuestionScreen extends StatefulWidget {
     required this.skillId,
     required this.courseName,
     this.allowedTypes,
+    this.questionToEdit,
   });
 
   @override
@@ -66,28 +68,57 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
 
   Future<void> _init() async {
     try {
-      _allowedTypes = widget.allowedTypes ?? [];
-      if (_allowedTypes.isEmpty) {
-        try {
-          final quizRow = await supabase
-              .from('cuestionarios')
-              .select('id_tipo_actividad')
-              .eq('id_cuestionario', widget.quizId)
-              .single();
-          final typeId = (quizRow['id_tipo_actividad'] as num?)?.toInt();
-          if (typeId != null) {
-            final rows = await supabase
-                .from('tipo_actividad_pregunta_permitida')
-                .select('tipo_pregunta')
-                .eq('id_tipo_actividad', typeId);
-            _allowedTypes = List<Map<String, dynamic>>.from(rows as List)
-                .map((e) => (e['tipo_pregunta'] as String).toLowerCase())
-                .toList();
-          }
-        } catch (_) {}
+      if (widget.questionToEdit != null) {
+        final q = widget.questionToEdit!;
+        _textCtrl.text = q['texto_pregunta'] ?? '';
+        _pointsCtrl.text = (q['puntos'] ?? 1).toString();
+        _explanationCtrl.text = q['explicacion'] ?? '';
+        _nivel = q['nivel_dificultad'] ?? 'Basico';
+        _type = (q['tipo_pregunta'] as String?)?.toLowerCase();
+
+        // Lock type
+        _allowedTypes = _type != null ? [_type!] : [];
+        
+        // Populate specific fields
+        if (_type == 'multiple_choice') {
+           final opts = q['opciones'] as List?;
+           if (opts != null) {
+             _mcOptCtrls = opts.map((o) => TextEditingController(text: o['texto_opcion'])).toList();
+             for (int i=0; i<opts.length; i++) {
+               if (opts[i]['es_correcta'] == true) _mcCorrect.add(i);
+             }
+             // Ensure at least 3 controllers
+             while (_mcOptCtrls.length < 3) _mcOptCtrls.add(TextEditingController());
+           }
+        }
+        // NOTE: For Matching/Completion, we rely on the teacher re-entering data if they want to edit, 
+        // as we don't fully fetch relations in TeacherQuestionsScreen yet.
+        // We will just allow editing basic info for those types if relations are missing.
+      } else {
+        // ... (Existing NEW logic)
+        _allowedTypes = widget.allowedTypes ?? [];
+        if (_allowedTypes.isEmpty) {
+          try {
+            final quizRow = await supabase
+                .from('cuestionarios')
+                .select('id_tipo_actividad')
+                .eq('id_cuestionario', widget.quizId)
+                .single();
+            final typeId = (quizRow['id_tipo_actividad'] as num?)?.toInt();
+            if (typeId != null) {
+              final rows = await supabase
+                  .from('tipo_actividad_pregunta_permitida')
+                  .select('tipo_pregunta')
+                  .eq('id_tipo_actividad', typeId);
+              _allowedTypes = List<Map<String, dynamic>>.from(rows as List)
+                  .map((e) => (e['tipo_pregunta'] as String).toLowerCase())
+                  .toList();
+            }
+          } catch (_) {}
+        }
+        if (_allowedTypes.isEmpty) _allowedTypes = List.from(_allTypes);
+        _type = _allowedTypes.first;
       }
-      if (_allowedTypes.isEmpty) _allowedTypes = List.from(_allTypes);
-      _type = _allowedTypes.first;
     } catch (e) {
       _error = 'Error loading: $e';
     } finally {
@@ -135,115 +166,160 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
     final puntos = int.tryParse(_pointsCtrl.text.trim()) ?? 1;
     final type = _type ?? _allowedTypes.first;
     setState(() => _submitting = true);
+    
     try {
-      if (type == 'multiple_choice') {
-        final nonEmpty = _mcOptCtrls.where((c) => c.text.trim().isNotEmpty).toList();
-        if (nonEmpty.length < 3 || nonEmpty.length > 5) {
-          throw 'Multiple Choice: 3 a 5 opciones';
-        }
-        if (_mcCorrect.isEmpty) throw 'Marca al menos una opción correcta';
-        final inserted = await supabase.from('preguntas').insert({
-          'id_habilidad': widget.skillId,
+      final isEdit = widget.questionToEdit != null;
+      final qId = isEdit ? widget.questionToEdit!['id_pregunta'] as int : null;
+
+      // 1. Update/Insert Question Record
+      if (isEdit) {
+        await supabase.from('preguntas').update({
           'texto_pregunta': texto,
-          'tipo_pregunta': 'multiple_choice',
           'nivel_dificultad': _nivel,
           'puntos': puntos,
           'explicacion': _explanationCtrl.text.trim(),
-        }).select('id_pregunta').single();
-        final qid = (inserted['id_pregunta'] as num).toInt();
+        }).eq('id_pregunta', qId!);
+      } else {
+        // Insert logic remains part of specific blocks below for ID retrieval
+        // But to unify, we could insert first. However, type-specific tables (record_audio_config) need ID.
+      }
+
+      // 2. Handle specific types
+      if (type == 'multiple_choice') {
+        final nonEmpty = _mcOptCtrls.where((c) => c.text.trim().isNotEmpty).toList();
+        if (nonEmpty.length < 3 || nonEmpty.length > 5) throw 'Multiple Choice: 3 a 5 opciones';
+        if (_mcCorrect.isEmpty) throw 'Marca al menos una opción correcta';
+
+        int currentQId;
+        if (isEdit) {
+          currentQId = qId!;
+          // Delete old options
+          await supabase.from('opciones_respuesta').delete().eq('id_pregunta', currentQId);
+        } else {
+           final inserted = await supabase.from('preguntas').insert({
+            'id_habilidad': widget.skillId,
+            'texto_pregunta': texto,
+            'tipo_pregunta': 'multiple_choice',
+            'nivel_dificultad': _nivel,
+            'puntos': puntos,
+            'explicacion': _explanationCtrl.text.trim(),
+          }).select('id_pregunta').single();
+          currentQId = (inserted['id_pregunta'] as num).toInt();
+        }
+
         final opts = <Map<String, dynamic>>[];
         for (int i = 0; i < _mcOptCtrls.length; i++) {
           final t = _mcOptCtrls[i].text.trim();
           if (t.isEmpty) continue;
-          opts.add({'id_pregunta': qid, 'texto_opcion': t, 'es_correcta': _mcCorrect.contains(i), 'orden': i + 1});
+          opts.add({'id_pregunta': currentQId, 'texto_opcion': t, 'es_correcta': _mcCorrect.contains(i), 'orden': i + 1});
         }
         await supabase.from('opciones_respuesta').insert(opts);
-        await _linkQuestionToQuiz(qid);
+        
+        if (!isEdit) await _linkQuestionToQuiz(currentQId);
+
       } else if (type == 'matching') {
-        final answers = _matchAnswersCtrls.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList();
-        final statements = _matchStatements
-            .where((r) => (r['text'] as TextEditingController).text.trim().isNotEmpty && r['answer'] != null)
-            .map((r) => {'texto': (r['text'] as TextEditingController).text.trim(), 'answer_index': (r['answer'] as int)})
-            .toList();
-        if (statements.isEmpty || statements.length > 5) throw 'Matching: 1..5 enunciados';
-        if (answers.length < statements.length || answers.length > 7) throw 'Matching: respuestas B entre A..7';
-        final res = await supabase.rpc('create_matching_question', params: {
-          'p_id_habilidad': widget.skillId,
-          'p_texto': texto,
-          'p_nivel': _nivel,
-          'p_puntos': puntos,
-          'p_explicacion': _explanationCtrl.text.trim(),
-          'p_answers': answers,
-          'p_statements': statements,
-        });
-        int qid;
-        if (res is List && res.isNotEmpty) {
-          qid = (res.first['qid'] as num).toInt();
-        } else if (res is Map && res.containsKey('qid')) {
-          qid = (res['qid'] as num).toInt();
+        // Edit Matching is complex due to relations. For MVP CRUD, we only update basic info if editing.
+        // If user wants to change pairs, they might need to re-create or we assume strict usage.
+        if (isEdit) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated basic info. Editing matching pairs is not fully supported yet.')));
         } else {
-          throw 'RPC create_matching_question no retornó qid';
+            // ... (Existing Creation Logic)
+            final answers = _matchAnswersCtrls.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList();
+            final statements = _matchStatements
+                .where((r) => (r['text'] as TextEditingController).text.trim().isNotEmpty && r['answer'] != null)
+                .map((r) => {'texto': (r['text'] as TextEditingController).text.trim(), 'answer_index': (r['answer'] as int)})
+                .toList();
+            if (statements.isEmpty || statements.length > 5) throw 'Matching: 1..5 enunciados';
+            if (answers.length < statements.length || answers.length > 7) throw 'Matching: respuestas B entre A..7';
+            final res = await supabase.rpc('create_matching_question', params: {
+              'p_id_habilidad': widget.skillId,
+              'p_texto': texto,
+              'p_nivel': _nivel,
+              'p_puntos': puntos,
+              'p_explicacion': _explanationCtrl.text.trim(),
+              'p_answers': answers,
+              'p_statements': statements,
+            });
+            int qid;
+             if (res is List && res.isNotEmpty) {
+              qid = (res.first['qid'] as num).toInt();
+            } else if (res is Map && res.containsKey('qid')) {
+              qid = (res['qid'] as num).toInt();
+            } else {
+              throw 'RPC error';
+            }
+            await _linkQuestionToQuiz(qid);
         }
-        await _linkQuestionToQuiz(qid);
       } else if (type == 'completion') {
-        if (_completionRows.length < 5 || _completionRows.length > 6) throw 'Completion: 5..6 oraciones';
-        final sentences = <Map<String, String>>[];
-        for (final r in _completionRows) {
-          final sentence = r['sentence']!.text.trim();
-          final correct = r['correct']!.text.trim();
-          if (sentence.isEmpty || correct.isEmpty) continue;
-          String template;
-          final idx = sentence.toLowerCase().indexOf(correct.toLowerCase());
-          if (idx >= 0) {
-            template = sentence.replaceRange(idx, idx + correct.length, '{{1}}');
-          } else {
-            template = '$sentence {{1}}';
-          }
-          sentences.add({'texto_template': template, 'correct_text': correct});
-        }
-        if (sentences.length < 5) throw 'Completion: completa 5 oraciones';
-        final res = await supabase.rpc('create_completion_question', params: {
-          'p_id_habilidad': widget.skillId,
-          'p_texto': texto,
-          'p_nivel': _nivel,
-          'p_puntos': puntos,
-          'p_explicacion': _explanationCtrl.text.trim(),
-          'p_sentences': sentences,
-        });
-        int qid;
-        if (res is List && res.isNotEmpty) {
-          qid = (res.first['qid'] as num).toInt();
-        } else if (res is Map && res.containsKey('qid')) {
-          qid = (res['qid'] as num).toInt();
-        } else {
-          throw 'RPC create_completion_question no retornó qid';
-        }
-        await _linkQuestionToQuiz(qid);
+         if (isEdit) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated basic info. Editing completion sentences is not fully supported yet.')));
+         } else {
+            // ... (Existing Creation Logic)
+            if (_completionRows.length < 5 || _completionRows.length > 6) throw 'Completion: 5..6 oraciones';
+            final sentences = <Map<String, String>>[];
+            for (final r in _completionRows) {
+              final sentence = r['sentence']!.text.trim();
+              final correct = r['correct']!.text.trim();
+              if (sentence.isEmpty || correct.isEmpty) continue;
+              String template;
+              final idx = sentence.toLowerCase().indexOf(correct.toLowerCase());
+              if (idx >= 0) {
+                template = sentence.replaceRange(idx, idx + correct.length, '{{1}}');
+              } else {
+                template = '$sentence {{1}}';
+              }
+              sentences.add({'texto_template': template, 'correct_text': correct});
+            }
+            if (sentences.length < 5) throw 'Completion: completa 5 oraciones';
+            final res = await supabase.rpc('create_completion_question', params: {
+              'p_id_habilidad': widget.skillId,
+              'p_texto': texto,
+              'p_nivel': _nivel,
+              'p_puntos': puntos,
+              'p_explicacion': _explanationCtrl.text.trim(),
+              'p_sentences': sentences,
+            });
+            int qid;
+            if (res is List && res.isNotEmpty) {
+              qid = (res.first['qid'] as num).toInt();
+            } else if (res is Map && res.containsKey('qid')) {
+              qid = (res['qid'] as num).toInt();
+            } else {
+              throw 'RPC error';
+            }
+            await _linkQuestionToQuiz(qid);
+         }
       } else if (type == 'record_audio') {
-        final inserted = await supabase.from('preguntas').insert({
-          'id_habilidad': widget.skillId,
-          'texto_pregunta': texto,
-          'tipo_pregunta': 'record_audio',
-          'nivel_dificultad': _nivel,
-          'puntos': puntos,
-          'explicacion': _explanationCtrl.text.trim(),
-        }).select('id_pregunta').single();
-        final qid = (inserted['id_pregunta'] as num).toInt();
-        await supabase.from('record_audio_config').insert({'id_pregunta': qid});
-        await _linkQuestionToQuiz(qid);
+         if (!isEdit) {
+            final inserted = await supabase.from('preguntas').insert({
+              'id_habilidad': widget.skillId,
+              'texto_pregunta': texto,
+              'tipo_pregunta': 'record_audio',
+              'nivel_dificultad': _nivel,
+              'puntos': puntos,
+              'explicacion': _explanationCtrl.text.trim(),
+            }).select('id_pregunta').single();
+            final qid = (inserted['id_pregunta'] as num).toInt();
+            await supabase.from('record_audio_config').insert({'id_pregunta': qid});
+            await _linkQuestionToQuiz(qid);
+         }
       } else if (type == 'write_text') {
-        final inserted = await supabase.from('preguntas').insert({
-          'id_habilidad': widget.skillId,
-          'texto_pregunta': texto,
-          'tipo_pregunta': 'write_text',
-          'nivel_dificultad': _nivel,
-          'puntos': puntos,
-          'explicacion': _explanationCtrl.text.trim(),
-        }).select('id_pregunta').single();
-        final qid = (inserted['id_pregunta'] as num).toInt();
-        final mw = int.tryParse(_maxWordsCtrl.text.trim()) ?? 120;
-        await supabase.from('write_text_config').insert({'id_pregunta': qid, 'max_words': mw});
-        await _linkQuestionToQuiz(qid);
+         final mw = int.tryParse(_maxWordsCtrl.text.trim()) ?? 120;
+         if (isEdit) {
+             await supabase.from('write_text_config').update({'max_words': mw}).eq('id_pregunta', qId!);
+         } else {
+            final inserted = await supabase.from('preguntas').insert({
+              'id_habilidad': widget.skillId,
+              'texto_pregunta': texto,
+              'tipo_pregunta': 'write_text',
+              'nivel_dificultad': _nivel,
+              'puntos': puntos,
+              'explicacion': _explanationCtrl.text.trim(),
+            }).select('id_pregunta').single();
+            final qid = (inserted['id_pregunta'] as num).toInt();
+            await supabase.from('write_text_config').insert({'id_pregunta': qid, 'max_words': mw});
+            await _linkQuestionToQuiz(qid);
+         }
       }
 
       if (!mounted) return;

@@ -49,9 +49,9 @@ void main() {
       rol: 'Estudiante',
     );
     when(mockAuth.register(
-      nombreCompleto: anyNamed('nombreCompleto'),
-      email: anyNamed('email'),
-      password: anyNamed('password'),
+      nombreCompleto: 'any_nombre_completo',
+      email: 'any_email@example.com',
+      password: 'any_password',
       profesion: anyNamed('profesion'),
     )).thenAnswer((_) async => {
           'success': true,

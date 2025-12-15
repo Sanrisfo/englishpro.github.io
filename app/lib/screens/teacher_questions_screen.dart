@@ -609,6 +609,28 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                 ),
               ),
               IconButton(
+                tooltip: 'Edit question',
+                icon: const Icon(Icons.edit_outlined, color: Color(0xFF23408E)),
+                onPressed: () async {
+                  final updated = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CreateQuestionScreen(
+                        quizId: widget.quizId,
+                        skillId: widget.skillId,
+                        courseName: widget.courseName,
+                        questionToEdit: q, // Pass the full question object (with options)
+                      ),
+                      fullscreenDialog: true,
+                    ),
+                  );
+                  if (updated == true) {
+                     _load(); 
+                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Question updated')));
+                  }
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
                 onPressed: () => _deleteQuestion(qid),
               ),

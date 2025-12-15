@@ -1,26 +1,58 @@
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../services/storage_service.dart';
 
-/// Widget de grabación de audio con reproducción y subida opcional.
+/// Un widget completo para la grabación, reproducción y subida de audio.
 ///
-/// Expone callbacks al completar la grabación y/o la subida.
+/// Este widget encapsula la lógica para:
+/// - Solicitar permisos de grabación.
+/// - Iniciar, pausar, reanudar y detener la grabación de audio.
+/// - Reproducir el audio grabado.
+/// - Eliminar la grabación local.
+/// - Subir automáticamente el archivo a un servicio de almacenamiento.
+///
+/// Utiliza los paquetes `record` para la grabación y `audioplayers` para la
+/// reproducción. Expone callbacks como [onRecordingComplete] y [onUploadComplete]
+/// para notificar a los widgets padres sobre estos eventos.
+///
+/// ### Nota de obsolescencia:
+/// Este widget utiliza [StorageService], que está obsoleto. Para nuevo
+/// desarrollo, se debería migrar a [SupabaseStorageService].
+///
+/// ### Uso básico:
+/// ```dart
+/// AudioRecorderWidget(
+///   userId: '123',
+///   onRecordingComplete: (path) => print('Grabado en: $path'),
+///   onUploadComplete: (url) => print('Subido a: $url'),
+/// )
+/// ```
 class AudioRecorderWidget extends StatefulWidget {
+  /// Callback que se ejecuta cuando la grabación finaliza. Devuelve la ruta local del archivo.
   final Function(String audioPath) onRecordingComplete;
+
+  /// Callback que se ejecuta cuando la subida del archivo se completa. Devuelve la URL del archivo en el almacenamiento.
   final Function(String firebaseUrl)? onUploadComplete;
+
+  /// El ID del usuario, necesario para la subida automática del archivo.
   final String? userId;
+
+  /// La duración máxima de la grabación en segundos. Por defecto, 120 segundos.
   final int? maxDurationSeconds;
+
+  /// Si es `true`, el archivo se subirá automáticamente al finalizar la grabación.
   final bool autoUpload;
 
+  /// Crea una instancia del widget de grabación de audio.
   const AudioRecorderWidget({
     Key? key,
     required this.onRecordingComplete,
     this.onUploadComplete,
     this.userId,
-    this.maxDurationSeconds = 120, // 2 minutes default
+    this.maxDurationSeconds = 120, // 2 minutos por defecto
     this.autoUpload = true,
   }) : super(key: key);
 
@@ -29,8 +61,13 @@ class AudioRecorderWidget extends StatefulWidget {
 }
 
 class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
+  /// Controlador para la grabación de audio del paquete `record`.
   final AudioRecorder _audioRecorder = AudioRecorder();
+
+  /// Controlador para la reproducción de audio del paquete `audioplayers`.
   final AudioPlayer _audioPlayer = AudioPlayer();
+
+  /// [DEPRECATED] Instancia del servicio de almacenamiento legado.
   final StorageService _storageService = StorageService();
 
   bool _isRecording = false;
@@ -51,16 +88,17 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
     super.dispose();
   }
 
+  /// Inicia el proceso de grabación de audio.
+  ///
+  /// Solicita permisos, define una ruta temporal y comienza a grabar.
+  /// Actualiza el estado de la UI y empieza un temporizador para la duración.
   Future<void> _startRecording() async {
     try {
-      // Request permission
       if (await _audioRecorder.hasPermission()) {
-        // Get temporary directory
         final directory = await getTemporaryDirectory();
         final path =
             '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-        // Start recording
         await _audioRecorder.start(
           const RecordConfig(),
           path: path,
@@ -73,7 +111,6 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
           _recordingDuration = 0;
         });
 
-        // Update duration
         _updateDuration();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -83,21 +120,25 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
         );
       }
     } catch (e) {
-      print('Error starting recording: $e');
+      print('Error al iniciar grabación: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al iniciar grabación: $e')),
       );
     }
   }
 
+  /// Actualiza el contador de duración de la grabación cada segundo.
+  ///
+  /// Si se alcanza la duración máxima definida en [widget.maxDurationSeconds],
+  /// detiene la grabación automáticamente.
   void _updateDuration() {
     Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
       if (_isRecording && !_isPaused) {
         setState(() {
           _recordingDuration++;
         });
 
-        // Check max duration
         if (widget.maxDurationSeconds != null &&
             _recordingDuration >= widget.maxDurationSeconds!) {
           _stopRecording();
@@ -108,6 +149,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
     });
   }
 
+  /// Pausa la grabación de audio en curso.
   Future<void> _pauseRecording() async {
     try {
       await _audioRecorder.pause();
@@ -115,10 +157,11 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
         _isPaused = true;
       });
     } catch (e) {
-      print('Error pausing recording: $e');
+      print('Error al pausar grabación: $e');
     }
   }
 
+  /// Reanuda una grabación de audio que estaba en pausa.
   Future<void> _resumeRecording() async {
     try {
       await _audioRecorder.resume();
@@ -127,10 +170,14 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
       });
       _updateDuration();
     } catch (e) {
-      print('Error resuming recording: $e');
+      print('Error al reanudar grabación: $e');
     }
   }
 
+  /// Detiene la grabación de audio.
+  ///
+  /// Llama al callback [onRecordingComplete] y, si [autoUpload] es `true`,
+  /// inicia el proceso de subida del archivo.
   Future<void> _stopRecording() async {
     try {
       final path = await _audioRecorder.stop();
@@ -144,20 +191,26 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
       if (path != null) {
         widget.onRecordingComplete(path);
 
-        // Auto upload to Firebase if enabled
         if (widget.autoUpload && widget.userId != null) {
           await _uploadToFirebase(path);
         }
       }
     } catch (e) {
-      print('Error stopping recording: $e');
+      print('Error al detener grabación: $e');
     }
   }
 
+  /// Sube el archivo grabado a Firebase Storage.
+  ///
+  /// Este método utiliza el [StorageService] legado. Actualiza el estado de la UI
+  /// para mostrar el progreso de la subida y notifica el resultado mediante
+  /// un `SnackBar` y el callback [onUploadComplete].
+  ///
+  /// @param filePath La ruta local del archivo a subir.
   Future<void> _uploadToFirebase(String filePath) async {
     if (widget.userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: User ID requerido para subir')),
+        const SnackBar(content: Text('Error: Se requiere User ID para subir')),
       );
       return;
     }
@@ -176,9 +229,11 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
         audioFile: file,
         fileName: fileName,
         onProgress: (progress) {
-          setState(() {
-            _uploadProgress = progress;
-          });
+          if (mounted) {
+            setState(() {
+              _uploadProgress = progress;
+            });
+          }
         },
       );
 
@@ -227,6 +282,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
     }
   }
 
+  /// Reproduce la grabación de audio desde su ruta local.
   Future<void> _playRecording() async {
     if (_recordingPath == null) return;
 
@@ -237,22 +293,27 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
       });
 
       _audioPlayer.onPlayerComplete.listen((event) {
-        setState(() {
-          _isPlaying = false;
-          _playbackDuration = 0;
-        });
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+            _playbackDuration = 0;
+          });
+        }
       });
 
       _audioPlayer.onPositionChanged.listen((duration) {
-        setState(() {
-          _playbackDuration = duration.inSeconds;
-        });
+        if (mounted) {
+          setState(() {
+            _playbackDuration = duration.inSeconds;
+          });
+        }
       });
     } catch (e) {
-      print('Error playing recording: $e');
+      print('Error al reproducir grabación: $e');
     }
   }
 
+  /// Detiene la reproducción del audio.
   Future<void> _stopPlayback() async {
     try {
       await _audioPlayer.stop();
@@ -261,10 +322,11 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
         _playbackDuration = 0;
       });
     } catch (e) {
-      print('Error stopping playback: $e');
+      print('Error al detener reproducción: $e');
     }
   }
 
+  /// Elimina el archivo de grabación local.
   Future<void> _deleteRecording() async {
     if (_recordingPath != null) {
       try {
@@ -277,13 +339,15 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
           _hasRecording = false;
           _recordingDuration = 0;
           _playbackDuration = 0;
+          _firebaseUrl = null;
         });
       } catch (e) {
-        print('Error deleting recording: $e');
+        print('Error al eliminar grabación: $e');
       }
     }
   }
 
+  /// Formatea una duración en segundos al formato `MM:SS`.
   String _formatDuration(int seconds) {
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
@@ -300,7 +364,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Microphone icon
+            // Icono de micrófono
             Icon(
               _isRecording ? Icons.mic : Icons.mic_none,
               size: 80,
@@ -308,7 +372,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
             ),
             const SizedBox(height: 16),
 
-            // Status text
+            // Texto de estado
             Text(
               _isUploading
                   ? 'Subiendo audio...'
@@ -333,7 +397,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
             ),
             const SizedBox(height: 8),
 
-            // Upload progress indicator
+            // Indicador de progreso de subida
             if (_isUploading)
               Column(
                 children: [
@@ -347,7 +411,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
                 ],
               ),
 
-            // Duration display
+            // Muestra de duración
             if (_isRecording || _hasRecording)
               Text(
                 _isPlaying
@@ -367,7 +431,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
 
             const SizedBox(height: 24),
 
-            // Control buttons
+            // Botones de control
             if (!_isRecording && !_hasRecording)
               ElevatedButton.icon(
                 onPressed: _startRecording,
@@ -414,14 +478,14 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      // Play/Stop button
+                      // Botón de reproducir/detener
                       IconButton(
                         onPressed: _isPlaying ? _stopPlayback : _playRecording,
                         icon: Icon(_isPlaying ? Icons.stop : Icons.play_arrow),
                         iconSize: 48,
                         color: Colors.blue,
                       ),
-                      // Re-record button
+                      // Botón de re-grabar
                       IconButton(
                         onPressed: () {
                           _deleteRecording();
@@ -431,7 +495,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
                         iconSize: 48,
                         color: Colors.orange,
                       ),
-                      // Delete button
+                      // Botón de eliminar
                       IconButton(
                         onPressed: _deleteRecording,
                         icon: const Icon(Icons.delete),

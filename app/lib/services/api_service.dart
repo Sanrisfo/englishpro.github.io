@@ -11,14 +11,30 @@ import '../models/material_model.dart';
 import '../models/module_model.dart';
 import '../models/question_model.dart';
 
-/// API HTTP tradicional (opcional) para operaciones fuera de Supabase.
+/// Servicio de API para interactuar con el backend.
 ///
-/// En proyectos actuales gran parte de la funcionalidad se sirve desde
-/// Supabase; esta capa se mantiene para endpoints propios cuando aplique.
+/// Proporciona una capa de comunicación para realizar operaciones a través de una API HTTP tradicional,
+/// así como interacciones directas con Supabase para ciertas funcionalidades.
+///
+/// **Nota:** Esta clase es opcional y se mantiene para endpoints propios (ej. pagos, informes).
+/// Muchos métodos interactúan directamente con Supabase para simplificar la lógica del cliente.
+/// Todos los métodos retornan un `Future<Map<String, dynamic>>` que contiene:
+/// - `success` (bool): `true` si la operación fue exitosa, `false` en caso contrario.
+/// - `data` (opcional): Los datos solicitados.
+/// - `message` (opcional): Un mensaje de error si la operación falló.
 class ApiService {
+  /// URL base para las llamadas a la API, obtenida desde las variables de entorno.
   static String get baseUrl => dotenv.env['API_URL'] ?? 'http://localhost:8080';
 
-  // Register user
+  // ==================== AUTENTICACIÓN ====================
+
+  /// Registra un nuevo usuario en el sistema.
+  ///
+  /// @param nombreCompleto El nombre completo del usuario.
+  /// @param email El correo electrónico del usuario.
+  /// @param password La contraseña del usuario.
+  /// @param profesion La profesión del usuario (opcional).
+  /// @return Un mapa con el resultado de la operación, incluyendo el usuario y un token si es exitoso.
   static Future<Map<String, dynamic>> register({
     required String nombreCompleto,
     required String email,
@@ -59,7 +75,11 @@ class ApiService {
     }
   }
 
-  // Login user
+  /// Inicia sesión de un usuario.
+  ///
+  /// @param email El correo electrónico del usuario.
+  /// @param password La contraseña del usuario.
+  /// @return Un mapa con el resultado de la operación, incluyendo el usuario y un token si es exitoso.
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -96,7 +116,10 @@ class ApiService {
     }
   }
 
-  // Get current user (with token)
+  /// Obtiene los datos del usuario actualmente autenticado.
+  ///
+  /// @param token El token de autenticación del usuario.
+  /// @return Un mapa con el resultado de la operación, incluyendo los datos del usuario si es exitoso.
   static Future<Map<String, dynamic>> getCurrentUser(String token) async {
     try {
       final response = await http.get(
@@ -128,9 +151,11 @@ class ApiService {
     }
   }
 
-  
+  // ==================== CURSOS ====================
 
-  /// Get all courses
+  /// Obtiene todos los cursos disponibles.
+  ///
+  /// @return Un mapa con una lista de todos los cursos.
   static Future<Map<String, dynamic>> getCourses() async {
     try {
       final response = await http.get(
@@ -164,7 +189,10 @@ class ApiService {
     }
   }
 
-  /// Get course by ID
+  /// Obtiene un curso por su ID.
+  ///
+  /// @param id El ID del curso a obtener.
+  /// @return Un mapa con los datos del curso.
   static Future<Map<String, dynamic>> getCourseById(int id) async {
     try {
       final response = await http.get(
@@ -193,9 +221,11 @@ class ApiService {
     }
   }
 
-  
+  // ==================== HABILIDADES ====================
 
-  /// Get all skills
+  /// Obtiene todas las habilidades.
+  ///
+  /// @return Un mapa con una lista de todas las habilidades.
   static Future<Map<String, dynamic>> getSkills() async {
     try {
       final response = await supabase
@@ -213,7 +243,10 @@ class ApiService {
     }
   }
 
-  /// Get skills by course ID
+  /// Obtiene las habilidades de un curso por su ID.
+  ///
+  /// @param courseId El ID del curso del que se quieren obtener las habilidades.
+  /// @return Un mapa con una lista de las habilidades del curso.
   static Future<Map<String, dynamic>> getSkillsByCourse(int courseId) async {
     try {
       final response = await supabase
@@ -232,9 +265,30 @@ class ApiService {
     }
   }
 
-  // ==================== ACTIVITY TYPES ====================
+  /// Obtiene una habilidad por su ID.
+  ///
+  /// @param id El ID de la habilidad a obtener.
+  /// @return Un mapa con los datos de la habilidad.
+  static Future<Map<String, dynamic>> getSkillById(int id) async {
+    try {
+      final row = await supabase
+          .from('habilidades')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-  /// List activity types for a skill
+      return {'success': true, 'skill': SkillModel.fromJson(row as Map<String, dynamic>)};
+    } catch (e) {
+      return {'success': false, 'message': 'Error (Supabase getSkillById): $e'};
+    }
+  }
+
+  // ==================== TIPOS DE ACTIVIDAD ====================
+
+  /// Lista los tipos de actividad para una habilidad.
+  ///
+  /// @param skillId El ID de la habilidad.
+  /// @return Un mapa con una lista de los tipos de actividad para la habilidad.
   static Future<Map<String, dynamic>> getActivityTypesBySkill(int skillId) async {
     try {
       final response = await supabase
@@ -254,7 +308,14 @@ class ApiService {
     }
   }
 
-  /// Create activity type
+  /// Crea un nuevo tipo de actividad.
+  ///
+  /// @param skillId El ID de la habilidad a la que pertenece el tipo de actividad.
+  /// @param nombre El nombre del tipo de actividad.
+  /// @param descripcion La descripción del tipo de actividad (opcional).
+  /// @param orden El orden del tipo de actividad (por defecto 1).
+  /// @param activo Si el tipo de actividad está activo (por defecto `true`).
+  /// @return Un mapa con los datos del tipo de actividad creado.
   static Future<Map<String, dynamic>> createActivityType({
     required int skillId,
     required String nombre,
@@ -280,7 +341,14 @@ class ApiService {
     }
   }
 
-  /// Update activity type
+  /// Actualiza un tipo de actividad existente.
+  ///
+  /// @param id El ID del tipo de actividad a actualizar.
+  /// @param nombre El nuevo nombre del tipo de actividad (opcional).
+  /// @param descripcion La nueva descripción del tipo de actividad (opcional).
+  /// @param orden El nuevo orden del tipo de actividad (opcional).
+  /// @param activo El nuevo estado de activación del tipo de actividad (opcional).
+  /// @return Un mapa con los datos del tipo de actividad actualizado.
   static Future<Map<String, dynamic>> updateActivityType({
     required int id,
     String? nombre,
@@ -307,7 +375,10 @@ class ApiService {
     }
   }
 
-  /// Delete activity type
+  /// Elimina un tipo de actividad.
+  ///
+  /// @param id El ID del tipo de actividad a eliminar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> deleteActivityType(int id) async {
     try {
       await supabase.from('tipos_actividad').delete().eq('id', id);
@@ -317,9 +388,12 @@ class ApiService {
     }
   }
 
-  // ==================== ACTIVITY TYPE RULES (ALLOWED QUESTION TYPES) ====================
+  // ==================== REGLAS DE TIPO DE ACTIVIDAD (TIPOS DE PREGUNTA PERMITIDOS) ====================
 
-  /// Get allowed question types for an activity type
+  /// Obtiene los tipos de pregunta permitidos para un tipo de actividad.
+  ///
+  /// @param activityTypeId El ID del tipo de actividad.
+  /// @return Una lista de los tipos de pregunta permitidos.
   static Future<List<String>> getAllowedQuestionTypes(int activityTypeId) async {
     try {
       final rows = await supabase
@@ -334,13 +408,17 @@ class ApiService {
     }
   }
 
-  /// Set allowed question types for an activity type (replaces current set)
+  /// Establece los tipos de pregunta permitidos para un tipo de actividad (reemplaza el conjunto actual).
+  ///
+  /// @param activityTypeId El ID del tipo de actividad.
+  /// @param allowed La lista de tipos de pregunta permitidos.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> setAllowedQuestionTypes({
     required int activityTypeId,
     required List<String> allowed,
   }) async {
     try {
-      // Replace strategy: delete all, then insert new set
+      // Estrategia de reemplazo: eliminar todos, luego insertar el nuevo conjunto
       await supabase
           .from('tipo_actividad_pregunta_permitida')
           .delete()
@@ -363,24 +441,11 @@ class ApiService {
     }
   }
 
-  /// Get skill by ID
-  static Future<Map<String, dynamic>> getSkillById(int id) async {
-    try {
-      final row = await supabase
-          .from('habilidades')
-          .select('*')
-          .eq('id', id)
-          .single();
+  // ==================== MATERIALES ====================
 
-      return {'success': true, 'skill': SkillModel.fromJson(row as Map<String, dynamic>)};
-    } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase getSkillById): $e'};
-    }
-  }
-
-  // ==================== MATERIALS ====================
-
-  /// Get all materials
+  /// Obtiene todos los materiales.
+  ///
+  /// @return Un mapa con una lista de todos los materiales.
   static Future<Map<String, dynamic>> getMaterials() async {
     try {
       final response = await supabase
@@ -398,7 +463,10 @@ class ApiService {
     }
   }
 
-  /// Get materials by skill ID
+  /// Obtiene los materiales de una habilidad por su ID.
+  ///
+  /// @param skillId El ID de la habilidad de la que se quieren obtener los materiales.
+  /// @return Un mapa con una lista de los materiales de la habilidad.
   static Future<Map<String, dynamic>> getMaterialsBySkill(int skillId) async {
     try {
       final response = await supabase
@@ -417,7 +485,10 @@ class ApiService {
     }
   }
 
-  /// Get material by ID
+  /// Obtiene un material por su ID.
+  ///
+  /// @param id El ID del material a obtener.
+  /// @return Un mapa con los datos del material.
   static Future<Map<String, dynamic>> getMaterialById(int id) async {
     try {
       final row = await supabase
@@ -431,7 +502,21 @@ class ApiService {
     }
   }
 
-  /// Create material (for teachers)
+  /// Crea un nuevo material (para docentes).
+  ///
+  /// @param habilidadId El ID de la habilidad a la que pertenece el material.
+  /// @param titulo El título del material.
+  /// @param tipoMaterial El tipo de material (ej. 'pdf', 'video').
+  /// @param descripcion La descripción del material (opcional).
+  /// @param archivoUrl La URL del archivo del material (opcional).
+  /// @param contenidoTexto El contenido de texto del material (opcional).
+  /// @param cuestionarioId El ID del cuestionario asociado al material (opcional).
+  /// @param esPremium Si el material es premium (por defecto `false`).
+  /// @param duracionMinutos La duración en minutos del material (opcional).
+  /// @param orden El orden del material (por defecto 1).
+  /// @param nivelAcceso El nivel de acceso del material (opcional).
+  /// @param creadoPor El ID del docente que crea el material (opcional).
+  /// @return Un mapa con los datos del material creado.
   static Future<Map<String, dynamic>> createMaterial({
     required int habilidadId,
     required String titulo,
@@ -500,7 +585,11 @@ class ApiService {
     }
   }
 
-  /// Update material (for teachers)
+  /// Actualiza un material existente (para docentes).
+  ///
+  /// @param materialId El ID del material a actualizar.
+  /// @param updates Un mapa con los campos a actualizar.
+  /// @return Un mapa con los datos del material actualizado.
   static Future<Map<String, dynamic>> updateMaterial({
     required int materialId,
     required Map<String, dynamic> updates,
@@ -522,7 +611,10 @@ class ApiService {
     }
   }
 
-  /// Delete material (for teachers)
+  /// Elimina un material (para docentes).
+  ///
+  /// @param materialId El ID del material a eliminar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> deleteMaterial(int materialId) async {
     try {
       await supabase.from('materiales_estudio').delete().eq('id_material', materialId);
@@ -532,9 +624,12 @@ class ApiService {
     }
   }
 
-  // ==================== MODULES ====================
+  // ==================== MÓDULOS ====================
 
-  /// Get modules by skill
+  /// Obtiene los módulos de una habilidad.
+  ///
+  /// @param skillId El ID de la habilidad de la que se quieren obtener los módulos.
+  /// @return Un mapa con una lista de los módulos de la habilidad.
   static Future<Map<String, dynamic>> getModulesBySkill(int skillId) async {
     try {
       final response = await supabase
@@ -553,7 +648,14 @@ class ApiService {
     }
   }
 
-  /// Create module
+  /// Crea un nuevo módulo.
+  ///
+  /// @param habilidadId El ID de la habilidad a la que pertenece el módulo.
+  /// @param nombre El nombre del módulo.
+  /// @param descripcion La descripción del módulo (opcional).
+  /// @param orden El orden del módulo (por defecto 1).
+  /// @param activo Si el módulo está activo (por defecto `true`).
+  /// @return Un mapa con los datos del módulo creado.
   static Future<Map<String, dynamic>> createModule({
     required int habilidadId,
     required String nombre,
@@ -579,7 +681,11 @@ class ApiService {
     }
   }
 
-  /// Update activity to assign module
+  /// Actualiza una actividad para asignarle un módulo.
+  ///
+  /// @param cuestionarioId El ID del cuestionario (actividad) a actualizar.
+  /// @param moduloId El ID del módulo a asignar.
+  /// @return Un mapa con los datos del cuestionario actualizado.
   static Future<Map<String, dynamic>> updateActivityModule({
     required int cuestionarioId,
     int? moduloId,
@@ -599,9 +705,12 @@ class ApiService {
     }
   }
 
-  // ==================== QUESTIONS ====================
+  // ==================== PREGUNTAS ====================
 
-  /// Get questions by skill ID
+  /// Obtiene las preguntas de una habilidad por su ID.
+  ///
+  /// @param skillId El ID de la habilidad de la que se quieren obtener las preguntas.
+  /// @return Un mapa con una lista de las preguntas de la habilidad.
   static Future<Map<String, dynamic>> getQuestionsBySkill(int skillId) async {
     try {
       final response = await http.get(
@@ -635,7 +744,10 @@ class ApiService {
     }
   }
 
-  /// Get question by ID with answer options
+  /// Obtiene una pregunta por su ID, incluyendo las opciones de respuesta.
+  ///
+  /// @param id El ID de la pregunta a obtener.
+  /// @return Un mapa con los datos de la pregunta.
   static Future<Map<String, dynamic>> getQuestionById(int id) async {
     try {
       final response = await http.get(
@@ -664,7 +776,15 @@ class ApiService {
     }
   }
 
-  /// Submit user answer (Supabase direct insert)
+  /// Envía la respuesta de un usuario a una pregunta (inserción directa en Supabase).
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param opcionSeleccionadaId El ID de la opción seleccionada (opcional).
+  /// @param respuestaTexto El texto de la respuesta (opcional).
+  /// @param audioUrl La URL del audio de la respuesta (opcional).
+  /// @param quizId El ID del cuestionario al que pertenece la pregunta (opcional).
+  /// @return Un mapa con los datos de la respuesta insertada.
   static Future<Map<String, dynamic>> submitAnswer({
     required int userId,
     required int preguntaId,
@@ -698,7 +818,13 @@ class ApiService {
     }
   }
 
-  /// Create base respuesta row and return id_respuesta
+  /// Crea una fila base de respuesta y devuelve su ID.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param quizId El ID del cuestionario (opcional).
+  /// @param extra Datos adicionales a insertar (opcional).
+  /// @return El ID de la respuesta creada.
   static Future<int> _createRespuestaBase({
     required int userId,
     required int preguntaId,
@@ -719,7 +845,13 @@ class ApiService {
     return (row['id_respuesta'] as num).toInt();
   }
 
-  /// Submit Multiple Choice (multi-select): inserts base + respuestas_usuario_opciones
+  /// Envía la respuesta a una pregunta de selección múltiple (multi-selección).
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param optionIds La lista de IDs de las opciones seleccionadas.
+  /// @param quizId El ID del cuestionario (opcional).
+  /// @return Un mapa indicando si la operación fue exitosa y el ID de la respuesta.
   static Future<Map<String, dynamic>> submitAnswerMultipleChoice({
     required int userId,
     required int preguntaId,
@@ -738,7 +870,13 @@ class ApiService {
     }
   }
 
-  /// Submit Matching: statement -> answer pairs
+  /// Envía la respuesta a una pregunta de emparejamiento (matching).
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param statementToAnswer Un mapa que relaciona el ID de cada enunciado con el ID de la respuesta seleccionada.
+  /// @param quizId El ID del cuestionario (opcional).
+  /// @return Un mapa indicando si la operación fue exitosa y el ID de la respuesta.
   static Future<Map<String, dynamic>> submitAnswerMatching({
     required int userId,
     required int preguntaId,
@@ -763,7 +901,13 @@ class ApiService {
     }
   }
 
-  /// Submit Completion: gap -> text
+  /// Envía la respuesta a una pregunta de completar (completion).
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param gapToText Un mapa que relaciona el ID de cada espacio con el texto introducido por el usuario.
+  /// @param quizId El ID del cuestionario (opcional).
+  /// @return Un mapa indicando si la operación fue exitosa y el ID de la respuesta.
   static Future<Map<String, dynamic>> submitAnswerCompletion({
     required int userId,
     required int preguntaId,
@@ -788,7 +932,13 @@ class ApiService {
     }
   }
 
-  /// Submit Write Text using base column (texto_ensayo)
+  /// Envía la respuesta a una pregunta de escribir texto.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param text El texto escrito por el usuario.
+  /// @param quizId El ID del cuestionario (opcional).
+  /// @return Un mapa indicando si la operación fue exitosa y el ID de la respuesta.
   static Future<Map<String, dynamic>> submitAnswerWriteText({
     required int userId,
     required int preguntaId,
@@ -825,7 +975,13 @@ class ApiService {
     }
   }
 
-  /// Submit Record Audio using base column (url_grabacion)
+  /// Envía la respuesta a una pregunta de grabar audio.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param audioUrl La URL del audio grabado por el usuario.
+  /// @param quizId El ID del cuestionario (opcional).
+  /// @return Un mapa indicando si la operación fue exitosa y el ID de la respuesta.
   static Future<Map<String, dynamic>> submitAnswerRecordAudio({
     required int userId,
     required int preguntaId,
@@ -862,9 +1018,12 @@ class ApiService {
     }
   }
 
-  // ==================== QUIZZES ====================
+  // ==================== CUESTIONARIOS ====================
 
-  /// Get quizzes by skill ID
+  /// Obtiene los cuestionarios de una habilidad por su ID.
+  ///
+  /// @param skillId El ID de la habilidad de la que se quieren obtener los cuestionarios.
+  /// @return Un mapa con una lista de los cuestionarios de la habilidad.
   static Future<Map<String, dynamic>> getQuizzesBySkill(int skillId) async {
     try {
       final response = await http.get(
@@ -895,7 +1054,10 @@ class ApiService {
     }
   }
 
-  /// Get quiz by ID with questions
+  /// Obtiene un cuestionario por su ID, incluyendo las preguntas.
+  ///
+  /// @param id El ID del cuestionario a obtener.
+  /// @return Un mapa con los datos del cuestionario y una lista de sus preguntas.
   static Future<Map<String, dynamic>> getQuizById(int id) async {
     try {
       final response = await http.get(
@@ -935,7 +1097,11 @@ class ApiService {
     }
   }
 
-  /// Create quiz attempt
+  /// Crea un intento de cuestionario.
+  ///
+  /// @param userId El ID del usuario que inicia el intento.
+  /// @param quizId El ID del cuestionario.
+  /// @return Un mapa con los datos del intento creado.
   static Future<Map<String, dynamic>> createQuizAttempt({
     required int userId,
     required int quizId,
@@ -973,7 +1139,12 @@ class ApiService {
     }
   }
 
-  /// Update quiz attempt (complete)
+  /// Actualiza un intento de cuestionario (lo completa).
+  ///
+  /// @param attemptId El ID del intento a actualizar.
+  /// @param puntosObtenidos Los puntos obtenidos en el intento.
+  /// @param porcentaje El porcentaje de aciertos en el intento.
+  /// @return Un mapa con los datos del intento actualizado.
   static Future<Map<String, dynamic>> updateQuizAttempt({
     required int attemptId,
     required int puntosObtenidos,
@@ -1012,7 +1183,11 @@ class ApiService {
     }
   }
 
-  /// Get user's best attempt for a quiz
+  /// Obtiene el mejor intento de un usuario para un cuestionario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param quizId El ID del cuestionario.
+  /// @return Un mapa con los datos del mejor intento.
   static Future<Map<String, dynamic>> getBestAttempt({
     required int userId,
     required int quizId,
@@ -1049,9 +1224,12 @@ class ApiService {
     }
   }
 
-  // ==================== PROGRESS ====================
+  // ==================== PROGRESO ====================
 
-  /// Get user progress for all courses
+  /// Obtiene el progreso de un usuario en todos los cursos.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con el progreso del usuario.
   static Future<Map<String, dynamic>> getUserProgress(int userId) async {
     try {
       final response = await http.get(
@@ -1080,7 +1258,10 @@ class ApiService {
     }
   }
 
-  /// Get user stats
+  /// Obtiene las estadísticas de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con las estadísticas del usuario.
   static Future<Map<String, dynamic>> getUserStats(int userId) async {
     try {
       final response = await http.get(
@@ -1109,7 +1290,14 @@ class ApiService {
     }
   }
 
-  /// Update progress after quiz
+  /// Actualiza el progreso después de un cuestionario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param courseId El ID del curso.
+  /// @param questionsAnswered El número de preguntas respondidas.
+  /// @param correctAnswers El número de respuestas correctas.
+  /// @param pointsEarned Los puntos ganados.
+  /// @return Un mapa con el progreso actualizado.
   static Future<Map<String, dynamic>> updateProgressAfterQuiz({
     required int userId,
     required int courseId,
@@ -1149,9 +1337,12 @@ class ApiService {
     }
   }
 
-  // ==================== PLAN VALIDATION ====================
+  // ==================== VALIDACIÓN DE PLAN ====================
 
-  /// Get user plan information with limits and usage
+  /// Obtiene la información del plan de un usuario, incluyendo límites y uso.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con la información del plan del usuario.
   static Future<Map<String, dynamic>> getUserPlanInfo(int userId) async {
     try {
       final response = await http.get(
@@ -1180,7 +1371,10 @@ class ApiService {
     }
   }
 
-  /// Validate if user can take a quiz (checks daily and monthly limits)
+  /// Valida si un usuario puede tomar un cuestionario (verifica límites diarios y mensuales).
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con el resultado de la validación.
   static Future<Map<String, dynamic>> validateQuizLimits(int userId) async {
     try {
       final response = await http.get(
@@ -1209,7 +1403,11 @@ class ApiService {
     }
   }
 
-  /// Validate if user can access a specific course
+  /// Valida si un usuario puede acceder a un curso específico.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param courseId El ID del curso.
+  /// @return Un mapa con el resultado de la validación.
   static Future<Map<String, dynamic>> validateCourseAccess({
     required int userId,
     required int courseId,
@@ -1241,7 +1439,11 @@ class ApiService {
     }
   }
 
-  /// Update user plan
+  /// Actualiza el plan de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param newPlan El nuevo plan a asignar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> updateUserPlan({
     required int userId,
     required String newPlan,
@@ -1274,9 +1476,14 @@ class ApiService {
     }
   }
 
-  // ==================== PAYMENTS ====================
+  // ==================== PAGOS ====================
 
-  /// Create payment intent
+  /// Crea una intención de pago.
+  ///
+  /// @param userId El ID del usuario.
+  /// @param planId El ID del plan.
+  /// @param amount El monto del pago.
+  /// @return Un mapa con los datos de la intención de pago.
   static Future<Map<String, dynamic>> createPaymentIntent({
     required int userId,
     required int planId,
@@ -1317,7 +1524,11 @@ class ApiService {
     }
   }
 
-  /// Confirm payment
+  /// Confirma un pago.
+  ///
+  /// @param paymentId El ID del pago.
+  /// @param paymentIntentId El ID de la intención de pago.
+  /// @return Un mapa con los datos del pago confirmado.
   static Future<Map<String, dynamic>> confirmPayment({
     required int paymentId,
     required String paymentIntentId,
@@ -1353,7 +1564,10 @@ class ApiService {
     }
   }
 
-  /// Get payment by ID
+  /// Obtiene un pago por su ID.
+  ///
+  /// @param paymentId El ID del pago a obtener.
+  /// @return Un mapa con los datos del pago.
   static Future<Map<String, dynamic>> getPaymentById(int paymentId) async {
     try {
       final response = await http.get(
@@ -1382,7 +1596,10 @@ class ApiService {
     }
   }
 
-  /// Get user payments
+  /// Obtiene los pagos de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con una lista de los pagos del usuario.
   static Future<Map<String, dynamic>> getUserPayments(int userId) async {
     try {
       final response = await http.get(
@@ -1412,7 +1629,10 @@ class ApiService {
     }
   }
 
-  /// Get user subscriptions
+  /// Obtiene las suscripciones de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con una lista de las suscripciones del usuario.
   static Future<Map<String, dynamic>> getUserSubscriptions(int userId) async {
     try {
       final response = await http.get(
@@ -1442,7 +1662,10 @@ class ApiService {
     }
   }
 
-  /// Get active subscription
+  /// Obtiene la suscripción activa de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con la suscripción activa del usuario.
   static Future<Map<String, dynamic>> getActiveSubscription(int userId) async {
     try {
       final response = await http.get(
@@ -1476,7 +1699,10 @@ class ApiService {
     }
   }
 
-  /// Cancel subscription
+  /// Cancela una suscripción.
+  ///
+  /// @param subscriptionId El ID de la suscripción a cancelar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> cancelSubscription(int subscriptionId) async {
     try {
       final response = await http.post(
@@ -1505,9 +1731,20 @@ class ApiService {
     }
   }
 
-  // ==================== FEEDBACK ====================
+  // ==================== RETROALIMENTACIÓN ====================
 
-  /// Create feedback
+  /// Crea una nueva retroalimentación.
+  ///
+  /// @param usuarioId El ID del usuario.
+  /// @param preguntaId El ID de la pregunta.
+  /// @param docenteId El ID del docente (opcional).
+  /// @param tipoRespuesta El tipo de respuesta.
+  /// @param respuestaTexto El texto de la respuesta (opcional).
+  /// @param respuestaAudioUrl La URL del audio de la respuesta (opcional).
+  /// @param puntuacion La puntuación de la retroalimentación (opcional).
+  /// @param comentarios Los comentarios de la retroalimentación (opcional).
+  /// @param estado El estado de la retroalimentación (opcional).
+  /// @return Un mapa con los datos de la retroalimentación creada.
   static Future<Map<String, dynamic>> createFeedback({
     required int usuarioId,
     required int preguntaId,
@@ -1557,7 +1794,10 @@ class ApiService {
     }
   }
 
-  /// Get feedback by ID
+  /// Obtiene una retroalimentación por su ID.
+  ///
+  /// @param feedbackId El ID de la retroalimentación.
+  /// @return Un mapa con los datos de la retroalimentación.
   static Future<Map<String, dynamic>> getFeedbackById(int feedbackId) async {
     try {
       final response = await http.get(
@@ -1586,7 +1826,10 @@ class ApiService {
     }
   }
 
-  /// Get feedbacks by user
+  /// Obtiene las retroalimentaciones de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con una lista de las retroalimentaciones del usuario.
   static Future<Map<String, dynamic>> getFeedbacksByUser(int userId) async {
     try {
       final response = await http.get(
@@ -1616,7 +1859,9 @@ class ApiService {
     }
   }
 
-  /// Get pending feedbacks
+  /// Obtiene las retroalimentaciones pendientes.
+  ///
+  /// @return Un mapa con una lista de las retroalimentaciones pendientes.
   static Future<Map<String, dynamic>> getPendingFeedbacks() async {
     try {
       final response = await http.get(
@@ -1646,7 +1891,10 @@ class ApiService {
     }
   }
 
-  /// Get feedbacks by teacher
+  /// Obtiene las retroalimentaciones de un docente.
+  ///
+  /// @param teacherId El ID del docente.
+  /// @return Un mapa con una lista de las retroalimentaciones del docente.
   static Future<Map<String, dynamic>> getFeedbacksByTeacher(int teacherId) async {
     try {
       final response = await http.get(
@@ -1676,7 +1924,13 @@ class ApiService {
     }
   }
 
-  /// Grade feedback
+  /// Califica una retroalimentación.
+  ///
+  /// @param feedbackId El ID de la retroalimentación.
+  /// @param teacherId El ID del docente.
+  /// @param puntuacion La puntuación asignada.
+  /// @param comentarios Los comentarios de la retroalimentación (opcional).
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> gradeFeedback({
     required int feedbackId,
     required int teacherId,
@@ -1715,7 +1969,10 @@ class ApiService {
     }
   }
 
-  /// Get user feedback stats
+  /// Obtiene las estadísticas de retroalimentación de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con las estadísticas de retroalimentación.
   static Future<Map<String, dynamic>> getUserFeedbackStats(int userId) async {
     try {
       final response = await http.get(
@@ -1744,9 +2001,16 @@ class ApiService {
     }
   }
 
-  // ==================== TEACHERS ====================
+  // ==================== DOCENTES ====================
 
-  /// Create teacher
+  /// Crea un nuevo docente.
+  ///
+  /// @param usuarioId El ID del usuario.
+  /// @param especialidad La especialidad del docente.
+  /// @param certificaciones Las certificaciones del docente (opcional).
+  /// @param aniosExperiencia Los años de experiencia del docente (opcional).
+  /// @param activo Si el docente está activo (opcional).
+  /// @return Un mapa con los datos del docente creado.
   static Future<Map<String, dynamic>> createTeacher({
     required int usuarioId,
     required String especialidad,
@@ -1788,7 +2052,10 @@ class ApiService {
     }
   }
 
-  /// Get teacher by ID
+  /// Obtiene un docente por su ID.
+  ///
+  /// @param teacherId El ID del docente a obtener.
+  /// @return Un mapa con los datos del docente.
   static Future<Map<String, dynamic>> getTeacherById(int teacherId) async {
     try {
       final response = await http.get(
@@ -1817,7 +2084,10 @@ class ApiService {
     }
   }
 
-  /// Get teacher by user ID
+  /// Obtiene un docente por el ID de usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con los datos del docente.
   static Future<Map<String, dynamic>> getTeacherByUserId(int userId) async {
     try {
       final response = await http.get(
@@ -1851,7 +2121,10 @@ class ApiService {
     }
   }
 
-  /// Get all teachers
+  /// Obtiene todos los docentes.
+  ///
+  /// @param activo Si se deben obtener solo los docentes activos (opcional).
+  /// @return Un mapa con una lista de todos los docentes.
   static Future<Map<String, dynamic>> getAllTeachers({bool? activo}) async {
     try {
       String url = '$baseUrl/api/teachers';
@@ -1886,7 +2159,10 @@ class ApiService {
     }
   }
 
-  /// Get teacher stats
+  /// Obtiene las estadísticas de un docente.
+  ///
+  /// @param teacherId El ID del docente.
+  /// @return Un mapa con las estadísticas del docente.
   static Future<Map<String, dynamic>> getTeacherStats(int teacherId) async {
     try {
       final response = await http.get(
@@ -1915,7 +2191,11 @@ class ApiService {
     }
   }
 
-  /// Update teacher
+  /// Actualiza un docente.
+  ///
+  /// @param teacherId El ID del docente a actualizar.
+  /// @param updates Un mapa con los campos a actualizar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> updateTeacher({
     required int teacherId,
     required Map<String, dynamic> updates,
@@ -1948,7 +2228,10 @@ class ApiService {
     }
   }
 
-  /// Deactivate teacher
+  /// Desactiva un docente.
+  ///
+  /// @param teacherId El ID del docente a desactivar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> deactivateTeacher(int teacherId) async {
     try {
       final response = await http.post(
@@ -1977,7 +2260,10 @@ class ApiService {
     }
   }
 
-  /// Activate teacher
+  /// Activa un docente.
+  ///
+  /// @param teacherId El ID del docente a activar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> activateTeacher(int teacherId) async {
     try {
       final response = await http.post(
@@ -2006,9 +2292,15 @@ class ApiService {
     }
   }
 
-  // ==================== NOTIFICATIONS ====================
+  // ==================== NOTIFICACIONES ====================
 
-  /// Create notification
+  /// Crea una nueva notificación.
+  ///
+  /// @param idUsuario El ID del usuario al que se le enviará la notificación.
+  /// @param titulo El título de la notificación.
+  /// @param mensaje El mensaje de la notificación.
+  /// @param tipo El tipo de notificación (por defecto 'Info').
+  /// @return Un mapa con los datos de la notificación creada.
   static Future<Map<String, dynamic>> createNotification({
     required int idUsuario,
     required String titulo,
@@ -2048,7 +2340,10 @@ class ApiService {
     }
   }
 
-  /// Get all notifications for a user
+  /// Obtiene todas las notificaciones de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con una lista de las notificaciones del usuario.
   static Future<Map<String, dynamic>> getNotificationsByUserId(int userId) async {
     try {
       final response = await http.get(
@@ -2078,7 +2373,10 @@ class ApiService {
     }
   }
 
-  /// Get unread notifications for a user
+  /// Obtiene las notificaciones no leídas de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con una lista de las notificaciones no leídas del usuario.
   static Future<Map<String, dynamic>> getUnreadNotifications(int userId) async {
     try {
       final response = await http.get(
@@ -2108,7 +2406,10 @@ class ApiService {
     }
   }
 
-  /// Get notification count for a user
+  /// Obtiene el conteo de notificaciones de un usuario.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa con el conteo total y no leído de notificaciones.
   static Future<Map<String, dynamic>> getNotificationCount(int userId) async {
     try {
       final response = await http.get(
@@ -2138,7 +2439,10 @@ class ApiService {
     }
   }
 
-  /// Mark notification as read
+  /// Marca una notificación como leída.
+  ///
+  /// @param notificationId El ID de la notificación a marcar como leída.
+  /// @return Un mapa con los datos de la notificación actualizada.
   static Future<Map<String, dynamic>> markNotificationAsRead(int notificationId) async {
     try {
       final response = await http.put(
@@ -2167,7 +2471,10 @@ class ApiService {
     }
   }
 
-  /// Mark all notifications as read for a user
+  /// Marca todas las notificaciones de un usuario como leídas.
+  ///
+  /// @param userId El ID del usuario.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> markAllNotificationsAsRead(int userId) async {
     try {
       final response = await http.put(
@@ -2196,7 +2503,10 @@ class ApiService {
     }
   }
 
-  /// Delete notification
+  /// Elimina una notificación.
+  ///
+  /// @param notificationId El ID de la notificación a eliminar.
+  /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> deleteNotification(int notificationId) async {
     try {
       final response = await http.delete(

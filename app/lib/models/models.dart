@@ -1,9 +1,16 @@
-// Barrel file for all models
-// Import this file to access all models in the app
-//
-// Usage:
-// import 'package:app/models/models.dart';
-
+/// Archivo de barril para la exportación centralizada de todos los modelos de la aplicación.
+///
+/// Importar este archivo permite acceder fácilmente a todas las clases de modelos
+/// definidas en el directorio `app/lib/models`, simplificando las importaciones
+/// en otras partes del código.
+///
+/// **Uso:**
+/// ```dart
+/// import 'package:englishpro/models/models.dart';
+///
+/// // Ahora puedes usar CourseModel, UserModel, QuestionModel, etc.
+/// CourseModel myCourse = CourseModel(...);
+/// ```
 export 'user_model.dart';
 export 'plan_model.dart';
 export 'course_model.dart';

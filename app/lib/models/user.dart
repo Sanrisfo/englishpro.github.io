@@ -1,17 +1,56 @@
 /// Modelo de usuario de la plataforma (tabla `usuarios`).
+///
+/// Representa una fila de la tabla `usuarios` y está diseñada para sincronizarse
+/// con el sistema de autenticación de Supabase. El modelo contempla variaciones
+/// en la capitalización de las claves JSON para asegurar compatibilidad con
+/// posibles migraciones o diferentes formatos de API.
 class User {
+  /// El identificador interno único del usuario, que corresponde a `id_usuario` en la base de datos.
   final int idUsuario;
+
+  /// El nombre completo del usuario.
   final String nombreCompleto;
+
+  /// El correo electrónico del usuario, que también es su identificador de inicio de sesión.
   final String email;
+
+  /// La profesión declarada por el usuario (opcional).
   final String? profesion;
+
+  /// El identificador del plan de suscripción al que está suscrito el usuario.
   final int idPlan;
+
+  /// Un booleano que indica si el usuario tiene el rol de docente.
   final bool esDocente;
+
+  /// El rol asignado al usuario (e.g., 'Estudiante', 'Docente', 'Admin').
   final String rol;
+
+  /// La fecha y hora de registro del usuario (opcional).
   final DateTime? fechaRegistro;
+
+  /// La fecha y hora del último acceso del usuario a la aplicación (opcional).
   final DateTime? ultimoAcceso;
+
+  /// El UID previo de Firebase, utilizado si hubo una migración desde un sistema de autenticación Firebase.
   final String? firebaseUid;
+
+  /// Un booleano que indica si el correo electrónico del usuario ha sido verificado.
   final bool emailVerificado;
 
+  /// Crea una instancia del modelo [User].
+  ///
+  /// @param idUsuario El ID único del usuario.
+  /// @param nombreCompleto El nombre completo del usuario.
+  /// @param email El correo electrónico del usuario.
+  /// @param profesion La profesión del usuario (opcional).
+  /// @param idPlan El ID del plan de suscripción.
+  /// @param esDocente Indica si es docente (por defecto `false`).
+  /// @param rol El rol del usuario (por defecto 'Estudiante').
+  /// @param fechaRegistro La fecha de registro (opcional).
+  /// @param ultimoAcceso La fecha del último acceso (opcional).
+  /// @param firebaseUid El UID de Firebase (opcional).
+  /// @param emailVerificado Indica si el email está verificado (por defecto `false`).
   User({
     required this.idUsuario,
     required this.nombreCompleto,
@@ -26,11 +65,18 @@ class User {
     this.emailVerificado = false,
   });
 
-  /// Crea una instancia a partir de un mapa JSON proveniente de Supabase.
+  /// Crea una instancia [User] a partir de un mapa JSON.
+  ///
+  /// Este constructor de fábrica es capaz de parsear JSON donde las claves
+  /// pueden estar en mayúsculas (como en algunas respuestas de Supabase)
+  /// o en minúsculas, asegurando la robustez.
+  ///
+  /// @param json Un mapa que contiene los datos del usuario.
+  /// @return Una nueva instancia de [User].
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      // Supabase usa mayúsculas en columnas (Nombre_Completo)
-      // Pero también acepta minúsculas por compatibilidad
+      // Supabase a veces usa mayúsculas en columnas (Nombre_Completo),
+      // pero también puede retornar en minúsculas por compatibilidad.
       idUsuario: json['ID_Usuario'] ?? json['id_usuario'] as int,
       nombreCompleto: json['Nombre_Completo'] ?? json['nombre_completo'] as String,
       email: json['Email'] ?? json['email'] as String,
@@ -49,7 +95,12 @@ class User {
     );
   }
 
-  /// Serializa la entidad al formato esperado por la API/BD.
+  /// Convierte esta instancia de [User] en un mapa JSON.
+  ///
+  /// Los nombres de las claves en el JSON de salida están en minúsculas
+  /// para una consistencia estándar en las comunicaciones con la API o la base de datos.
+  ///
+  /// @return Una representación en mapa del usuario.
   Map<String, dynamic> toJson() {
     return {
       'id_usuario': idUsuario,
