@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/supabase_config.dart';
+import '../widgets/rich_text_field.dart';
 
 class CreateQuestionScreen extends StatefulWidget {
   final int quizId;
@@ -437,9 +438,11 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
               const SizedBox(height: 16),
 
               // --- CAMPOS COMUNES ---
-              TextField(controller: _textCtrl, decoration: _inputDeco('Texto de la pregunta'), maxLines: 3),
+              // --- CAMPOS COMUNES ---
+              RichTextField(controller: _textCtrl, label: 'Texto de la pregunta', maxLines: 3, decoration: _inputDeco('Texto de la pregunta')),
               const SizedBox(height: 16),
-              TextField(controller: _explanationCtrl, decoration: _inputDeco('Explicación general (opcional)'), maxLines: 2),
+              const SizedBox(height: 16),
+              RichTextField(controller: _explanationCtrl, label: 'Explicación general (opcional)', maxLines: 2, decoration: _inputDeco('Explicación general (opcional)')),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -487,7 +490,7 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
                         onChanged: (v) => setState(() => v == true ? _mcCorrect.add(e.key) : _mcCorrect.remove(e.key)),
                       ),
                     ),
-                    Expanded(child: TextField(controller: e.value, decoration: _inputDeco('Opción ${e.key + 1}'))),
+                    Expanded(child: RichTextField(controller: e.value, label: 'Opción ${e.key + 1}', decoration: _inputDeco('Opción ${e.key + 1}'))),
                     if (_mcOptCtrls.length > 3)
                       IconButton(
                           icon: const Icon(Icons.close),
@@ -506,7 +509,7 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
                 ..._matchAnswersCtrls.asMap().entries.map((e) => Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: Row(children: [
-                    Expanded(child: TextField(controller: e.value, decoration: _inputDeco('Respuesta B${e.key + 1}'))),
+                    Expanded(child: RichTextField(controller: e.value, label: 'Respuesta B${e.key + 1}', decoration: _inputDeco('Respuesta B${e.key + 1}'))),
                     if (_matchAnswersCtrls.length > 1)
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -532,7 +535,7 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Row(children: [
-                      Expanded(flex: 2, child: TextField(controller: row['text'], decoration: _inputDeco('Enunciado A${i + 1}'))),
+                      Expanded(flex: 2, child: RichTextField(controller: row['text'], label: 'Enunciado A${i + 1}', decoration: _inputDeco('Enunciado A${i + 1}'))),
                       const SizedBox(width: 8),
                       Expanded(
                         flex: 1,
@@ -576,9 +579,9 @@ class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Column(
                       children: [
-                        TextField(controller: e.value['sentence'], decoration: _inputDeco('Oración Completa ${e.key + 1}')),
+                        RichTextField(controller: e.value['sentence']!, label: 'Oración Completa ${e.key + 1}', decoration: _inputDeco('Oración Completa ${e.key + 1}')),
                         const SizedBox(height: 8),
-                        TextField(controller: e.value['correct'], decoration: _inputDeco('Palabra (Gap)')),
+                        RichTextField(controller: e.value['correct']!, label: 'Palabra (Gap)', decoration: _inputDeco('Palabra (Gap)')),
                       ],
                     ),
                   )),

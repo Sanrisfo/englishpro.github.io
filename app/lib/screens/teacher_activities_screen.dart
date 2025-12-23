@@ -1,6 +1,9 @@
 import 'package:universal_io/io.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
+import '../widgets/rich_text_field.dart';
 import '../config/supabase_config.dart';
 import '../services/supabase_storage_service.dart';
 import '../services/api_service.dart';
@@ -89,17 +92,22 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
     );
   }
 
-  Future<void> _createQuizDialog() async {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final timeCtrl = TextEditingController();
-    String tipo = 'Practica';
+  Future<void> _createQuizDialog({Map<String, dynamic>? quizToEdit}) async {
+    final isEdit = quizToEdit != null;
+    final titleCtrl = TextEditingController(text: isEdit ? quizToEdit!['titulo'] : '');
+    final descCtrl = TextEditingController(text: isEdit ? quizToEdit!['descripcion'] : '');
+    final timeCtrl = TextEditingController(text: isEdit ? (quizToEdit!['tiempo_limite_minutos']?.toString() ?? '') : '');
+    String tipo = isEdit ? (quizToEdit!['tipo_evaluacion'] ?? 'Practica') : 'Practica';
 
-    // Material opcional
+    // Material logic (Editing material is complex, for MVP we might only allow creating new material or keep existing)
+    // For now, in Edit mode, we won't show the "Add material" toggle to avoid complexity if one already exists, 
+    // or we leave it as "Add NEW material". 
+    // Simplifying: Hide material section in Edit mode for this iteration OR allow adding new.
+    // Let's hide it for now to prevent confusion/data loss, as requested "Edit Activity" usually means metadata.
     bool addMaterial = false;
     final materialTitleCtrl = TextEditingController();
     final materialTextCtrl = TextEditingController();
-    String materialType = 'pdf'; // pdf | text | image | audio
+    String materialType = 'pdf'; 
     File? selectedFile;
 
     await showDialog(
@@ -108,7 +116,7 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            'Create Activity',
+            isEdit ? 'Edit Activity' : 'Create Activity',
             style: GoogleFonts.ptSans(color: _courseColor, fontSize: 20),
             textAlign: TextAlign.center,
           ),
@@ -143,72 +151,79 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   ],
                   onChanged: (v) => tipo = v ?? 'Practica',
                 ),
-                // --- Dropdown de Módulo Eliminado ---
 
-                const SizedBox(height: 12),
-                const Divider(),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Add material (optional)'),
-                  value: addMaterial,
-                  onChanged: (val) => setDialogState(() => addMaterial = val),
-                  activeColor: _courseColor,
-                ),
-                if (addMaterial) ...[
-                  TextField(
-                    controller: materialTitleCtrl,
-                    decoration: _dialogTextFieldDecoration('Material title'),
+                if (!isEdit) ...[
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Add material (optional)'),
+                    value: addMaterial,
+                    onChanged: (val) => setDialogState(() => addMaterial = val),
+                    activeColor: _courseColor,
                   ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: materialType,
-                    decoration: _dialogTextFieldDecoration('Material type'),
-                    items: const [
-                      DropdownMenuItem(value: 'pdf', child: Text('PDF')),
-                      DropdownMenuItem(value: 'text', child: Text('Text')),
-                      DropdownMenuItem(value: 'image', child: Text('Image')),
-                      DropdownMenuItem(value: 'audio', child: Text('Audio')),
-                    ],
-                    onChanged: (v) => setDialogState(() => materialType = v ?? 'pdf'),
-                  ),
-                  const SizedBox(height: 8),
-                  if (materialType == 'text')
+                  if (addMaterial) ...[
                     TextField(
-                      controller: materialTextCtrl,
-                      decoration: _dialogTextFieldDecoration('Text content'),
-                      maxLines: 4,
-                    )
-                  else
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedFile?.path.split(Platform.pathSeparator).last ?? 'No file selected',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          style: _dialogButtonStyle(),
-                          onPressed: () async {
-                            final extensions = materialType == 'pdf'
-                                ? ['pdf']
-                                : materialType == 'image'
-                                ? ['png', 'jpg', 'jpeg']
-                                : ['mp3', 'm4a', 'wav'];
-                            final result = await FilePicker.platform.pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: extensions,
-                            );
-                            if (result != null && result.files.single.path != null) {
-                              setDialogState(() => selectedFile = File(result.files.single.path!));
-                            }
-                          },
-                          child: const Icon(Icons.attach_file),
-                        ),
-                      ],
+                      controller: materialTitleCtrl,
+                      decoration: _dialogTextFieldDecoration('Material title'),
                     ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: materialType,
+                      decoration: _dialogTextFieldDecoration('Material type'),
+                      items: const [
+                        DropdownMenuItem(value: 'pdf', child: Text('PDF')),
+                        DropdownMenuItem(value: 'text', child: Text('Text')),
+                        DropdownMenuItem(value: 'image', child: Text('Image')),
+                        DropdownMenuItem(value: 'audio', child: Text('Audio')),
+                      ],
+                      onChanged: (v) => setDialogState(() => materialType = v ?? 'pdf'),
+                    ),
+                    const SizedBox(height: 8),
+                    if (materialType == 'text')
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichTextField(
+                            controller: materialTextCtrl,
+                            label: 'Text content (Supports Markdown)',
+                            maxLines: 6,
+                            decoration: _dialogTextFieldDecoration('Text content (Supports Markdown)'),
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedFile?.path.split(Platform.pathSeparator).last ?? 'No file selected',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: _dialogButtonStyle(),
+                            onPressed: () async {
+                              final extensions = materialType == 'pdf'
+                                  ? ['pdf']
+                                  : materialType == 'image'
+                                  ? ['png', 'jpg', 'jpeg']
+                                  : ['mp3', 'm4a', 'wav'];
+                              final result = await FilePicker.platform.pickFiles(
+                                type: FileType.custom,
+                                allowedExtensions: extensions,
+                              );
+                              if (result != null && result.files.single.path != null) {
+                                setDialogState(() => selectedFile = File(result.files.single.path!));
+                              }
+                            },
+                            child: const Icon(Icons.attach_file),
+                          ),
+                        ],
+                      ),
+                  ],
                 ],
               ],
             ),
@@ -228,87 +243,103 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
 
                   final payload = <String, dynamic>{
                     'titulo': titulo,
-                    if (descCtrl.text.trim().isNotEmpty) 'descripcion': descCtrl.text.trim(),
-                    if (tiempo != null) 'tiempo_limite_minutos': tiempo,
+                    'descripcion': descCtrl.text.trim(),
+                    'tiempo_limite_minutos': tiempo,
                     'tipo_evaluacion': tipo,
                     'activo': true,
                   };
-                  if (widget.activityTypeId != null) {
-                    payload['id_tipo_actividad'] = widget.activityTypeId;
+                  
+                  if (isEdit) {
+                     // UPDATE
+                     await supabase.from('cuestionarios')
+                        .update(payload)
+                        .eq('id_cuestionario', quizToEdit!['id_cuestionario']);
+                     
+                     if (!mounted) return;
+                     Navigator.pop(context);
+                     await _load();
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity updated')));
                   } else {
-                    payload['id_habilidad'] = widget.skillId;
-                  }
-                  final insertedQuiz = await supabase
-                      .from('cuestionarios')
-                      .insert(payload)
-                      .select('id_cuestionario')
-                      .single();
-                  final insertedQuizId = insertedQuiz['id_cuestionario'] as int;
-
-                  if (addMaterial) {
-                    final mTitle = (materialTitleCtrl.text.trim().isEmpty) ? titulo : materialTitleCtrl.text.trim();
-                    String? publicUrl;
-                    String? contenidoTexto;
-                    if (materialType == 'text') {
-                      contenidoTexto = materialTextCtrl.text.trim();
-                      if (contenidoTexto.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text content is required')));
-                      } else {
-                        await ApiService.createMaterial(
-                          habilidadId: widget.skillId,
-                          titulo: mTitle,
-                          tipoMaterial: 'text',
-                          contenidoTexto: contenidoTexto,
-                          cuestionarioId: insertedQuizId,
-                          esPremium: false,
-                          orden: 1,
-                        );
-                      }
+                    // INSERT
+                    if (widget.activityTypeId != null) {
+                      payload['id_tipo_actividad'] = widget.activityTypeId;
                     } else {
-                      if (selectedFile == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a file for the material')));
-                      } else {
-                        final storage = SupabaseStorageService();
-                        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split(Platform.pathSeparator).last}';
-                        try {
-                          if (materialType == 'pdf') {
-                            final r = await storage.uploadPDF(pdfFile: selectedFile!, fileName: fileName);
-                            if (r['success'] == true) publicUrl = r['url'] as String;
-                          } else if (materialType == 'image') {
-                            final r = await storage.uploadImage(imageFile: selectedFile!, fileName: fileName);
-                            if (r['success'] == true) publicUrl = r['url'] as String;
-                          } else if (materialType == 'audio') {
-                            final path = 'materials/$fileName';
-                            await supabase.storage.from('audios').upload(path, selectedFile!);
-                            publicUrl = supabase.storage.from('audios').getPublicUrl(path);
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error uploading material: $e')));
-                        }
-                        if (publicUrl != null) {
+                      payload['id_habilidad'] = widget.skillId;
+                    }
+                    if (descCtrl.text.trim().isEmpty) payload.remove('descripcion'); // clean if empty for insert
+
+                    final insertedQuiz = await supabase
+                        .from('cuestionarios')
+                        .insert(payload)
+                        .select('id_cuestionario')
+                        .single();
+                    final insertedQuizId = insertedQuiz['id_cuestionario'] as int;
+
+                    if (addMaterial) {
+                      final mTitle = (materialTitleCtrl.text.trim().isEmpty) ? titulo : materialTitleCtrl.text.trim();
+                      String? publicUrl;
+                      String? contenidoTexto;
+                      if (materialType == 'text') {
+                        contenidoTexto = materialTextCtrl.text.trim();
+                        if (contenidoTexto.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text content is required')));
+                        } else {
                           await ApiService.createMaterial(
                             habilidadId: widget.skillId,
                             titulo: mTitle,
-                            tipoMaterial: materialType,
-                            archivoUrl: publicUrl,
+                            tipoMaterial: 'text',
+                            contenidoTexto: contenidoTexto,
                             cuestionarioId: insertedQuizId,
                             esPremium: false,
                             orden: 1,
                           );
                         }
+                      } else {
+                        if (selectedFile == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a file for the material')));
+                        } else {
+                          final storage = SupabaseStorageService();
+                          final fileName = '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split(Platform.pathSeparator).last}';
+                          try {
+                            if (materialType == 'pdf') {
+                              final r = await storage.uploadPDF(pdfFile: selectedFile!, fileName: fileName);
+                              if (r['success'] == true) publicUrl = r['url'] as String;
+                            } else if (materialType == 'image') {
+                              final r = await storage.uploadImage(imageFile: selectedFile!, fileName: fileName);
+                              if (r['success'] == true) publicUrl = r['url'] as String;
+                            } else if (materialType == 'audio') {
+                              final path = 'materials/$fileName';
+                              await supabase.storage.from('audios').upload(path, selectedFile!);
+                              publicUrl = supabase.storage.from('audios').getPublicUrl(path);
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error uploading material: $e')));
+                          }
+                          if (publicUrl != null) {
+                            await ApiService.createMaterial(
+                              habilidadId: widget.skillId,
+                              titulo: mTitle,
+                              tipoMaterial: materialType,
+                              archivoUrl: publicUrl,
+                              cuestionarioId: insertedQuizId,
+                              esPremium: false,
+                              orden: 1,
+                            );
+                          }
+                        }
                       }
                     }
-                  }
 
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  await _load();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity created')));
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    await _load();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity created')));
+                  }
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
-              child: const Text('Create'),
+              child: Text(isEdit ? 'Save' : 'Create'),
             ),
           ],
         ),
@@ -563,6 +594,11 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
             ),
 
             // Botones de Acción
+            IconButton(
+              tooltip: 'Edit activity',
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFF23408E)),
+              onPressed: () => _createQuizDialog(quizToEdit: q),
+            ),
             IconButton(
               tooltip: 'Delete activity',
               icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),

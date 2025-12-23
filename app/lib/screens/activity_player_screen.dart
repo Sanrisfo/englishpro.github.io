@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener google_f
 import 'package:audioplayers/audioplayers.dart';
 import 'package:record/record.dart';
 import 'package:universal_io/io.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:path_provider/path_provider.dart';
 
 // Importaciones de tu proyecto (ajusta las rutas si es necesario)
@@ -606,9 +607,12 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
-            Text(
-              m.contenidoTexto ?? '',
-              style: TextStyle(color: Colors.grey[800], height: 1.5, fontSize: 15),
+            MarkdownBody(
+              data: m.contenidoTexto ?? '',
+              styleSheet: MarkdownStyleSheet(
+                p: TextStyle(color: Colors.grey[800], height: 1.5, fontSize: 15),
+                strong: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              ),
             ),
           ] else if ((type.contains('image') || type.contains('imagen')) && (m.archivoUrl?.isNotEmpty ?? false)) ...[
             const SizedBox(height: 16),
@@ -692,7 +696,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
                 children: [
                   Icon(icon, color: iconColor),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(o.textoOpcion, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal))),
+                  Expanded(child: MarkdownBody(data: o.textoOpcion, styleSheet: MarkdownStyleSheet(p: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: Colors.black87)))),
                 ],
               ),
             ),
@@ -723,9 +727,9 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      s.texto,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    child: MarkdownBody(
+                      data: s.texto,
+                      styleSheet: MarkdownStyleSheet(p: const TextStyle(fontWeight: FontWeight.w500)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -792,7 +796,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           final reg = RegExp(r'\{\{(\d+)\}\}');
           int last = 0;
           for (final m in reg.allMatches(s.textoTemplate)) {
-            if (m.start > last) parts.add(Text(s.textoTemplate.substring(last, m.start), style: const TextStyle(fontSize: 16, height: 1.5)));
+             if (m.start > last) parts.add(MarkdownBody(data: s.textoTemplate.substring(last, m.start), styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 16, height: 1.5))));
 
             final gapIndex = int.parse(m.group(1)!);
             final gap = s.gaps.firstWhere((g) => g.gapIndex == gapIndex);
@@ -818,7 +822,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             ));
             last = m.end;
           }
-          if (last < s.textoTemplate.length) parts.add(Text(s.textoTemplate.substring(last), style: const TextStyle(fontSize: 16, height: 1.5)));
+          if (last < s.textoTemplate.length) parts.add(MarkdownBody(data: s.textoTemplate.substring(last), styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 16, height: 1.5))));
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -885,7 +889,13 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Text(q.textoPregunta, style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+MarkdownBody(
+            data: q.textoPregunta,
+            styleSheet: MarkdownStyleSheet(
+              p: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              strong: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87), // Ensure bold stays bold matches regular text style
+            ),
+          ),
           const SizedBox(height: 24),
           body,
           if (_allSubmitted && (q.explicacionGeneral?.isNotEmpty ?? false))
@@ -896,7 +906,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
               child: Row(children: [
                 Icon(Icons.lightbulb, color: Color(0xFF1A3075), size: 20),
                 const SizedBox(width: 12),
-                Expanded(child: Text(q.explicacionGeneral!, style: TextStyle(color: Color(0xFF1A3075), fontSize: 13))),
+                Expanded(child: MarkdownBody(data: q.explicacionGeneral!, styleSheet: MarkdownStyleSheet(p: TextStyle(color: Color(0xFF1A3075), fontSize: 13)))),
               ]),
             ),
         ],
