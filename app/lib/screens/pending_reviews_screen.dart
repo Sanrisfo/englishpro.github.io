@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
+import '../config/supabase_config.dart';
 
 /// Pantalla que muestra una lista de envíos de estudiantes que están
 /// pendientes de revisión manual por parte de un docente.
@@ -241,6 +242,15 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                 ],
               ),
             ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
+              onPressed: () {
+                final responseId = (feedback['id_respuesta'] as num?)?.toInt();
+                if (responseId != null) {
+                  _deleteSubmission(responseId);
+                }
+              },
+            ),
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),
@@ -282,5 +292,51 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
         builder: (context) => ManualGradingScreen(feedback: feedback),
       ),
     ).then((_) => _load());
+  }
+
+  Future<void> _deleteSubmission(int responseId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Confirmar Eliminación'),
+        content: const Text('¿Estás seguro de que deseas eliminar este envío? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD9232A),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await supabase.from('respuestas_usuario').delete().eq('id_respuesta', responseId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Envío eliminado correctamente.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        await _load();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar el envío: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }
