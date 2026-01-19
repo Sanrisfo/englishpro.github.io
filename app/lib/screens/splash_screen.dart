@@ -15,7 +15,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fillAnimation;
 
@@ -24,7 +25,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1), // Duración de la animación de llenado
+      duration: const Duration(
+        seconds: 1,
+      ), // Duración de la animación de llenado
     );
 
     _fillAnimation = Tween<double>(begin: 0.0, end: 1).animate(
@@ -87,9 +90,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         );
       }
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
     }
   }
 
@@ -116,9 +119,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     child: Align(
                       alignment: Alignment.bottomCenter,
                       heightFactor: _fillAnimation.value,
-                      child: Image.asset(
-                        'assets/images/logo_completo.png',
-                      ),
+                      child: Image.asset('assets/images/logo_completo.png'),
                     ),
                   ),
                 ],

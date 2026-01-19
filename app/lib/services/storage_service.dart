@@ -43,10 +43,7 @@ class StorageService {
       if (kDebugMode) {
         print('Error uploading audio: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -70,19 +67,12 @@ class StorageService {
       await uploadTask;
       final downloadUrl = await ref.getDownloadURL();
 
-      return {
-        'success': true,
-        'url': downloadUrl,
-        'path': 'videos/$fileName',
-      };
+      return {'success': true, 'url': downloadUrl, 'path': 'videos/$fileName'};
     } catch (e) {
       if (kDebugMode) {
         print('Error uploading video: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -106,19 +96,12 @@ class StorageService {
       await uploadTask;
       final downloadUrl = await ref.getDownloadURL();
 
-      return {
-        'success': true,
-        'url': downloadUrl,
-        'path': 'pdfs/$fileName',
-      };
+      return {'success': true, 'url': downloadUrl, 'path': 'pdfs/$fileName'};
     } catch (e) {
       if (kDebugMode) {
         print('Error uploading PDF: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -142,19 +125,12 @@ class StorageService {
       await uploadTask;
       final downloadUrl = await ref.getDownloadURL();
 
-      return {
-        'success': true,
-        'url': downloadUrl,
-        'path': 'images/$fileName',
-      };
+      return {'success': true, 'url': downloadUrl, 'path': 'images/$fileName'};
     } catch (e) {
       if (kDebugMode) {
         print('Error uploading image: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -164,18 +140,12 @@ class StorageService {
       final ref = _storage.ref().child(path);
       final url = await ref.getDownloadURL();
 
-      return {
-        'success': true,
-        'url': url,
-      };
+      return {'success': true, 'url': url};
     } catch (e) {
       if (kDebugMode) {
         print('Error getting download URL: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -185,18 +155,12 @@ class StorageService {
       final ref = _storage.ref().child(path);
       await ref.delete();
 
-      return {
-        'success': true,
-        'message': 'File deleted successfully',
-      };
+      return {'success': true, 'message': 'File deleted successfully'};
     } catch (e) {
       if (kDebugMode) {
         print('Error deleting file: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -219,10 +183,7 @@ class StorageService {
       if (kDebugMode) {
         print('Error deleting user audios: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -235,26 +196,15 @@ class StorageService {
       final files = <Map<String, String>>[];
       for (var item in listResult.items) {
         final url = await item.getDownloadURL();
-        files.add({
-          'name': item.name,
-          'path': item.fullPath,
-          'url': url,
-        });
+        files.add({'name': item.name, 'path': item.fullPath, 'url': url});
       }
 
-      return {
-        'success': true,
-        'files': files,
-        'count': files.length,
-      };
+      return {'success': true, 'files': files, 'count': files.length};
     } catch (e) {
       if (kDebugMode) {
         print('Error listing files: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -280,10 +230,7 @@ class StorageService {
       if (kDebugMode) {
         print('Error getting metadata: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 }

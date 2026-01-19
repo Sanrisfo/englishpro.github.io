@@ -1,4 +1,4 @@
-﻿/// Representa un plan de suscripción de la aplicación EnglishPro.
+/// Representa un plan de suscripción de la aplicación EnglishPro.
 ///
 /// Define las características y límites asociados a cada tipo de plan,
 /// como 'Freemium', 'Básico', 'Pro' o 'Premium'.
@@ -180,4 +180,3 @@ class PlanModel {
         accesoCompletoCursos.hashCode;
   }
 }
-

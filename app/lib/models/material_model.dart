@@ -112,16 +112,27 @@ class MaterialModel {
     }
 
     final id = toInt(json['id'] ?? json['id_material'] ?? json['ID_Material']);
-    final habilidadId = toInt(json['habilidad_id'] ?? json['id_habilidad'] ?? json['ID_Habilidad']);
+    final habilidadId = toInt(
+      json['habilidad_id'] ?? json['id_habilidad'] ?? json['ID_Habilidad'],
+    );
     final titulo = (json['titulo'] ?? json['Titulo'] ?? '').toString();
-    final descripcion = (json['descripcion'] ?? json['Descripcion'] ?? '').toString();
-    final tipoMaterial = (json['tipo_material'] ?? json['Tipo_Material'] ?? '').toString();
-    final contenidoTexto = toStringOrNull(json['contenido_texto'] ?? json['Contenido_Texto']);
-    final archivoUrl = toStringOrNull(json['url_recurso'] ?? json['archivo_url'] ?? json['URL_Recurso']);
+    final descripcion = (json['descripcion'] ?? json['Descripcion'] ?? '')
+        .toString();
+    final tipoMaterial = (json['tipo_material'] ?? json['Tipo_Material'] ?? '')
+        .toString();
+    final contenidoTexto = toStringOrNull(
+      json['contenido_texto'] ?? json['Contenido_Texto'],
+    );
+    final archivoUrl = toStringOrNull(
+      json['url_recurso'] ?? json['archivo_url'] ?? json['URL_Recurso'],
+    );
     final orden = toInt(json['orden'] ?? json['Orden'], defaultValue: 1);
     final esPremium = toBool(json['es_premium'] ?? json['Es_Premium']);
     final fechaCreacion = toDate(
-      json['fecha_creacion'] ?? json['Fecha_Creacion'] ?? json['created_at'] ?? json['Created_At'],
+      json['fecha_creacion'] ??
+          json['Fecha_Creacion'] ??
+          json['created_at'] ??
+          json['Created_At'],
     );
 
     return MaterialModel(
@@ -166,7 +177,9 @@ class MaterialModel {
   bool get isAudio => tipoMaterial.toLowerCase() == 'audio';
 
   /// Verifica si el material es de tipo texto.
-  bool get isText => tipoMaterial.toLowerCase() == 'text' || tipoMaterial.toLowerCase() == 'texto';
+  bool get isText =>
+      tipoMaterial.toLowerCase() == 'text' ||
+      tipoMaterial.toLowerCase() == 'texto';
 
   /// Verifica si el material es un enlace externo.
   bool get isLink => tipoMaterial.toLowerCase() == 'link';

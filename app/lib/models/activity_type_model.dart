@@ -67,9 +67,12 @@ class ActivityTypeModel {
 
     return ActivityTypeModel(
       id: toInt(json['id'] ?? json['id_tipo_actividad']),
-      habilidadId: toInt(json['id_habilidad'] ?? json['habilidad_id'] ?? json['ID_Habilidad']),
+      habilidadId: toInt(
+        json['id_habilidad'] ?? json['habilidad_id'] ?? json['ID_Habilidad'],
+      ),
       nombre: (json['nombre'] ?? json['nombre_tipo'] ?? '').toString(),
-      descripcion: (json['descripcion'] as String?) ?? (json['Descripcion'] as String?),
+      descripcion:
+          (json['descripcion'] as String?) ?? (json['Descripcion'] as String?),
       orden: toInt(json['orden'] ?? 1, d: 1),
       activo: (json['activo'] as bool?) ?? true,
     );
@@ -83,11 +86,11 @@ class ActivityTypeModel {
   ///
   /// @return Una representación en mapa del tipo de actividad.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'id_habilidad': habilidadId,
-        'nombre': nombre,
-        'descripcion': descripcion,
-        'orden': orden,
-        'activo': activo,
-      };
+    'id': id,
+    'id_habilidad': habilidadId,
+    'nombre': nombre,
+    'descripcion': descripcion,
+    'orden': orden,
+    'activo': activo,
+  };
 }

@@ -1,4 +1,4 @@
-﻿import 'matching_models.dart';
+import 'matching_models.dart';
 import 'completion_models.dart';
 
 /// Representa una pregunta multimedia con distintos tipos y contenidos asociados.
@@ -102,28 +102,35 @@ class QuestionModel {
       tiempoLimiteSegundos: json['tiempo_limite_segundos'] as int?,
       opciones: json['opciones'] != null
           ? (json['opciones'] as List)
-              .map((e) => AnswerOptionModel.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map(
+                  (e) => AnswerOptionModel.fromJson(e as Map<String, dynamic>),
+                )
+                .toList()
           : null,
       matchingAnswers: json['matching_answers'] != null
           ? (json['matching_answers'] as List)
-              .map((e) => MatchingAnswer.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map((e) => MatchingAnswer.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       matchingStatements: json['matching_statements'] != null
           ? (json['matching_statements'] as List)
-              .map((e) => MatchingStatement.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map(
+                  (e) => MatchingStatement.fromJson(e as Map<String, dynamic>),
+                )
+                .toList()
           : null,
       completionSentences: json['completion_sentences'] != null
           ? (json['completion_sentences'] as List)
-              .map((e) => CompletionSentence.fromJson(e as Map<String, dynamic>))
-              .toList()
+                .map(
+                  (e) => CompletionSentence.fromJson(e as Map<String, dynamic>),
+                )
+                .toList()
           : null,
       maxWords: json['max_words'] as int?,
       thinkTimeSeconds: json['think_time_seconds'] as int?,
       maxRecordSeconds: json['max_record_seconds'] as int?,
-      explicacionGeneral: (json['explicacion'] ?? json['explicacion_general']) as String?,
+      explicacionGeneral:
+          (json['explicacion'] ?? json['explicacion_general']) as String?,
     );
   }
 
@@ -145,8 +152,12 @@ class QuestionModel {
       'tiempo_limite_segundos': tiempoLimiteSegundos,
       'opciones': opciones?.map((e) => e.toJson()).toList(),
       'matching_answers': matchingAnswers?.map((e) => e.toJson()).toList(),
-      'matching_statements': matchingStatements?.map((e) => e.toJson()).toList(),
-      'completion_sentences': completionSentences?.map((e) => e.toJson()).toList(),
+      'matching_statements': matchingStatements
+          ?.map((e) => e.toJson())
+          .toList(),
+      'completion_sentences': completionSentences
+          ?.map((e) => e.toJson())
+          .toList(),
       'max_words': maxWords,
       'think_time_seconds': thinkTimeSeconds,
       'max_record_seconds': maxRecordSeconds,
@@ -295,4 +306,3 @@ class AnswerOptionModel {
     return 'AnswerOptionModel(id: $id, correcta: $esCorrecta)';
   }
 }
-

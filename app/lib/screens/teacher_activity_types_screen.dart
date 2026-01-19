@@ -52,9 +52,7 @@ class _TeacherActivityTypesScreenState
     backgroundColor: _mainBlue.withOpacity(0.1),
     foregroundColor: _mainBlue,
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
   );
 
   /// Estilo para botones de texto.
@@ -81,12 +79,15 @@ class _TeacherActivityTypesScreenState
       if (res['success'] == true) {
         final items = res['types'] as List<dynamic>;
         _types = items
-            .map((e) => e is Map<String, dynamic>
-            ? e
-            : (e as dynamic).toJson() as Map<String, dynamic>)
+            .map(
+              (e) => e is Map<String, dynamic>
+                  ? e
+                  : (e as dynamic).toJson() as Map<String, dynamic>,
+            )
             .toList();
       } else {
-        _error = res['message'] ?? 'No se pudieron cargar los tipos de actividad';
+        _error =
+            res['message'] ?? 'No se pudieron cargar los tipos de actividad';
       }
     } catch (e) {
       _error = 'Error: $e';
@@ -202,7 +203,7 @@ class _TeacherActivityTypesScreenState
                     child: const Text('Crear'),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
@@ -213,8 +214,12 @@ class _TeacherActivityTypesScreenState
   /// Muestra un diálogo para renombrar un tipo de actividad existente.
   /// @param t El mapa de datos del tipo de actividad a editar.
   Future<void> _renameTypeDialog(Map<String, dynamic> t) async {
-    final nameCtrl = TextEditingController(text: (t['nombre'] as String?) ?? '');
-    final descCtrl = TextEditingController(text: (t['descripcion'] as String?) ?? '');
+    final nameCtrl = TextEditingController(
+      text: (t['nombre'] as String?) ?? '',
+    );
+    final descCtrl = TextEditingController(
+      text: (t['descripcion'] as String?) ?? '',
+    );
 
     await showDialog(
       context: context,
@@ -266,7 +271,9 @@ class _TeacherActivityTypesScreenState
                     style: _softButtonStyle,
                     onPressed: () async {
                       final nombre = nameCtrl.text.trim();
-                      final id = (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
+                      final id =
+                          (t['id'] as int?) ??
+                          (t['id_tipo_actividad'] as int? ?? 0);
 
                       final r = await ApiService.updateActivityType(
                         id: id,
@@ -285,7 +292,9 @@ class _TeacherActivityTypesScreenState
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(r['message'] ?? 'Error al actualizar el tipo'),
+                            content: Text(
+                              r['message'] ?? 'Error al actualizar el tipo',
+                            ),
                           ),
                         );
                       }
@@ -293,7 +302,7 @@ class _TeacherActivityTypesScreenState
                     child: const Text('Guardar'),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
@@ -317,7 +326,8 @@ class _TeacherActivityTypesScreenState
           textAlign: TextAlign.center,
         ),
         content: const Text(
-            '¿Eliminar este tipo de actividad? Esto también eliminará todas sus actividades asociadas.'),
+          '¿Eliminar este tipo de actividad? Esto también eliminará todas sus actividades asociadas.',
+        ),
         actions: [
           TextButton(
             style: _textButtonStyle,
@@ -329,7 +339,8 @@ class _TeacherActivityTypesScreenState
               backgroundColor: const Color(0xFFD9232A),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar'),
@@ -344,8 +355,9 @@ class _TeacherActivityTypesScreenState
     if (r['success'] == true) {
       await _load();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tipo eliminado')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Tipo eliminado')));
       }
     } else {
       if (mounted) {
@@ -392,72 +404,70 @@ class _TeacherActivityTypesScreenState
                 ),
               )
             : _error != null
-                ? Center(child: Text(_error!))
-                : _types.isEmpty
-                    ? const Center(child: Text('No se encontraron tipos de actividad'))
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                            child: Column(
-                              children: [
-                                Center(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 40, vertical: 0),
-                                    decoration: BoxDecoration(
-                                      color: _courseColor,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      widget.skillName,
-                                      style: GoogleFonts.ptSans(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+            ? Center(child: Text(_error!))
+            : _types.isEmpty
+            ? const Center(child: Text('No se encontraron tipos de actividad'))
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40,
+                              vertical: 0,
                             ),
-                          ),
-                          Expanded(
-                            child: RefreshIndicator(
-                              onRefresh: _load,
+                            decoration: BoxDecoration(
                               color: _courseColor,
-                              child: ListView.separated(
-                                padding: const EdgeInsets.only(
-                                  left: 16.0,
-                                  right: 16.0,
-                                  top: 0,
-                                  bottom: 150.0,
-                                ),
-                                itemCount: _types.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  return _buildTypeTile(
-                                    _types[index],
-                                    _courseColor,
-                                  );
-                                },
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              widget.skillName,
+                              style: GoogleFonts.ptSans(
+                                color: Colors.white,
+                                fontSize: 20,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _load,
+                      color: _courseColor,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(
+                          left: 16.0,
+                          right: 16.0,
+                          top: 0,
+                          bottom: 150.0,
+                        ),
+                        itemCount: _types.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return _buildTypeTile(_types[index], _courseColor);
+                        },
                       ),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -521,10 +531,7 @@ class _TeacherActivityTypesScreenState
                         desc,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ),
                 ],
@@ -537,7 +544,10 @@ class _TeacherActivityTypesScreenState
             IconButton(
               icon: const Icon(Icons.rule, color: Color(0xFF23408E)),
               tooltip: 'Tipos de pregunta permitidos',
-              onPressed: () => _editAllowedTypesDialog((t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0), nombre),
+              onPressed: () => _editAllowedTypesDialog(
+                (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0),
+                nombre,
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
@@ -583,7 +593,7 @@ class _TeacherActivityTypesScreenState
                 color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
-              )
+              ),
             ],
           ),
           padding: const EdgeInsets.fromLTRB(40, 20, 40, 30),
@@ -618,22 +628,26 @@ class _TeacherActivityTypesScreenState
                   Flexible(
                     child: SingleChildScrollView(
                       child: Column(
-                        children: all.map((t) => CheckboxListTile(
-                          activeColor: mainColor,
-                          contentPadding: EdgeInsets.zero,
-                          value: selected.contains(t),
-                          title: Text(
-                            t.replaceAll('_', ' '),
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                          onChanged: (v) => setStateDialog(() {
-                            if (v == true) {
-                              selected.add(t);
-                            } else {
-                              selected.remove(t);
-                            }
-                          }),
-                        )).toList(),
+                        children: all
+                            .map(
+                              (t) => CheckboxListTile(
+                                activeColor: mainColor,
+                                contentPadding: EdgeInsets.zero,
+                                value: selected.contains(t),
+                                title: Text(
+                                  t.replaceAll('_', ' '),
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                                onChanged: (v) => setStateDialog(() {
+                                  if (v == true) {
+                                    selected.add(t);
+                                  } else {
+                                    selected.remove(t);
+                                  }
+                                }),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ),
                   ),
@@ -643,7 +657,10 @@ class _TeacherActivityTypesScreenState
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                        child: const Text(
+                          'Cancelar',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
@@ -651,8 +668,13 @@ class _TeacherActivityTypesScreenState
                           backgroundColor: mainColor.withOpacity(0.1),
                           foregroundColor: mainColor,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                         ),
                         onPressed: () async {
                           final r = await ApiService.setAllowedQuestionTypes(
@@ -665,11 +687,20 @@ class _TeacherActivityTypesScreenState
 
                           if (r['success'] == true) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: const Text('Tipos permitidos guardados'), backgroundColor: mainColor),
+                              SnackBar(
+                                content: const Text(
+                                  'Tipos permitidos guardados',
+                                ),
+                                backgroundColor: mainColor,
+                              ),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(r['message'] ?? 'Error al guardar los tipos')),
+                              SnackBar(
+                                content: Text(
+                                  r['message'] ?? 'Error al guardar los tipos',
+                                ),
+                              ),
                             );
                           }
                         },

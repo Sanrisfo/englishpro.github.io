@@ -44,4 +44,3 @@ void main() {
     expect(json['email'], 't@e.com');
   });
 }
-

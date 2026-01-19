@@ -101,9 +101,9 @@ class QuizResultsScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Revisión de Preguntas',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -167,10 +167,7 @@ class QuizResultsScreen extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(label, style: const TextStyle(fontSize: 16)),
           ],
         ),
         Text(
@@ -186,7 +183,10 @@ class QuizResultsScreen extends StatelessWidget {
   }
 
   Widget _buildQuestionReview(
-      BuildContext context, QuestionModel question, int questionNumber) {
+    BuildContext context,
+    QuestionModel question,
+    int questionNumber,
+  ) {
     final userAnswer = userAnswers[question.id];
     final correctOption = question.opciones?.firstWhere(
       (opt) => opt.esCorrecta,
@@ -235,8 +235,10 @@ class QuizResultsScreen extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -310,10 +312,9 @@ class QuizResultsScreen extends StatelessWidget {
                           option.textoOpcion,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight:
-                                isCorrectOption || isUserAnswer
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                            fontWeight: isCorrectOption || isUserAnswer
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -334,7 +335,11 @@ class QuizResultsScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

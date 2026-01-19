@@ -64,8 +64,9 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   Future<void> _initializePlayer() async {
     try {
       if (widget.videoUrl.startsWith('http')) {
-        _videoPlayerController =
-            VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+        _videoPlayerController = VideoPlayerController.networkUrl(
+          Uri.parse(widget.videoUrl),
+        );
       } else {
         _videoPlayerController = VideoPlayerController.asset(widget.videoUrl);
       }
@@ -120,9 +121,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Asegúrate de tener esto importado
 import '../config/supabase_config.dart';
 import 'package:provider/provider.dart';
@@ -41,6 +41,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     if (_quizzes.isEmpty) return _quizzes;
     return _quizzes.take(limit).toList();
   }
+
   bool _isLoading = true;
   String? _errorMessage;
   List<Map<String, dynamic>> _quizzes = [];
@@ -61,7 +62,9 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
     try {
       final qs = await supabase
           .from('cuestionarios')
-          .select('id_cuestionario, titulo, tiempo_limite_minutos, tipo_evaluacion, activo, descripcion') // Agregué descripción
+          .select(
+            'id_cuestionario, titulo, tiempo_limite_minutos, tipo_evaluacion, activo, descripcion',
+          ) // Agregué descripción
           .eq('id_tipo_actividad', widget.activityTypeId)
           .eq('activo', true)
           .order('id_cuestionario', ascending: true);
@@ -83,7 +86,8 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String breadcrumb = '... > ${widget.skillName} > ${widget.activityTypeName}';
+    final String breadcrumb =
+        '... > ${widget.skillName} > ${widget.activityTypeName}';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -98,102 +102,117 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
 
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5.0,
+                ),
+              )
             : _errorMessage != null
             ? Center(child: Text(_errorMessage!))
             : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. ENCABEZADO ESTÁNDAR
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 1. ENCABEZADO ESTÁNDAR
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Image.asset(
+                                'assets/images/logo_completo.png',
+                                height: 40,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
 
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Image.asset(
-                          'assets/images/logo_completo.png',
-                          height: 40,
-                          fit: BoxFit.contain,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40.0,
+                                vertical: 0.0,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _courseColor,
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              child: Text(
+                                widget.activityTypeName,
+                                style: GoogleFonts.ptSans(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
 
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
-                        decoration: BoxDecoration(
-                          color: _courseColor,
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Text(
-                          widget.activityTypeName,
-                          style: GoogleFonts.ptSans(
-                            color: Colors.white,
-                            fontSize: 20,
+                        const SizedBox(height: 16),
+
+                        Text(
+                          breadcrumb,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
                           ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
-                  const SizedBox(height: 16),
-
-                  Text(
-                    breadcrumb,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                  // lista de actividades
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _load,
+                      color: _courseColor,
+                      child: Builder(
+                        builder: (context) {
+                          final user = context.read<AuthProvider>().user;
+                          final planId = user?.idPlan ?? 1;
+                          int limit;
+                          if (planId <= 1) {
+                            limit = 1; // Freemium
+                          } else if (planId == 2) {
+                            limit = 3; // Básico
+                          } else {
+                            limit = 5; // Pro/Premium
+                          }
+                          final display = _quizzes;
+                          if (display.isEmpty) {
+                            return const Center(
+                              child: Text('No activities found yet'),
+                            );
+                          }
+                          return ListView.separated(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 0,
+                              bottom: 100,
+                            ),
+                            itemCount: display.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final q = display[index];
+                              final locked = index >= limit;
+                              return _buildActivityTile(q, locked: locked);
+                            },
+                          );
+                        },
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-            ),
-
-            // lista de actividades
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                color: _courseColor,
-                child: Builder(
-                  builder: (context) {
-                    final user = context.read<AuthProvider>().user;
-final planId = user?.idPlan ?? 1;
-int limit;
-if (planId <= 1) {
-  limit = 1; // Freemium
-} else if (planId == 2) {
-  limit = 3; // Básico
-} else {
-  limit = 5; // Pro/Premium
-}
-final display = _quizzes;
-                    if (display.isEmpty) {
-                      return const Center(child: Text('No activities found yet'));
-                    }
-                    return ListView.separated(
-                      padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 100),
-                      itemCount: display.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final q = display[index];
-final locked = index >= limit;
-                        return _buildActivityTile(q, locked: locked);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -207,12 +226,24 @@ final locked = index >= limit;
     final desc = q['descripcion'] as String? ?? '';
 
     return InkWell(
-      onTap: () { if (locked) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Actividad bloqueada por tu plan. Actualiza para acceder.'))); return; }
+      onTap: () {
+        if (locked) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Actividad bloqueada por tu plan. Actualiza para acceder.',
+              ),
+            ),
+          );
+          return;
+        }
         final user = context.read<AuthProvider>().user;
         final userId = user?.idUsuario;
         if (userId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Debes iniciar sesión para realizar la actividad')),
+            const SnackBar(
+              content: Text('Debes iniciar sesión para realizar la actividad'),
+            ),
           );
           return;
         }
@@ -245,7 +276,11 @@ final locked = index >= limit;
                 color: _courseColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.assignment_outlined, color: _courseColor, size: 28),
+              child: Icon(
+                Icons.assignment_outlined,
+                color: _courseColor,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
 
@@ -265,11 +300,9 @@ final locked = index >= limit;
                   const SizedBox(height: 4),
                   // Subtítulos
                   Text(
-                    "Type: $tipo" + (minutos != null ? "  •  Time: $minutos min" : ""),
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    "Type: $tipo" +
+                        (minutos != null ? "  •  Time: $minutos min" : ""),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   if (desc.isNotEmpty)
                     Padding(
@@ -290,7 +323,13 @@ final locked = index >= limit;
             ),
 
             // Flecha a la derecha
-            locked ? const Icon(Icons.lock, size: 16, color: Colors.grey) : const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            locked
+                ? const Icon(Icons.lock, size: 16, color: Colors.grey)
+                : const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
           ],
         ),
       ),

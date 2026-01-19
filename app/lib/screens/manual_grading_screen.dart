@@ -15,7 +15,8 @@ class ManualGradingScreen extends StatefulWidget {
   final Map<String, dynamic> feedback;
 
   /// Crea una instancia de la pantalla de calificación manual.
-  const ManualGradingScreen({Key? key, required this.feedback}) : super(key: key);
+  const ManualGradingScreen({Key? key, required this.feedback})
+    : super(key: key);
 
   @override
   State<ManualGradingScreen> createState() => _ManualGradingScreenState();
@@ -91,12 +92,15 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
     try {
       await _audioPlayer.play(UrlSource(audioUrl));
     } catch (e) {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _isAudioLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar el audio: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error al cargar el audio: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -107,7 +111,10 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
   /// Actualiza la columna `requiere_revision` a `false` en la tabla `respuestas_usuario`
   /// para que ya no aparezca en la lista de pendientes.
   Future<void> _markAsReviewed() async {
-    setState(() { _isLoadingAction = true; _errorMessage = null; });
+    setState(() {
+      _isLoadingAction = true;
+      _errorMessage = null;
+    });
 
     try {
       final responseId = (widget.feedback['id_respuesta'] as num?)?.toInt();
@@ -120,15 +127,21 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Marcado como revisado'), backgroundColor: Color(0xFF23408E)),
+          const SnackBar(
+            content: Text('Marcado como revisado'),
+            backgroundColor: Color(0xFF23408E),
+          ),
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
-      if(mounted) {
+      if (mounted) {
         setState(() => _errorMessage = e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $_errorMessage'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $_errorMessage'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -138,14 +151,20 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic>? q = (widget.feedback['preguntas'] as Map?)?.cast<String, dynamic>();
+    final Map<String, dynamic>? q = (widget.feedback['preguntas'] as Map?)
+        ?.cast<String, dynamic>();
     final tipoPreguntaDb = (q?['tipo_pregunta'] as String?)?.toLowerCase();
 
-    final tipoRespuesta = widget.feedback['tipo_respuesta'] as String? ??
+    final tipoRespuesta =
+        widget.feedback['tipo_respuesta'] as String? ??
         (tipoPreguntaDb == 'write_text' ? 'Writing' : 'Speaking');
 
-    final respuestaTexto = (widget.feedback['respuesta_texto'] as String?) ?? (widget.feedback['texto_ensayo'] as String?);
-    final respuestaAudioUrl = (widget.feedback['respuesta_audio_url'] as String?) ?? (widget.feedback['url_grabacion'] as String?);
+    final respuestaTexto =
+        (widget.feedback['respuesta_texto'] as String?) ??
+        (widget.feedback['texto_ensayo'] as String?);
+    final respuestaAudioUrl =
+        (widget.feedback['respuesta_audio_url'] as String?) ??
+        (widget.feedback['url_grabacion'] as String?);
     final preguntaId = widget.feedback['id_pregunta'] as int?;
 
     return Scaffold(
@@ -162,7 +181,12 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
                   children: [
                     _buildStudentInfo(),
                     const SizedBox(height: 20),
-                    _buildQuestionCard(preguntaId, tipoRespuesta, respuestaTexto, respuestaAudioUrl),
+                    _buildQuestionCard(
+                      preguntaId,
+                      tipoRespuesta,
+                      respuestaTexto,
+                      respuestaAudioUrl,
+                    ),
                   ],
                 ),
               ),
@@ -191,13 +215,21 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
                 border: Border.all(color: Colors.grey[200]!),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: Colors.black54),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 20,
+                color: Colors.black54,
+              ),
             ),
           ),
           const SizedBox(width: 16),
           Text(
             'Revisar Envío',
-            style: GoogleFonts.ptSans(fontSize: 22, fontWeight: FontWeight.bold, color: _primaryColor),
+            style: GoogleFonts.ptSans(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: _primaryColor,
+            ),
           ),
         ],
       ),
@@ -222,8 +254,18 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              if (email.isNotEmpty) Text(email, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+              Text(
+                nombre,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              if (email.isNotEmpty)
+                Text(
+                  email,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                ),
             ],
           ),
         ),
@@ -232,7 +274,12 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
   }
 
   /// Construye la tarjeta principal que contiene la respuesta del estudiante.
-  Widget _buildQuestionCard(int? preguntaId, String tipoRespuesta, String? respuestaTexto, String? respuestaAudioUrl) {
+  Widget _buildQuestionCard(
+    int? preguntaId,
+    String tipoRespuesta,
+    String? respuestaTexto,
+    String? respuestaAudioUrl,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -241,7 +288,11 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[200]!, width: 1.5),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -250,17 +301,37 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Pregunta #$preguntaId", style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold, fontSize: 12)),
-              _infoChip(tipoRespuesta, tipoRespuesta == 'Writing' ? Icons.edit_rounded : Icons.mic_rounded),
+              Text(
+                "Pregunta #$preguntaId",
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              _infoChip(
+                tipoRespuesta,
+                tipoRespuesta == 'Writing'
+                    ? Icons.edit_rounded
+                    : Icons.mic_rounded,
+              ),
             ],
           ),
           const SizedBox(height: 16),
           const Text(
             "Respuesta del Estudiante:",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 16),
-          _buildResponseContent(tipoRespuesta, respuestaTexto, respuestaAudioUrl),
+          _buildResponseContent(
+            tipoRespuesta,
+            respuestaTexto,
+            respuestaAudioUrl,
+          ),
         ],
       ),
     );
@@ -282,12 +353,24 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: _primaryColor,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 0,
           ),
           child: _isLoadingAction
-              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-              : const Text('Marcar como Revisado', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : const Text(
+                  'Marcar como Revisado',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
         ),
       ),
     );
@@ -306,11 +389,14 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
         ),
         child: Text(
           text,
-          style: GoogleFonts.ptSans(fontSize: 16, height: 1.5, color: Colors.black87),
+          style: GoogleFonts.ptSans(
+            fontSize: 16,
+            height: 1.5,
+            color: Colors.black87,
+          ),
         ),
       );
-    }
-    else if (type == 'Speaking' && audioUrl != null) {
+    } else if (type == 'Speaking' && audioUrl != null) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -334,17 +420,32 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _primaryColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
                 icon: _isAudioLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                label: Text(_isAudioLoading
-                    ? 'Cargando...'
-                    : _isPlaying
-                    ? 'Pausar Audio'
-                    : 'Reproducir Audio'),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Icon(
+                        _isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                      ),
+                label: Text(
+                  _isAudioLoading
+                      ? 'Cargando...'
+                      : _isPlaying
+                      ? 'Pausar Audio'
+                      : 'Reproducir Audio',
+                ),
               ),
             ),
           ],
@@ -376,7 +477,11 @@ class _ManualGradingScreenState extends State<ManualGradingScreen> {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(color: _primaryColor, fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+              color: _primaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ],
       ),

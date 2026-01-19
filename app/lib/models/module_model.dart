@@ -88,8 +88,15 @@ class ModuleModel {
 
     return ModuleModel(
       id: toInt(json['id_modulo'] ?? json['id'] ?? json['ID_Modulo']),
-      habilidadId: toInt(json['id_habilidad'] ?? json['habilidad_id'] ?? json['ID_Habilidad']),
-      nombre: (json['nombre_modulo'] ?? json['nombre'] ?? json['Nombre_Modulo'] ?? '').toString(),
+      habilidadId: toInt(
+        json['id_habilidad'] ?? json['habilidad_id'] ?? json['ID_Habilidad'],
+      ),
+      nombre:
+          (json['nombre_modulo'] ??
+                  json['nombre'] ??
+                  json['Nombre_Modulo'] ??
+                  '')
+              .toString(),
       descripcion: (json['descripcion'] ?? json['Descripcion']) as String?,
       orden: toInt(json['orden'] ?? json['Orden'], def: 1),
       activo: toBool(json['activo'] ?? json['Activo'] ?? true),

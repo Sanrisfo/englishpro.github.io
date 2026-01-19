@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../services/supabase_auth_service.dart';
@@ -66,8 +66,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', session?.accessToken ?? '');
 
-      Provider.of<AuthProvider>(context, listen: false)
-          .setUser(user, session?.accessToken ?? '');
+      Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).setUser(user, session?.accessToken ?? '');
 
       if (user.rol == 'Docente') {
         Navigator.of(context).pushReplacement(
@@ -122,10 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Text(
                   'Join EnglishPro today!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
 
@@ -225,7 +224,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             : Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                        setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        );
                       },
                     ),
                     border: OutlineInputBorder(
@@ -261,7 +263,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(

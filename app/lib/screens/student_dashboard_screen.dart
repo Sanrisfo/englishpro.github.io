@@ -96,27 +96,29 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF23408E)))
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF23408E)),
+              )
             : _errorMessage != null
-                ? _buildErrorView()
-                : RefreshIndicator(
-                    onRefresh: _loadStudentData,
-                    color: const Color(0xFF23408E),
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildStudentHeader(context),
-                          const SizedBox(height: 32),
-                          _buildModulesSection(context),
-                          const SizedBox(height: 32),
-                          _buildStatsSection(),
-                        ],
-                      ),
-                    ),
+            ? _buildErrorView()
+            : RefreshIndicator(
+                onRefresh: _loadStudentData,
+                color: const Color(0xFF23408E),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildStudentHeader(context),
+                      const SizedBox(height: 32),
+                      _buildModulesSection(context),
+                      const SizedBox(height: 32),
+                      _buildStatsSection(),
+                    ],
                   ),
+                ),
+              ),
       ),
     );
   }
@@ -136,7 +138,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               children: [
                 Text(
                   "¡Hola de nuevo!",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -168,7 +172,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                   children: const [
                     Icon(Icons.logout, color: Color(0xFFD9232A)),
                     SizedBox(width: 8),
-                    Text("Cerrar Sesión", style: TextStyle(color: Color(0xFFD9232A))),
+                    Text(
+                      "Cerrar Sesión",
+                      style: TextStyle(color: Color(0xFFD9232A)),
+                    ),
                   ],
                 ),
               ),
@@ -192,7 +199,12 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           icon: Icons.school_rounded,
           color: const Color(0xFF23408E),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const CoursesListScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const CoursesListScreen(),
+              ),
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -202,7 +214,12 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           icon: Icons.bar_chart_rounded,
           color: const Color(0xFF23408E),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ProgressDashboardScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ProgressDashboardScreen(),
+              ),
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -212,7 +229,12 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           icon: Icons.notifications_rounded,
           color: const Color(0xFF23408E),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationsScreen(),
+              ),
+            );
           },
         ),
       ],
@@ -231,9 +253,22 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _statCard('Puntos Totales', _studentStats!['total_puntos']?.toString() ?? '0', Icons.star_rounded),
-            _statCard('Cursos Iniciados', _studentStats!['cursos_iniciados']?.toString() ?? '0', Icons.book_rounded),
-            _statCard('Feedback Recibido', _studentStats!['retroalimentaciones_recibidas']?.toString() ?? '0', Icons.feedback_rounded),
+            _statCard(
+              'Puntos Totales',
+              _studentStats!['total_puntos']?.toString() ?? '0',
+              Icons.star_rounded,
+            ),
+            _statCard(
+              'Cursos Iniciados',
+              _studentStats!['cursos_iniciados']?.toString() ?? '0',
+              Icons.book_rounded,
+            ),
+            _statCard(
+              'Feedback Recibido',
+              _studentStats!['retroalimentaciones_recibidas']?.toString() ??
+                  '0',
+              Icons.feedback_rounded,
+            ),
           ],
         ),
       ],
@@ -279,7 +314,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(width: 16),
@@ -287,9 +325,19 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
                 ],
               ),
             ),
@@ -312,9 +360,20 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             children: [
               Icon(icon, size: 32, color: const Color(0xFF23408E)),
               const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF23408E))),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF23408E),
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(label, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
             ],
           ),
         ),
@@ -332,7 +391,11 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           children: [
             Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
             const SizedBox(height: 16),
-            Text(_errorMessage!, style: const TextStyle(fontSize: 16, color: Colors.red), textAlign: TextAlign.center),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(fontSize: 16, color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadStudentData,

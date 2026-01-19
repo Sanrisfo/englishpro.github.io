@@ -6,13 +6,17 @@ void main() {
   Widget _wrap(Widget child) => MaterialApp(home: child);
 
   testWidgets('CreateActivityScreen: valida título requerido', (tester) async {
-    await tester.pumpWidget(_wrap(const CreateActivityScreen(
-      skillId: 1,
-      skillName: 'Reading',
-      courseName: 'TOEFL',
-      activityTypeId: 1,
-      activityTypeName: 'Practice',
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        const CreateActivityScreen(
+          skillId: 1,
+          skillName: 'Reading',
+          courseName: 'TOEFL',
+          activityTypeId: 1,
+          activityTypeName: 'Practice',
+        ),
+      ),
+    );
 
     await tester.pumpAndSettle();
 
@@ -25,13 +29,17 @@ void main() {
   });
 
   testWidgets('CreateActivityScreen: alterna material y tipos', (tester) async {
-    await tester.pumpWidget(_wrap(const CreateActivityScreen(
-      skillId: 1,
-      skillName: 'Reading',
-      courseName: 'TOEFL',
-      activityTypeId: 1,
-      activityTypeName: 'Practice',
-    )));
+    await tester.pumpWidget(
+      _wrap(
+        const CreateActivityScreen(
+          skillId: 1,
+          skillName: 'Reading',
+          courseName: 'TOEFL',
+          activityTypeId: 1,
+          activityTypeName: 'Practice',
+        ),
+      ),
+    );
 
     await tester.pumpAndSettle();
 
@@ -49,4 +57,3 @@ void main() {
     expect(find.widgetWithText(TextField, 'Text content'), findsOneWidget);
   });
 }
-

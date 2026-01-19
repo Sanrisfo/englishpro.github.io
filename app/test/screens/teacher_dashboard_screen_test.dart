@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget _wrap(Widget child) => MaterialApp(home: child);
 
-  testWidgets('TeacherDashboardScreen muestra acciones y métricas básicas', (tester) async {
+  testWidgets('TeacherDashboardScreen muestra acciones y métricas básicas', (
+    tester,
+  ) async {
     await tester.pumpWidget(_wrap(const TeacherDashboardScreen()));
     await tester.pump();
 
@@ -35,4 +37,3 @@ void main() {
     expect(find.text('No pending submissions'), findsOneWidget);
   });
 }
-

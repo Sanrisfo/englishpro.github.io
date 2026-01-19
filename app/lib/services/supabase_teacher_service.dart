@@ -1,4 +1,4 @@
-﻿import '../config/supabase_config.dart';
+import '../config/supabase_config.dart';
 
 /// Servicio para la gestión de docentes y funcionalidades relacionadas en Supabase.
 ///
@@ -250,7 +250,9 @@ class SupabaseTeacherService {
           final typeName = (qz != null && qz['id_tipo_actividad'] != null)
               ? (typesById[qz['id_tipo_actividad'] as int] ?? '')
               : '';
-          final activityTitle = (qz != null ? (qz['titulo'] as String? ?? '') : '');
+          final activityTitle = (qz != null
+              ? (qz['titulo'] as String? ?? '')
+              : '');
 
           final parts = <String>[];
           if (courseName.isNotEmpty) parts.add(courseName);
@@ -275,7 +277,9 @@ class SupabaseTeacherService {
   ///
   /// @param teacherId El ID del docente.
   /// @return Una lista de mapas, donde cada mapa representa una retroalimentación.
-  static Future<List<Map<String, dynamic>>> getFeedbacksByTeacher(int teacherId) async {
+  static Future<List<Map<String, dynamic>>> getFeedbacksByTeacher(
+    int teacherId,
+  ) async {
     try {
       final response = await supabase
           .from('retroalimentacion_docente')
@@ -338,16 +342,10 @@ class SupabaseTeacherService {
           .update(updatePayload)
           .eq('id_respuesta', responseId);
 
-      return {
-        'success': true,
-        'feedback': response,
-      };
+      return {'success': true, 'feedback': response};
     } catch (e) {
       print('Error creating feedback: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -409,16 +407,10 @@ class SupabaseTeacherService {
           .update({'es_docente': true, 'rol': 'Docente'})
           .eq('id_usuario', userId);
 
-      return {
-        'success': true,
-        'teacher': response,
-      };
+      return {'success': true, 'teacher': response};
     } catch (e) {
       print('Error creating teacher: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -441,7 +433,8 @@ class SupabaseTeacherService {
       final updates = <String, dynamic>{};
       if (especialidad != null) updates['especialidad'] = especialidad;
       if (certificaciones != null) updates['certificaciones'] = certificaciones;
-      if (anosExperiencia != null) updates['anos_experiencia'] = anosExperiencia;
+      if (anosExperiencia != null)
+        updates['anos_experiencia'] = anosExperiencia;
 
       final response = await supabase
           .from('docentes')
@@ -450,17 +443,10 @@ class SupabaseTeacherService {
           .select()
           .single();
 
-      return {
-        'success': true,
-        'teacher': response,
-      };
+      return {'success': true, 'teacher': response};
     } catch (e) {
       print('Error updating teacher: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 }
-

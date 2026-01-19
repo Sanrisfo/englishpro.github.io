@@ -85,9 +85,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', session?.accessToken ?? '');
       await prefs.setString('user_role', user.rol);
-      await prefs.setBool('user_is_teacher', user.rol == 'Docente' || user.esDocente);
+      await prefs.setBool(
+        'user_is_teacher',
+        user.rol == 'Docente' || user.esDocente,
+      );
 
-      Provider.of<AuthProvider>(context, listen: false).setUser(user, session?.accessToken ?? '');
+      Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).setUser(user, session?.accessToken ?? '');
 
       // Redirigir según el rol del usuario.
       if (user.rol == 'Docente') {
@@ -123,18 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 60),
-                Image.asset(
-                  'assets/images/logo_completo.png',
-                  height: 120,
-                ),
+                Image.asset('assets/images/logo_completo.png', height: 120),
                 const SizedBox(height: 8),
                 const Text(
                   '¡Bienvenido de vuelta!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
                 const SizedBox(height: 48),
                 TextFormField(
@@ -202,8 +202,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(

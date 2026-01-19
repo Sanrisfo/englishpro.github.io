@@ -36,11 +36,11 @@ class MatchingAnswer {
   /// @param json Un mapa que contiene los datos de la respuesta.
   /// @return Una nueva instancia de [MatchingAnswer].
   factory MatchingAnswer.fromJson(Map<String, dynamic> json) => MatchingAnswer(
-        id: json['id'] as int,
-        preguntaId: (json['id_pregunta'] ?? json['pregunta_id']) as int,
-        texto: json['texto'] as String,
-        orden: (json['orden'] as num?)?.toInt() ?? 1,
-      );
+    id: json['id'] as int,
+    preguntaId: (json['id_pregunta'] ?? json['pregunta_id']) as int,
+    texto: json['texto'] as String,
+    orden: (json['orden'] as num?)?.toInt() ?? 1,
+  );
 
   /// Convierte esta instancia de [MatchingAnswer] en un mapa JSON.
   ///
@@ -49,11 +49,11 @@ class MatchingAnswer {
   ///
   /// @return Una representación en mapa de la respuesta.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'id_pregunta': preguntaId,
-        'texto': texto,
-        'orden': orden,
-      };
+    'id': id,
+    'id_pregunta': preguntaId,
+    'texto': texto,
+    'orden': orden,
+  };
 }
 
 /// Representa un enunciado que el usuario debe relacionar con una respuesta correcta
@@ -96,12 +96,14 @@ class MatchingStatement {
   ///
   /// @param json Un mapa que contiene los datos del enunciado.
   /// @return Una nueva instancia de [MatchingStatement].
-  factory MatchingStatement.fromJson(Map<String, dynamic> json) => MatchingStatement(
+  factory MatchingStatement.fromJson(Map<String, dynamic> json) =>
+      MatchingStatement(
         id: json['id'] as int,
         preguntaId: (json['id_pregunta'] ?? json['pregunta_id']) as int,
         texto: json['texto'] as String,
         orden: (json['orden'] as num?)?.toInt() ?? 1,
-        correctAnswerId: (json['correct_answer_id'] ?? json['id_respuesta_correcta']) as int,
+        correctAnswerId:
+            (json['correct_answer_id'] ?? json['id_respuesta_correcta']) as int,
       );
 
   /// Convierte esta instancia de [MatchingStatement] en un mapa JSON.
@@ -111,10 +113,10 @@ class MatchingStatement {
   ///
   /// @return Una representación en mapa del enunciado.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'id_pregunta': preguntaId,
-        'texto': texto,
-        'orden': orden,
-        'correct_answer_id': correctAnswerId,
-      };
+    'id': id,
+    'id_pregunta': preguntaId,
+    'texto': texto,
+    'orden': orden,
+    'correct_answer_id': correctAnswerId,
+  };
 }

@@ -7,7 +7,9 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('EnglishPro Integration Tests', () {
-    testWidgets('App should launch and show login screen', (WidgetTester tester) async {
+    testWidgets('App should launch and show login screen', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -19,7 +21,9 @@ void main() {
       expect(find.text("Don't have an account?"), findsOneWidget);
     });
 
-    testWidgets('Login screen should have email and password fields', (WidgetTester tester) async {
+    testWidgets('Login screen should have email and password fields', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -36,7 +40,9 @@ void main() {
       expect(loginButton, findsOneWidget);
     });
 
-    testWidgets('Login form should validate empty fields', (WidgetTester tester) async {
+    testWidgets('Login form should validate empty fields', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -50,7 +56,9 @@ void main() {
       expect(find.text('Please enter your password'), findsOneWidget);
     });
 
-    testWidgets('Register link should navigate to register screen', (WidgetTester tester) async {
+    testWidgets('Register link should navigate to register screen', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -64,7 +72,9 @@ void main() {
       expect(find.text('Join EnglishPro today!'), findsOneWidget);
     });
 
-    testWidgets('Register screen should have all required fields', (WidgetTester tester) async {
+    testWidgets('Register screen should have all required fields', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -77,11 +87,16 @@ void main() {
       expect(find.widgetWithText(TextFormField, 'Full Name'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'Confirm Password'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextFormField, 'Confirm Password'),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(ElevatedButton, 'Sign Up'), findsOneWidget);
     });
 
-    testWidgets('Password fields should toggle visibility', (WidgetTester tester) async {
+    testWidgets('Password fields should toggle visibility', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -107,7 +122,9 @@ void main() {
   }, skip: true);
 
   group('Navigation Tests', () {
-    testWidgets('Back button should work on register screen', (WidgetTester tester) async {
+    testWidgets('Back button should work on register screen', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 

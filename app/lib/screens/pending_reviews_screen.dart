@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/supabase_teacher_service.dart';
 import 'manual_grading_screen.dart';
 
@@ -44,11 +44,11 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     });
     try {
       final items = await SupabaseTeacherService.getPendingFeedbacks();
-      if(mounted) {
+      if (mounted) {
         setState(() => _pending = items);
       }
     } catch (e) {
-      if(mounted) {
+      if (mounted) {
         setState(() => _errorMessage = 'Error al cargar pendientes: $e');
       }
     } finally {
@@ -78,42 +78,46 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                 ),
               )
             : _errorMessage != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                          const SizedBox(height: 12),
-                          Text(_errorMessage!, textAlign: TextAlign.center),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: _load,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFD9232A),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Reintentar'),
-                          )
-                        ],
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red[300],
                       ),
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _load,
-                    color: const Color(0xFFD9232A),
-                    child: _pending.isEmpty
-                        ? _buildEmptyState(textTheme)
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(24.0),
-                            itemCount: _pending.length,
-                            itemBuilder: (context, index) {
-                              final f = _pending[index];
-                              return _buildFeedbackCard(f, textTheme);
-                            },
-                          ),
+                      const SizedBox(height: 12),
+                      Text(_errorMessage!, textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _load,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD9232A),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Reintentar'),
+                      ),
+                    ],
                   ),
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: _load,
+                color: const Color(0xFFD9232A),
+                child: _pending.isEmpty
+                    ? _buildEmptyState(textTheme)
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(24.0),
+                        itemCount: _pending.length,
+                        itemBuilder: (context, index) {
+                          final f = _pending[index];
+                          return _buildFeedbackCard(f, textTheme);
+                        },
+                      ),
+              ),
       ),
     );
   }
@@ -141,7 +145,11 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                     color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.check_circle, color: Colors.indigo, size: 28),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.indigo,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Flexible(
@@ -164,10 +172,19 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
   ///
   /// @param feedback El mapa de datos de la revisión pendiente.
   /// @param textTheme El tema de texto actual para el estilo.
-  Widget _buildFeedbackCard(Map<String, dynamic> feedback, TextTheme textTheme) {
+  Widget _buildFeedbackCard(
+    Map<String, dynamic> feedback,
+    TextTheme textTheme,
+  ) {
     final q = (feedback['preguntas'] as Map?)?.cast<String, dynamic>();
     final tipoDb = (q?['tipo_pregunta'] as String?)?.toLowerCase();
-    final tipoRespuesta = (feedback['tipo_respuesta'] as String?) ?? (tipoDb == 'write_text' ? 'Writing' : tipoDb == 'record_audio' ? 'Speaking' : null);
+    final tipoRespuesta =
+        (feedback['tipo_respuesta'] as String?) ??
+        (tipoDb == 'write_text'
+            ? 'Writing'
+            : tipoDb == 'record_audio'
+            ? 'Speaking'
+            : null);
     final preguntaId = feedback['id_pregunta'] as int?;
     final fechaRespuesta = feedback['fecha_respuesta'] as String?;
     final bool isWriting = tipoRespuesta == 'Writing';
@@ -212,8 +229,15 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  if (breadcrumb.isNotEmpty) Text(breadcrumb, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                  Text(sent, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  if (breadcrumb.isNotEmpty)
+                    Text(
+                      breadcrumb,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  Text(
+                    sent,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
                 ],
               ),
             ),
@@ -260,5 +284,3 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     ).then((_) => _load());
   }
 }
-
-

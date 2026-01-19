@@ -5,13 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget _wrap(Widget child) => MaterialApp(home: child);
 
-  testWidgets('CreateQuestionScreen: construye UI y muestra selector de tipo', (tester) async {
-    await tester.pumpWidget(_wrap(const CreateQuestionScreen(
-      quizId: 1,
-      skillId: 1,
-      courseName: 'TOEFL',
-      allowedTypes: ['multiple_choice', 'matching', 'completion'],
-    )));
+  testWidgets('CreateQuestionScreen: construye UI y muestra selector de tipo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        const CreateQuestionScreen(
+          quizId: 1,
+          skillId: 1,
+          courseName: 'TOEFL',
+          allowedTypes: ['multiple_choice', 'matching', 'completion'],
+        ),
+      ),
+    );
 
     // La pantalla hace init async; damos tiempo
     await tester.pumpAndSettle();
@@ -22,4 +28,3 @@ void main() {
     expect(find.text('Complete'), findsOneWidget);
   });
 }
-

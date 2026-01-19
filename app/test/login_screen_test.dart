@@ -15,7 +15,10 @@ class FakeSupabaseAuthService extends SupabaseAuthService {
   FakeSupabaseAuthService(this.user) : super();
 
   @override
-  Future<Map<String, dynamic>> login({required String email, required String password}) async {
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
     return {
       'success': true,
       'user': user,
@@ -30,7 +33,9 @@ class _FakeSession {
 }
 
 void main() {
-  testWidgets('LoginScreen logs in and navigates to HomeScreen', (tester) async {
+  testWidgets('LoginScreen logs in and navigates to HomeScreen', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     final user = models.User(
       idUsuario: 42,
@@ -43,25 +48,17 @@ void main() {
 
     await tester.pumpWidget(
       MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ],
-        child: const MaterialApp(
-          home: SizedBox(),
-        ),
+        providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+        child: const MaterialApp(home: SizedBox()),
       ),
     );
 
     await tester.pumpWidget(
       MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ],
+        providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
         child: MaterialApp(
           home: LoginScreen(authService: fakeAuth),
-          routes: {
-            '/home': (_) => const HomeScreen(),
-          },
+          routes: {'/home': (_) => const HomeScreen()},
         ),
       ),
     );

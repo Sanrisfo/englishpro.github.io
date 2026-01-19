@@ -32,7 +32,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       // Obtener usuario directo de Supabase
       final u = await supabase
           .from('usuarios')
-          .select('id_usuario, nombre_completo, email, rol, es_docente, id_plan, fecha_registro')
+          .select(
+            'id_usuario, nombre_completo, email, rol, es_docente, id_plan, fecha_registro',
+          )
           .eq('id_usuario', widget.userId)
           .maybeSingle();
       if (u == null) {
@@ -72,19 +74,21 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Plan updated',
+        const SnackBar(
+          content: Text(
+            'Plan updated',
             style: TextStyle(color: Color(0xFFFFFFFF)),
           ),
-            backgroundColor: const Color(0xFF23408E),
-          )
+          backgroundColor: const Color(0xFF23408E),
+        ),
       );
 
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -107,11 +111,11 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       body: SafeArea(
         child: _loading
             ? Center(
-          child: CircularProgressIndicator(
-            color: const Color(0xFFD9232A),
-            strokeWidth: 5.0,
-          ),
-        )
+                child: CircularProgressIndicator(
+                  color: const Color(0xFFD9232A),
+                  strokeWidth: 5.0,
+                ),
+              )
             : _error != null
             ? _buildErrorView()
             : _buildContent(),
@@ -121,29 +125,32 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       bottomNavigationBar: _user == null
           ? null
           : SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-              height: 18,
-              width: 18,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-            )
-                : const Icon(Icons.save),
-            label: const Text('Save Changes'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD9232A),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 52),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.save),
+                  label: const Text('Save Changes'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD9232A),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -172,7 +179,11 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   color: const Color(0xFF23408E).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.person_outline_outlined, color: const Color(0xFF23408E), size: 28),
+                child: Icon(
+                  Icons.person_outline_outlined,
+                  color: const Color(0xFF23408E),
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -181,24 +192,34 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   children: [
                     Text(
                       (u['nombre_completo'] as String?) ?? 'No name',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text((u['email'] as String?) ?? '', style: TextStyle(color: Colors.grey[600])),
+                    Text(
+                      (u['email'] as String?) ?? '',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
                         _chip('Role: ${u['rol'] ?? '—'}'),
-                        _chip((u['es_docente'] == true) ? 'Teacher' : 'Student'),
+                        _chip(
+                          (u['es_docente'] == true) ? 'Teacher' : 'Student',
+                        ),
                         if (u['fecha_registro'] != null)
-                          _chip('Registered: ${(u['fecha_registro'] as String).split('T').first}'),
+                          _chip(
+                            'Registered: ${(u['fecha_registro'] as String).split('T').first}',
+                          ),
                       ],
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -207,15 +228,11 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
 
         // Titulo
 
-
         //Menu de subscripciones
         DropdownMenu<int?>(
           expandedInsets: EdgeInsets.zero,
           initialSelection: _selectedPlanId,
-          textStyle: const TextStyle(
-            color: Color(0xFF23408E),
-            fontSize: 16,
-          ),
+          textStyle: const TextStyle(color: Color(0xFF23408E), fontSize: 16),
           onSelected: (val) {
             setState(() => _selectedPlanId = val);
           },
@@ -234,13 +251,10 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             backgroundColor: WidgetStateProperty.all(Color(0xFFE8EBF1)),
             elevation: WidgetStateProperty.all(1),
             shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
             ),
             padding: WidgetStateProperty.all(const EdgeInsets.all(8.0)),
           ),
-
 
           dropdownMenuEntries: [
             // 1. Opción para "Sin Plan" (equivale a null)
@@ -258,7 +272,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             ..._plans.map((p) {
               final planName = p['nombre_plan'] as String? ?? 'Unnamed Plan';
               final price = p['precio'] as num? ?? 0;
-              final priceLabel = price == 0 ? 'Free' : '\$${price.toStringAsFixed(2)}';
+              final priceLabel = price == 0
+                  ? 'Free'
+                  : '\$${price.toStringAsFixed(2)}';
 
               return DropdownMenuEntry<int?>(
                 value: (p['id_plan'] as num).toInt(),
@@ -283,11 +299,14 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         const SizedBox(height: 24),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
+          child: Text(
             'Note: Changing the plan immediately updates the available limits and benefits for the student.',
-            style: TextStyle(color: Color(0xFF7E7E81), fontStyle: FontStyle.italic),
+            style: TextStyle(
+              color: Color(0xFF7E7E81),
+              fontStyle: FontStyle.italic,
+            ),
           ),
-        )
+        ),
       ],
     );
   }

@@ -111,10 +111,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Mejora tu experiencia y alcanza tus metas',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
                 if (currentUserPlan != null) ...[
@@ -146,8 +143,8 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               itemCount: plans.length,
               itemBuilder: (context, index) {
                 final plan = plans[index];
-                final isCurrentPlan = currentUserPlan?.toLowerCase() ==
-                    plan.nombre.toLowerCase();
+                final isCurrentPlan =
+                    currentUserPlan?.toLowerCase() == plan.nombre.toLowerCase();
                 final isSelected = selectedPlanIndex == index;
 
                 return _buildPlanCard(
@@ -253,8 +250,8 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
             color: isSelected
                 ? accentColor
                 : isCurrentPlan
-                    ? Colors.green
-                    : Colors.transparent,
+                ? Colors.green
+                : Colors.transparent,
             width: isSelected || isCurrentPlan ? 3 : 1,
           ),
           boxShadow: [
@@ -328,10 +325,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                       if (plan.precio > 0)
                         const Text(
                           '/mes',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                     ],
                   ),
@@ -340,10 +334,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               const SizedBox(height: 12),
               Text(
                 plan.descripcion,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               const Divider(),
@@ -402,12 +393,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
         children: [
           Icon(icon, size: 20, color: accentColor),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -492,9 +478,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {

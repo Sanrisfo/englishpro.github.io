@@ -34,50 +34,44 @@ class SupabaseStorageService {
       // Sube el archivo a Supabase Storage
       if (kIsWeb) {
         if (bytes == null) throw Exception('En web se requieren bytes');
-        await _supabase.storage.from('audios').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('audios')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       } else {
         if (audioFile == null) throw Exception('En móvil se requiere archivo');
-        await _supabase.storage.from('audios').upload(
-          path,
-          audioFile,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('audios')
+            .upload(
+              path,
+              audioFile,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       }
 
       // Obtiene la URL pública
       final url = _supabase.storage.from('audios').getPublicUrl(path);
 
-      return {
-        'success': true,
-        'url': url,
-        'path': 'audios/$path',
-      };
+      return {'success': true, 'url': url, 'path': 'audios/$path'};
     } on StorageException catch (e) {
       if (kDebugMode) {
         print('Error al subir audio: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al subir audio: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -100,49 +94,43 @@ class SupabaseStorageService {
 
       if (kIsWeb) {
         if (bytes == null) throw Exception('En web se requieren bytes');
-        await _supabase.storage.from('videos').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('videos')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       } else {
         if (videoFile == null) throw Exception('En móvil se requiere archivo');
-        await _supabase.storage.from('videos').upload(
-          path,
-          videoFile,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('videos')
+            .upload(
+              path,
+              videoFile,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       }
 
       final url = _supabase.storage.from('videos').getPublicUrl(path);
 
-      return {
-        'success': true,
-        'url': url,
-        'path': 'videos/$path',
-      };
+      return {'success': true, 'url': url, 'path': 'videos/$path'};
     } on StorageException catch (e) {
       if (kDebugMode) {
         print('Error al subir video: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al subir video: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -165,49 +153,43 @@ class SupabaseStorageService {
 
       if (kIsWeb) {
         if (bytes == null) throw Exception('En web se requieren bytes');
-        await _supabase.storage.from('pdfs').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('pdfs')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       } else {
         if (pdfFile == null) throw Exception('En móvil se requiere archivo');
-        await _supabase.storage.from('pdfs').upload(
-          path,
-          pdfFile,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('pdfs')
+            .upload(
+              path,
+              pdfFile,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       }
 
       final url = _supabase.storage.from('pdfs').getPublicUrl(path);
 
-      return {
-        'success': true,
-        'url': url,
-        'path': 'pdfs/$path',
-      };
+      return {'success': true, 'url': url, 'path': 'pdfs/$path'};
     } on StorageException catch (e) {
       if (kDebugMode) {
         print('Error al subir PDF: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al subir PDF: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -230,49 +212,43 @@ class SupabaseStorageService {
 
       if (kIsWeb) {
         if (bytes == null) throw Exception('En web se requieren bytes');
-        await _supabase.storage.from('images').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('images')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       } else {
         if (imageFile == null) throw Exception('En móvil se requiere archivo');
-        await _supabase.storage.from('images').upload(
-          path,
-          imageFile,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            upsert: false,
-          ),
-        );
+        await _supabase.storage
+            .from('images')
+            .upload(
+              path,
+              imageFile,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
       }
 
       final url = _supabase.storage.from('images').getPublicUrl(path);
 
-      return {
-        'success': true,
-        'url': url,
-        'path': 'images/$path',
-      };
+      return {'success': true, 'url': url, 'path': 'images/$path'};
     } on StorageException catch (e) {
       if (kDebugMode) {
         print('Error al subir imagen: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al subir imagen: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -283,22 +259,19 @@ class SupabaseStorageService {
   /// @param bucket El nombre del bucket donde se encuentra el archivo.
   /// @param path La ruta del archivo dentro del bucket.
   /// @return Un mapa con la URL pública del archivo.
-  Future<Map<String, dynamic>> getDownloadUrl(String bucket, String path) async {
+  Future<Map<String, dynamic>> getDownloadUrl(
+    String bucket,
+    String path,
+  ) async {
     try {
       final url = _supabase.storage.from(bucket).getPublicUrl(path);
 
-      return {
-        'success': true,
-        'url': url,
-      };
+      return {'success': true, 'url': url};
     } catch (e) {
       if (kDebugMode) {
         print('Error al obtener URL de descarga: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -311,26 +284,17 @@ class SupabaseStorageService {
     try {
       await _supabase.storage.from(bucket).remove([path]);
 
-      return {
-        'success': true,
-        'message': 'Archivo eliminado exitosamente',
-      };
+      return {'success': true, 'message': 'Archivo eliminado exitosamente'};
     } on StorageException catch (e) {
       if (kDebugMode) {
         print('Error al eliminar archivo: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al eliminar archivo: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -370,18 +334,12 @@ class SupabaseStorageService {
       if (kDebugMode) {
         print('Error al eliminar audios de usuario: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al eliminar audios de usuario: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -392,9 +350,7 @@ class SupabaseStorageService {
   /// @return Un mapa con la lista de archivos, sus detalles y la cantidad total.
   Future<Map<String, dynamic>> listFiles(String bucket, {String? path}) async {
     try {
-      final listResult = await _supabase.storage.from(bucket).list(
-            path: path,
-          );
+      final listResult = await _supabase.storage.from(bucket).list(path: path);
 
       final files = listResult.map((file) {
         final filePath = path != null ? '$path/${file.name}' : file.name;
@@ -409,27 +365,17 @@ class SupabaseStorageService {
         };
       }).toList();
 
-      return {
-        'success': true,
-        'files': files,
-        'count': files.length,
-      };
+      return {'success': true, 'files': files, 'count': files.length};
     } on StorageException catch (e) {
       if (kDebugMode) {
         print('Error al listar archivos: ${e.message}');
       }
-      return {
-        'success': false,
-        'error': e.message,
-      };
+      return {'success': false, 'error': e.message};
     } catch (e) {
       if (kDebugMode) {
         print('Error al listar archivos: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -457,19 +403,12 @@ class SupabaseStorageService {
       // We can check if file exists by trying to get public URL
       final url = _supabase.storage.from(bucket).getPublicUrl(path);
 
-      return {
-        'success': true,
-        'url': url,
-        'path': path,
-      };
+      return {'success': true, 'url': url, 'path': path};
     } catch (e) {
       if (kDebugMode) {
         print('Error al obtener información del archivo: $e');
       }
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return {'success': false, 'error': e.toString()};
     }
   }
 }

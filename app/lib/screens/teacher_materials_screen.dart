@@ -43,14 +43,16 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
       // Load all skills for the dropdown
       final skillsResponse = await ApiService.getSkills();
 
-      if (materialsResponse['success'] == true && skillsResponse['success'] == true) {
+      if (materialsResponse['success'] == true &&
+          skillsResponse['success'] == true) {
         setState(() {
           _materials = materialsResponse['materials'] as List<MaterialModel>;
           _skills = skillsResponse['skills'] as List<SkillModel>;
         });
       } else {
         setState(() {
-          _errorMessage = materialsResponse['message'] ?? skillsResponse['message'];
+          _errorMessage =
+              materialsResponse['message'] ?? skillsResponse['message'];
         });
       }
     } catch (e) {
@@ -70,11 +72,13 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
 
     if (teacherId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Login failed',
+        const SnackBar(
+          content: Text(
+            'Error: Login failed',
             style: TextStyle(color: Color(0xFFFFFFFF)),
           ),
-            backgroundColor: const Color(0xFFD9232A),
-          )
+          backgroundColor: const Color(0xFFD9232A),
+        ),
       );
       return;
     }
@@ -91,7 +95,12 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(skillsResponse['message'] ?? 'No se pudieron cargar las habilidades')),
+            SnackBar(
+              content: Text(
+                skillsResponse['message'] ??
+                    'No se pudieron cargar las habilidades',
+              ),
+            ),
           );
           return;
         }
@@ -106,7 +115,9 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
       if (_skills.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No hay habilidades disponibles aún. Intenta nuevamente en unos segundos.'),
+            content: Text(
+              'No hay habilidades disponibles aún. Intenta nuevamente en unos segundos.',
+            ),
           ),
         );
         return;
@@ -139,14 +150,17 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                     DropdownButtonFormField<int>(
                       value: selectedSkillId,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Habilidad *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Habilidad *',
+                      ),
                       hint: const Text('Selecciona una habilidad'),
                       disabledHint: const Text('Cargando habilidades...'),
                       items: () {
                         // Eliminar duplicados por ID usando Map
                         final Map<int, SkillModel> uniqueSkills = {};
                         for (var skill in _skills) {
-                          if (skill.id > 0 && !uniqueSkills.containsKey(skill.id)) {
+                          if (skill.id > 0 &&
+                              !uniqueSkills.containsKey(skill.id)) {
                             uniqueSkills[skill.id] = skill;
                           }
                         }
@@ -179,7 +193,9 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                     // Description
                     TextField(
                       controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Descripción'),
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción',
+                      ),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 12),
@@ -216,120 +232,174 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton.icon(
-                          icon: isUploading 
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                          icon: isUploading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
                               : const Icon(Icons.cloud_upload),
                           label: Text(isUploading ? 'Subiendo...' : 'Subir'),
-                          onPressed: isUploading ? null : () async {
-                            // Seleccionar archivo según tipo
-                            List<String> exts;
-                            String bucket;
-                            String folder;
-                            if (selectedType == 'pdf') {
-                              exts = ['pdf'];
-                              bucket = 'pdfs';
-                              folder = 'materials';
-                            } else if (selectedType == 'image' || selectedType == 'imagen') {
-                              exts = ['png', 'jpg', 'jpeg'];
-                              bucket = 'images';
-                              folder = '';
-                            } else if (selectedType == 'audio') {
-                              exts = ['mp3', 'm4a', 'wav'];
-                              bucket = 'audios';
-                              folder = 'materials';
-                            } else if (selectedType == 'video') {
-                              exts = ['mp4', 'mov'];
-                              bucket = 'videos';
-                              folder = '';
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Tipo no soportado para subida directa')),
-                              );
-                              return;
-                            }
+                          onPressed: isUploading
+                              ? null
+                              : () async {
+                                  // Seleccionar archivo según tipo
+                                  List<String> exts;
+                                  String bucket;
+                                  String folder;
+                                  if (selectedType == 'pdf') {
+                                    exts = ['pdf'];
+                                    bucket = 'pdfs';
+                                    folder = 'materials';
+                                  } else if (selectedType == 'image' ||
+                                      selectedType == 'imagen') {
+                                    exts = ['png', 'jpg', 'jpeg'];
+                                    bucket = 'images';
+                                    folder = '';
+                                  } else if (selectedType == 'audio') {
+                                    exts = ['mp3', 'm4a', 'wav'];
+                                    bucket = 'audios';
+                                    folder = 'materials';
+                                  } else if (selectedType == 'video') {
+                                    exts = ['mp4', 'mov'];
+                                    bucket = 'videos';
+                                    folder = '';
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Tipo no soportado para subida directa',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                            try {
-                              final result = await FilePicker.platform.pickFiles(
-                                type: FileType.custom,
-                                allowedExtensions: exts,
-                                withData: true, // Necesario para Web
-                              );
-                              
-                              if (result == null) return;
+                                  try {
+                                    final result = await FilePicker.platform
+                                        .pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: exts,
+                                          withData: true, // Necesario para Web
+                                        );
 
-                              print('Archivo seleccionado: ${result.files.single.name}');
-                              
-                              // Validar path solo en móvil
-                              if (!kIsWeb && result.files.single.path == null) {
-                                print('Error: Path es null en móvil');
-                                return;
-                              }
+                                    if (result == null) return;
 
-                              setDialogState(() {
-                                isUploading = true;
-                              });
+                                    print(
+                                      'Archivo seleccionado: ${result.files.single.name}',
+                                    );
 
-                              File? file;
-                              Uint8List? bytes;
-                              
-                              if (kIsWeb) {
-                                bytes = result.files.single.bytes;
-                                print('Web Bytes length: ${bytes?.length}');
-                                if (bytes == null) {
-                                  throw Exception('No se pudieron leer los bytes del archivo (Web).');
-                                }
-                              } else {
-                                file = File(result.files.single.path!);
-                                print('Mobile File Path: ${file.path}');
-                              }
-                              
-                              final fileName = '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
+                                    // Validar path solo en móvil
+                                    if (!kIsWeb &&
+                                        result.files.single.path == null) {
+                                      print('Error: Path es null en móvil');
+                                      return;
+                                    }
 
-                              String? publicUrl;
-                              final storage = SupabaseStorageService();
-                              
-                              Map<String, dynamic> r;
-                              if (selectedType == 'pdf') {
-                                r = await storage.uploadPDF(pdfFile: file, bytes: bytes, fileName: fileName);
-                              } else if (selectedType == 'image' || selectedType == 'imagen') {
-                                r = await storage.uploadImage(imageFile: file, bytes: bytes, fileName: fileName);
-                              } else if (selectedType == 'audio') {
-                                r = await storage.uploadAudio(userId: teacherId.toString(), audioFile: file, bytes: bytes, fileName: fileName);
-                              } else if (selectedType == 'video') {
-                                r = await storage.uploadVideo(videoFile: file, bytes: bytes, fileName: fileName);
-                              } else {
-                                r = {'success': false, 'message': 'Tipo desconocido'};
-                              }
+                                    setDialogState(() {
+                                      isUploading = true;
+                                    });
 
-                              if (r['success'] == true) {
-                                publicUrl = r['url'] as String;
-                                print('Upload success: $publicUrl');
-                              } else {
-                                throw Exception(r['error'] ?? 'Error desconocido en subida');
-                              }
-                            
-                              if (publicUrl != null) {
-                                setDialogState(() {
-                                  urlController.text = publicUrl!;
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Archivo subido exitosamente')),
-                                );
-                              }
-                            } catch (e) {
-                              print('Error upload: $e');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error subiendo archivo: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            } finally {
-                              setDialogState(() {
-                                isUploading = false;
-                              });
-                            }
-                          },
+                                    File? file;
+                                    Uint8List? bytes;
+
+                                    if (kIsWeb) {
+                                      bytes = result.files.single.bytes;
+                                      print(
+                                        'Web Bytes length: ${bytes?.length}',
+                                      );
+                                      if (bytes == null) {
+                                        throw Exception(
+                                          'No se pudieron leer los bytes del archivo (Web).',
+                                        );
+                                      }
+                                    } else {
+                                      file = File(result.files.single.path!);
+                                      print('Mobile File Path: ${file.path}');
+                                    }
+
+                                    final fileName =
+                                        '${DateTime.now().millisecondsSinceEpoch}_${result.files.single.name}';
+
+                                    String? publicUrl;
+                                    final storage = SupabaseStorageService();
+
+                                    Map<String, dynamic> r;
+                                    if (selectedType == 'pdf') {
+                                      r = await storage.uploadPDF(
+                                        pdfFile: file,
+                                        bytes: bytes,
+                                        fileName: fileName,
+                                      );
+                                    } else if (selectedType == 'image' ||
+                                        selectedType == 'imagen') {
+                                      r = await storage.uploadImage(
+                                        imageFile: file,
+                                        bytes: bytes,
+                                        fileName: fileName,
+                                      );
+                                    } else if (selectedType == 'audio') {
+                                      r = await storage.uploadAudio(
+                                        userId: teacherId.toString(),
+                                        audioFile: file,
+                                        bytes: bytes,
+                                        fileName: fileName,
+                                      );
+                                    } else if (selectedType == 'video') {
+                                      r = await storage.uploadVideo(
+                                        videoFile: file,
+                                        bytes: bytes,
+                                        fileName: fileName,
+                                      );
+                                    } else {
+                                      r = {
+                                        'success': false,
+                                        'message': 'Tipo desconocido',
+                                      };
+                                    }
+
+                                    if (r['success'] == true) {
+                                      publicUrl = r['url'] as String;
+                                      print('Upload success: $publicUrl');
+                                    } else {
+                                      throw Exception(
+                                        r['error'] ??
+                                            'Error desconocido en subida',
+                                      );
+                                    }
+
+                                    if (publicUrl != null) {
+                                      setDialogState(() {
+                                        urlController.text = publicUrl!;
+                                      });
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Archivo subido exitosamente',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    print('Error upload: $e');
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Error subiendo archivo: $e',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  } finally {
+                                    setDialogState(() {
+                                      isUploading = false;
+                                    });
+                                  }
+                                },
                         ),
                       ],
                     ),
@@ -363,10 +433,13 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    if (selectedSkillId == null || titleController.text.isEmpty) {
+                    if (selectedSkillId == null ||
+                        titleController.text.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Por favor complete los campos obligatorios'),
+                          content: Text(
+                            'Por favor complete los campos obligatorios',
+                          ),
                         ),
                       );
                       return;
@@ -377,9 +450,15 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
                       habilidadId: selectedSkillId!,
                       titulo: titleController.text,
                       tipoMaterial: selectedType,
-                      descripcion: descriptionController.text.isNotEmpty ? descriptionController.text : null,
-                      archivoUrl: urlController.text.isNotEmpty ? urlController.text : null,
-                      contenidoTexto: contentController.text.isNotEmpty ? contentController.text : null,
+                      descripcion: descriptionController.text.isNotEmpty
+                          ? descriptionController.text
+                          : null,
+                      archivoUrl: urlController.text.isNotEmpty
+                          ? urlController.text
+                          : null,
+                      contenidoTexto: contentController.text.isNotEmpty
+                          ? contentController.text
+                          : null,
                       esPremium: isPremium,
                       duracionMinutos: int.tryParse(durationController.text),
                       // nivelAcceso: selectedLevel, // opcional; omitir para evitar constraint si no existe
@@ -390,7 +469,9 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
 
                     if (result['success'] == true) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Material creado exitosamente')),
+                        const SnackBar(
+                          content: Text('Material creado exitosamente'),
+                        ),
                       );
                       _loadData();
                     } else {
@@ -467,55 +548,55 @@ class _TeacherMaterialsScreenState extends State<TeacherMaterialsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(fontSize: 16, color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadData,
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(fontSize: 16, color: Colors.red),
+                    textAlign: TextAlign.center,
                   ),
-                )
-              : _materials.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.folder_open, size: 80, color: Colors.grey[400]),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No hay materiales todavía',
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Presiona el botón + para crear uno',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadData,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: _materials.length,
-                        itemBuilder: (context, index) {
-                          final material = _materials[index];
-                          return _buildMaterialCard(material);
-                        },
-                      ),
-                    ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadData,
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            )
+          : _materials.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.folder_open, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No hay materiales todavía',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Presiona el botón + para crear uno',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: _materials.length,
+                itemBuilder: (context, index) {
+                  final material = _materials[index];
+                  return _buildMaterialCard(material);
+                },
+              ),
+            ),
     );
   }
 

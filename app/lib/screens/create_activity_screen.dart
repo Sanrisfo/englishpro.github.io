@@ -68,9 +68,18 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     labelText: label,
     filled: true,
     fillColor: _courseColor.withOpacity(0.05),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _courseColor, width: 2)),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.grey[300]!),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.grey[300]!),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: _courseColor, width: 2),
+    ),
   );
 
   @override
@@ -98,12 +107,12 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     );
     if (result != null) {
       setState(() {
-         _selectedFileName = result.files.single.name;
-         if (kIsWeb) {
-           _selectedBytes = result.files.single.bytes;
-         } else if (result.files.single.path != null) {
-           _selectedFile = File(result.files.single.path!);
-         }
+        _selectedFileName = result.files.single.name;
+        if (kIsWeb) {
+          _selectedBytes = result.files.single.bytes;
+        } else if (result.files.single.path != null) {
+          _selectedFile = File(result.files.single.path!);
+        }
       });
     }
   }
@@ -119,7 +128,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   Future<void> _submit() async {
     final titulo = _titleCtrl.text.trim();
     if (titulo.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El título es obligatorio')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('El título es obligatorio')));
       return;
     }
     final tiempo = int.tryParse(_timeCtrl.text.trim());
@@ -127,7 +138,8 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     try {
       final payload = <String, dynamic>{
         'titulo': titulo,
-        if (_descCtrl.text.trim().isNotEmpty) 'descripcion': _descCtrl.text.trim(),
+        if (_descCtrl.text.trim().isNotEmpty)
+          'descripcion': _descCtrl.text.trim(),
         if (tiempo != null) 'tiempo_limite_minutos': tiempo,
         'tipo_evaluacion': _tipo,
         'activo': true,
@@ -146,13 +158,19 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       final insertedQuizId = (insertedQuiz['id_cuestionario'] as num).toInt();
 
       if (_addMaterial) {
-        final mTitle = (_materialTitleCtrl.text.trim().isEmpty) ? titulo : _materialTitleCtrl.text.trim();
+        final mTitle = (_materialTitleCtrl.text.trim().isEmpty)
+            ? titulo
+            : _materialTitleCtrl.text.trim();
         String? publicUrl;
         String? contenidoTexto;
         if (_materialType == 'text') {
           contenidoTexto = _materialTextCtrl.text.trim();
           if (contenidoTexto.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El contenido del texto es obligatorio')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('El contenido del texto es obligatorio'),
+              ),
+            );
           } else {
             await ApiService.createMaterial(
               habilidadId: widget.skillId,
@@ -165,33 +183,55 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
             );
           }
         } else {
-          if ((kIsWeb && _selectedBytes == null) || (!kIsWeb && _selectedFile == null)) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, selecciona un archivo para el material')));
+          if ((kIsWeb && _selectedBytes == null) ||
+              (!kIsWeb && _selectedFile == null)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Por favor, selecciona un archivo para el material',
+                ),
+              ),
+            );
           } else {
             final storage = SupabaseStorageService();
             // Usar _selectedFileName si existe, o generar uno
             final nameToUse = _selectedFileName ?? 'file';
-            final fileName = '${DateTime.now().millisecondsSinceEpoch}_$nameToUse';
+            final fileName =
+                '${DateTime.now().millisecondsSinceEpoch}_$nameToUse';
             try {
               if (_materialType == 'pdf') {
-                final r = await storage.uploadPDF(pdfFile: _selectedFile, bytes: _selectedBytes, fileName: fileName);
+                final r = await storage.uploadPDF(
+                  pdfFile: _selectedFile,
+                  bytes: _selectedBytes,
+                  fileName: fileName,
+                );
                 if (r['success'] == true) publicUrl = r['url'] as String;
               } else if (_materialType == 'image') {
-                final r = await storage.uploadImage(imageFile: _selectedFile, bytes: _selectedBytes, fileName: fileName);
+                final r = await storage.uploadImage(
+                  imageFile: _selectedFile,
+                  bytes: _selectedBytes,
+                  fileName: fileName,
+                );
                 if (r['success'] == true) publicUrl = r['url'] as String;
               } else if (_materialType == 'audio') {
                 // Usar uploadAudio que ya soporta bytes
                 // Subida manual para audios en materiales
                 final path = 'materials/$fileName';
                 if (kIsWeb) {
-                   await supabase.storage.from('audios').uploadBinary(path, _selectedBytes!);
+                  await supabase.storage
+                      .from('audios')
+                      .uploadBinary(path, _selectedBytes!);
                 } else {
-                   await supabase.storage.from('audios').upload(path, _selectedFile!);
+                  await supabase.storage
+                      .from('audios')
+                      .upload(path, _selectedFile!);
                 }
                 publicUrl = supabase.storage.from('audios').getPublicUrl(path);
               }
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al subir material: $e')));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error al subir material: $e')),
+              );
             }
             if (publicUrl != null) {
               await ApiService.createMaterial(
@@ -212,7 +252,9 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -237,12 +279,25 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
               backgroundColor: _courseColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
             child: _submitting
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Crear Actividad', style: TextStyle(fontSize: 16), textAlign: TextAlign.center),
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Crear Actividad',
+                    style: TextStyle(fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
           ),
         ),
       ),
@@ -264,7 +319,10 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                   children: [
                     Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40.0,
+                          vertical: 8.0,
+                        ),
                         decoration: BoxDecoration(
                           color: _courseColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10.0),
@@ -294,24 +352,47 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
-                    TextField(controller: _titleCtrl, decoration: _fieldDeco('Título')),
+                    TextField(
+                      controller: _titleCtrl,
+                      decoration: _fieldDeco('Título'),
+                    ),
                     const SizedBox(height: 16),
-                    TextField(controller: _descCtrl, decoration: _fieldDeco('Descripción'), maxLines: 3),
+                    TextField(
+                      controller: _descCtrl,
+                      decoration: _fieldDeco('Descripción'),
+                      maxLines: 3,
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: TextField(controller: _timeCtrl, decoration: _fieldDeco('Límite de tiempo (min)'), keyboardType: TextInputType.number)),
+                        Expanded(
+                          child: TextField(
+                            controller: _timeCtrl,
+                            decoration: _fieldDeco('Límite de tiempo (min)'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: _tipo,
                             decoration: _fieldDeco('Tipo de Evaluación'),
                             items: const [
-                              DropdownMenuItem(value: 'Practica', child: Text('Práctica')),
-                              DropdownMenuItem(value: 'Simulacro', child: Text('Simulacro')),
-                              DropdownMenuItem(value: 'Examen', child: Text('Examen')),
+                              DropdownMenuItem(
+                                value: 'Practica',
+                                child: Text('Práctica'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Simulacro',
+                                child: Text('Simulacro'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Examen',
+                                child: Text('Examen'),
+                              ),
                             ],
-                            onChanged: (v) => setState(() => _tipo = v ?? 'Practica'),
+                            onChanged: (v) =>
+                                setState(() => _tipo = v ?? 'Practica'),
                           ),
                         ),
                       ],
@@ -324,27 +405,56 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                       activeColor: _courseColor,
                       value: _addMaterial,
                       onChanged: (v) => setState(() => _addMaterial = v),
-                      title: Text('Añadir Material de Estudio', style: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                      subtitle: const Text('Adjuntar PDF, Audio, Imagen o Texto'),
+                      title: Text(
+                        'Añadir Material de Estudio',
+                        style: GoogleFonts.ptSans(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Adjuntar PDF, Audio, Imagen o Texto',
+                      ),
                     ),
                     if (_addMaterial) ...[
                       const SizedBox(height: 16),
-                      TextField(controller: _materialTitleCtrl, decoration: _fieldDeco('Título del Material')),
+                      TextField(
+                        controller: _materialTitleCtrl,
+                        decoration: _fieldDeco('Título del Material'),
+                      ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
                         value: _materialType,
                         decoration: _fieldDeco('Tipo de Material'),
                         items: const [
-                          DropdownMenuItem(value: 'pdf', child: Text('Documento PDF')),
-                          DropdownMenuItem(value: 'text', child: Text('Texto de Lectura')),
-                          DropdownMenuItem(value: 'image', child: Text('Imagen')),
-                          DropdownMenuItem(value: 'audio', child: Text('Archivo de Audio')),
+                          DropdownMenuItem(
+                            value: 'pdf',
+                            child: Text('Documento PDF'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'text',
+                            child: Text('Texto de Lectura'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'image',
+                            child: Text('Imagen'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'audio',
+                            child: Text('Archivo de Audio'),
+                          ),
                         ],
-                        onChanged: (v) => setState(() => _materialType = v ?? 'pdf'),
+                        onChanged: (v) =>
+                            setState(() => _materialType = v ?? 'pdf'),
                       ),
                       const SizedBox(height: 16),
                       if (_materialType == 'text')
-                        TextField(controller: _materialTextCtrl, decoration: _fieldDeco('Contenido'), maxLines: 6)
+                        TextField(
+                          controller: _materialTextCtrl,
+                          decoration: _fieldDeco('Contenido'),
+                          maxLines: 6,
+                        )
                       else
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -359,14 +469,21 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  _selectedFileName ?? 'Ningún archivo seleccionado',
-                                  style: TextStyle(color: _selectedFileName != null ? Colors.black87 : Colors.grey),
+                                  _selectedFileName ??
+                                      'Ningún archivo seleccionado',
+                                  style: TextStyle(
+                                    color: _selectedFileName != null
+                                        ? Colors.black87
+                                        : Colors.grey,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               TextButton(
                                 onPressed: _pickFile,
-                                style: TextButton.styleFrom(foregroundColor: _courseColor),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: _courseColor,
+                                ),
                                 child: const Text('Elegir Archivo'),
                               ),
                             ],

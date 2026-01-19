@@ -27,12 +27,16 @@ import '../widgets/pdf_viewer_widget.dart';
 class ActivityPlayerScreen extends StatefulWidget {
   /// El ID del cuestionario a reproducir.
   final int quizId;
+
   /// El ID de la habilidad asociada.
   final int skillId;
+
   /// El nombre de la habilidad, para la UI.
   final String skillName;
+
   /// El título de la actividad, para la UI.
   final String quizTitle;
+
   /// El nombre del curso, para tematización.
   final String courseName;
 
@@ -54,10 +58,13 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   // --- VARIABLES DE ESTADO ---
   /// Indica si los datos iniciales de la actividad se están cargando.
   bool _isLoading = true;
+
   /// Almacena un mensaje de error si ocurre un problema durante la carga.
   String? _errorMessage;
+
   /// El material de estudio asociado a esta actividad, si existe.
   MaterialModel? _material;
+
   /// La lista de preguntas que componen la actividad.
   List<QuestionModel> _questions = [];
 
@@ -65,29 +72,39 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   /// Almacena las opciones seleccionadas para preguntas de opción múltiple.
   /// La clave es el ID de la pregunta.
   final Map<int, Set<int>> _selectedOptionsByQuestion = {};
+
   /// Almacena las parejas seleccionadas para preguntas de emparejamiento.
   /// La clave es el ID de la pregunta.
   final Map<int, Map<int, int>> _matchingByQuestion = {};
+
   /// Almacena el texto introducido para preguntas de completar espacios.
   /// La clave es el ID de la pregunta.
   final Map<int, Map<int, String>> _completionByQuestion = {};
+
   /// Almacena los controladores de texto para las preguntas de completar.
   final Map<int, Map<int, TextEditingController>> _completionControllers = {};
+
   /// Almacena el texto para preguntas de escritura libre.
   final Map<int, String> _writeTextByQuestion = {};
+
   /// Almacena los controladores de texto para las preguntas de escritura.
   final Map<int, TextEditingController> _writeTextControllers = {};
+
   /// Almacena la URL del audio grabado para preguntas de grabación.
   final Map<int, String?> _audioUrlByQuestion = {};
 
   /// Indica si todas las respuestas ya han sido enviadas al servidor.
   bool _allSubmitted = false;
+
   /// Controlador para la reproducción de audio (ej. del material de estudio).
   final _audioPlayer = AudioPlayer();
+
   /// Segundos restantes si la actividad tiene un límite de tiempo.
   int _secondsRemaining = 0;
+
   /// El temporizador para la cuenta regresiva.
   Timer? _timer;
+
   /// Límite de tiempo de la actividad en minutos, si se especifica.
   int? _quizTimeMinutes;
 
@@ -152,15 +169,23 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       final cpList = List<Map<String, dynamic>>.from(cp as List);
 
       if (cpList.isEmpty) {
-        setState(() { _questions = []; _isLoading = false; });
+        setState(() {
+          _questions = [];
+          _isLoading = false;
+        });
         return;
       }
 
-      final ids = cpList.map((e) => e['id_pregunta']).where((e) => e != null).toList();
+      final ids = cpList
+          .map((e) => e['id_pregunta'])
+          .where((e) => e != null)
+          .toList();
 
       final qs = await supabase
           .from('preguntas')
-          .select('id_pregunta, id_habilidad, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos, explicacion')
+          .select(
+            'id_pregunta, id_habilidad, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos, explicacion',
+          )
           .inFilter('id_pregunta', ids);
       final qList = List<Map<String, dynamic>>.from(qs as List);
 
@@ -171,43 +196,98 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           .order('orden', ascending: true);
       final optList = List<Map<String, dynamic>>.from(opts as List);
 
-      final matchingIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('matching')).map((q) => q['id_pregunta'] as int).toList();
-      final completionIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('completion')).map((q) => q['id_pregunta'] as int).toList();
-      final writeTextIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('write')).map((q) => q['id_pregunta'] as int).toList();
-      final recordAudioIds = qList.where((q) => ((q['tipo_pregunta'] as String?) ?? '').toLowerCase().contains('record')).map((q) => q['id_pregunta'] as int).toList();
+      final matchingIds = qList
+          .where(
+            (q) => ((q['tipo_pregunta'] as String?) ?? '')
+                .toLowerCase()
+                .contains('matching'),
+          )
+          .map((q) => q['id_pregunta'] as int)
+          .toList();
+      final completionIds = qList
+          .where(
+            (q) => ((q['tipo_pregunta'] as String?) ?? '')
+                .toLowerCase()
+                .contains('completion'),
+          )
+          .map((q) => q['id_pregunta'] as int)
+          .toList();
+      final writeTextIds = qList
+          .where(
+            (q) => ((q['tipo_pregunta'] as String?) ?? '')
+                .toLowerCase()
+                .contains('write'),
+          )
+          .map((q) => q['id_pregunta'] as int)
+          .toList();
+      final recordAudioIds = qList
+          .where(
+            (q) => ((q['tipo_pregunta'] as String?) ?? '')
+                .toLowerCase()
+                .contains('record'),
+          )
+          .map((q) => q['id_pregunta'] as int)
+          .toList();
 
       List<Map<String, dynamic>> mAnswers = [];
       List<Map<String, dynamic>> mStatements = [];
       if (matchingIds.isNotEmpty) {
-        final a = await supabase.from('matching_answers').select('id, id_pregunta, texto, orden').inFilter('id_pregunta', matchingIds).order('orden');
+        final a = await supabase
+            .from('matching_answers')
+            .select('id, id_pregunta, texto, orden')
+            .inFilter('id_pregunta', matchingIds)
+            .order('orden');
         mAnswers = List<Map<String, dynamic>>.from(a as List);
-        final s = await supabase.from('matching_statements').select('id, id_pregunta, texto, orden, correct_answer_id').inFilter('id_pregunta', matchingIds).order('orden');
+        final s = await supabase
+            .from('matching_statements')
+            .select('id, id_pregunta, texto, orden, correct_answer_id')
+            .inFilter('id_pregunta', matchingIds)
+            .order('orden');
         mStatements = List<Map<String, dynamic>>.from(s as List);
       }
 
       List<Map<String, dynamic>> cSentences = [];
       List<Map<String, dynamic>> cGaps = [];
       if (completionIds.isNotEmpty) {
-        final cs = await supabase.from('completion_sentences').select('id, id_pregunta, texto_template, orden').inFilter('id_pregunta', completionIds).order('orden');
+        final cs = await supabase
+            .from('completion_sentences')
+            .select('id, id_pregunta, texto_template, orden')
+            .inFilter('id_pregunta', completionIds)
+            .order('orden');
         cSentences = List<Map<String, dynamic>>.from(cs as List);
         final sentIds = cSentences.map((e) => e['id'] as int).toList();
         if (sentIds.isNotEmpty) {
-          final cg = await supabase.from('completion_gaps').select('id, sentence_id, gap_index, correct_text').inFilter('sentence_id', sentIds).order('gap_index');
+          final cg = await supabase
+              .from('completion_gaps')
+              .select('id, sentence_id, gap_index, correct_text')
+              .inFilter('sentence_id', sentIds)
+              .order('gap_index');
           cGaps = List<Map<String, dynamic>>.from(cg as List);
         }
       }
 
       Map<int, int> maxWordsByQ = {};
       if (writeTextIds.isNotEmpty) {
-        final wt = await supabase.from('write_text_config').select('id_pregunta, max_words').inFilter('id_pregunta', writeTextIds);
-        for (final r in List<Map<String, dynamic>>.from(wt as List)) maxWordsByQ[(r['id_pregunta'] as num).toInt()] = (r['max_words'] as num).toInt();
+        final wt = await supabase
+            .from('write_text_config')
+            .select('id_pregunta, max_words')
+            .inFilter('id_pregunta', writeTextIds);
+        for (final r in List<Map<String, dynamic>>.from(wt as List))
+          maxWordsByQ[(r['id_pregunta'] as num).toInt()] =
+              (r['max_words'] as num).toInt();
       }
 
       Map<int, Map<String, int>> audioConfigByQ = {};
       if (recordAudioIds.isNotEmpty) {
-        final ra = await supabase.from('record_audio_config').select('id_pregunta, think_time_seconds, max_record_seconds').inFilter('id_pregunta', recordAudioIds);
+        final ra = await supabase
+            .from('record_audio_config')
+            .select('id_pregunta, think_time_seconds, max_record_seconds')
+            .inFilter('id_pregunta', recordAudioIds);
         for (final r in List<Map<String, dynamic>>.from(ra as List)) {
-          audioConfigByQ[(r['id_pregunta'] as num).toInt()] = {'think': (r['think_time_seconds'] as num).toInt(), 'max': (r['max_record_seconds'] as num).toInt()};
+          audioConfigByQ[(r['id_pregunta'] as num).toInt()] = {
+            'think': (r['think_time_seconds'] as num).toInt(),
+            'max': (r['max_record_seconds'] as num).toInt(),
+          };
         }
       }
       // --- FIN BLOQUE DE CARGA AUXILIAR ---
@@ -215,13 +295,38 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       final byId = <int, Map<String, dynamic>>{};
       for (final q in qList) {
         final tipo = (q['tipo_pregunta'] as String? ?? '').toLowerCase();
-        String normalized = tipo.contains('multiple') ? 'multiple_choice' : tipo.contains('matching') ? 'matching' : tipo.contains('completion') ? 'completion' : tipo.contains('record') ? 'record_audio' : (tipo.contains('write') || tipo.contains('texto')) ? 'write_text' : 'multiple_choice';
+        String normalized = tipo.contains('multiple')
+            ? 'multiple_choice'
+            : tipo.contains('matching')
+            ? 'matching'
+            : tipo.contains('completion')
+            ? 'completion'
+            : tipo.contains('record')
+            ? 'record_audio'
+            : (tipo.contains('write') || tipo.contains('texto'))
+            ? 'write_text'
+            : 'multiple_choice';
 
         final qid = q['id_pregunta'] as int;
-        final myAnswers = mAnswers.where((e) => e['id_pregunta'] == qid).toList();
-        final myStatements = mStatements.where((e) => e['id_pregunta'] == qid).toList();
-        final mySentences = cSentences.where((e) => e['id_pregunta'] == qid).toList();
-        final sentWithGaps = mySentences.map((s) => {...s, 'gaps': cGaps.where((g) => g['sentence_id'] == s['id']).toList()}).toList();
+        final myAnswers = mAnswers
+            .where((e) => e['id_pregunta'] == qid)
+            .toList();
+        final myStatements = mStatements
+            .where((e) => e['id_pregunta'] == qid)
+            .toList();
+        final mySentences = cSentences
+            .where((e) => e['id_pregunta'] == qid)
+            .toList();
+        final sentWithGaps = mySentences
+            .map(
+              (s) => {
+                ...s,
+                'gaps': cGaps
+                    .where((g) => g['sentence_id'] == s['id'])
+                    .toList(),
+              },
+            )
+            .toList();
 
         byId[qid] = {
           'id': q['id_pregunta'],
@@ -231,7 +336,17 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           'nivel_dificultad': q['nivel_dificultad'] ?? 'Basico',
           'puntaje': q['puntos'] ?? 1,
           'tiempo_limite_segundos': null,
-          'opciones': optList.where((o) => o['id_pregunta'] == qid).map((o) => {'id': o['id_opcion'], 'pregunta_id': o['id_pregunta'], 'texto_opcion': o['texto_opcion'], 'es_correcta': o['es_correcta']}).toList(),
+          'opciones': optList
+              .where((o) => o['id_pregunta'] == qid)
+              .map(
+                (o) => {
+                  'id': o['id_opcion'],
+                  'pregunta_id': o['id_pregunta'],
+                  'texto_opcion': o['texto_opcion'],
+                  'es_correcta': o['es_correcta'],
+                },
+              )
+              .toList(),
           'matching_answers': myAnswers,
           'matching_statements': myStatements,
           'completion_sentences': sentWithGaps,
@@ -277,7 +392,10 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
     final user = context.read<AuthProvider>().user;
     final userId = user?.idUsuario;
     if (userId == null) {
-      if (!auto) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must log in to submit answers')));
+      if (!auto)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You must log in to submit answers')),
+        );
       return;
     }
 
@@ -289,20 +407,33 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       } else if (q.isMatching) {
         final map = _matchingByQuestion[q.id];
         final totalStmts = q.matchingStatements?.length ?? 0;
-        if (map != null && map.length == totalStmts && !map.values.contains(null)) answered++;
+        if (map != null &&
+            map.length == totalStmts &&
+            !map.values.contains(null))
+          answered++;
       } else if (q.isCompletion) {
         final map = _completionByQuestion[q.id];
-        final totalGaps = (q.completionSentences ?? []).fold<int>(0, (sum, s) => sum + s.gaps.length);
+        final totalGaps = (q.completionSentences ?? []).fold<int>(
+          0,
+          (sum, s) => sum + s.gaps.length,
+        );
         if (map != null && map.length == totalGaps) answered++;
       } else if (q.isWriteText) {
-        if ((_writeTextByQuestion[q.id]?.trim().isNotEmpty ?? false)) answered++;
+        if ((_writeTextByQuestion[q.id]?.trim().isNotEmpty ?? false))
+          answered++;
       } else if (q.isRecordAudio) {
         if ((_audioUrlByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
       }
     }
 
     if (!auto && (answered < _questions.length)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please answer all questions ($answered/${_questions.length})')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please answer all questions ($answered/${_questions.length})',
+          ),
+        ),
+      );
       return;
     }
 
@@ -312,19 +443,54 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       for (final q in _questions) {
         if (q.isMultipleChoice) {
           final set = _selectedOptionsByQuestion[q.id] ?? const {};
-          futures.add(ApiService.submitAnswerMultipleChoice(userId: userId, preguntaId: q.id, optionIds: set.toList(), quizId: widget.quizId));
+          futures.add(
+            ApiService.submitAnswerMultipleChoice(
+              userId: userId,
+              preguntaId: q.id,
+              optionIds: set.toList(),
+              quizId: widget.quizId,
+            ),
+          );
         } else if (q.isMatching) {
           final map = _matchingByQuestion[q.id] ?? const {};
-          futures.add(ApiService.submitAnswerMatching(userId: userId, preguntaId: q.id, statementToAnswer: Map<int, int>.from(map), quizId: widget.quizId));
+          futures.add(
+            ApiService.submitAnswerMatching(
+              userId: userId,
+              preguntaId: q.id,
+              statementToAnswer: Map<int, int>.from(map),
+              quizId: widget.quizId,
+            ),
+          );
         } else if (q.isCompletion) {
           final map = _completionByQuestion[q.id] ?? const {};
-          futures.add(ApiService.submitAnswerCompletion(userId: userId, preguntaId: q.id, gapToText: Map<int, String>.from(map), quizId: widget.quizId));
+          futures.add(
+            ApiService.submitAnswerCompletion(
+              userId: userId,
+              preguntaId: q.id,
+              gapToText: Map<int, String>.from(map),
+              quizId: widget.quizId,
+            ),
+          );
         } else if (q.isWriteText) {
           final text = _writeTextByQuestion[q.id] ?? '';
-          futures.add(ApiService.submitAnswerWriteText(userId: userId, preguntaId: q.id, text: text, quizId: widget.quizId));
+          futures.add(
+            ApiService.submitAnswerWriteText(
+              userId: userId,
+              preguntaId: q.id,
+              text: text,
+              quizId: widget.quizId,
+            ),
+          );
         } else if (q.isRecordAudio) {
           final url = _audioUrlByQuestion[q.id] ?? '';
-          futures.add(ApiService.submitAnswerRecordAudio(userId: userId, preguntaId: q.id, audioUrl: url, quizId: widget.quizId));
+          futures.add(
+            ApiService.submitAnswerRecordAudio(
+              userId: userId,
+              preguntaId: q.id,
+              audioUrl: url,
+              quizId: widget.quizId,
+            ),
+          );
         }
       }
       await Future.wait(futures);
@@ -334,10 +500,16 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           _timer?.cancel();
           _secondsRemaining = 0;
         });
-        if (!auto) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Answers submitted successfully')));
+        if (!auto)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Answers submitted successfully')),
+          );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error submitting: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error submitting: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -358,9 +530,18 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       filled: true,
       fillColor: _courseColor.withOpacity(0.05),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: _courseColor, width: 2)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey[300]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: _courseColor, width: 2),
+      ),
     );
   }
 
@@ -373,12 +554,18 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       if (q.isMultipleChoice) {
         if ((_selectedOptionsByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
       } else if (q.isMatching) {
-        if ((_matchingByQuestion[q.id]?.length ?? 0) == (q.matchingStatements?.length ?? 0)) answered++;
+        if ((_matchingByQuestion[q.id]?.length ?? 0) ==
+            (q.matchingStatements?.length ?? 0))
+          answered++;
       } else if (q.isCompletion) {
-        final totalGaps = (q.completionSentences ?? []).fold<int>(0, (s, e) => s + e.gaps.length);
+        final totalGaps = (q.completionSentences ?? []).fold<int>(
+          0,
+          (s, e) => s + e.gaps.length,
+        );
         if ((_completionByQuestion[q.id]?.length ?? 0) == totalGaps) answered++;
       } else if (q.isWriteText) {
-        if ((_writeTextByQuestion[q.id]?.trim().isNotEmpty ?? false)) answered++;
+        if ((_writeTextByQuestion[q.id]?.trim().isNotEmpty ?? false))
+          answered++;
       } else if (q.isRecordAudio) {
         if ((_audioUrlByQuestion[q.id]?.isNotEmpty ?? false)) answered++;
       }
@@ -390,83 +577,106 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5.0,
+                ),
+              )
             : _errorMessage != null
             ? Center(child: Text(_errorMessage!))
             : Column(
-          children: [
-            // 1. ENCABEZADO
-            _buildHeader(),
-
-            // 2. BARRA DE PROGRESO
-            LinearProgressIndicator(
-              value: total == 0 ? 0 : (answered / total),
-              backgroundColor: Colors.grey[100],
-              color: _courseColor,
-              minHeight: 4,
-            ),
-
-            // 3. CONTENIDO (Material + Preguntas)
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(24),
                 children: [
-                  // Título de la Actividad
-                  Text(
-                    widget.quizTitle,
-                    style: GoogleFonts.ptSans(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _allSubmitted ? 'Activity Completed' : 'Answer all questions below',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                  const SizedBox(height: 24),
+                  // 1. ENCABEZADO
+                  _buildHeader(),
 
-                  // Material (Si existe)
-                  if (_material != null) _buildMaterialCard(),
-                  if (_material != null) const SizedBox(height: 24),
+                  // 2. BARRA DE PROGRESO
+                  LinearProgressIndicator(
+                    value: total == 0 ? 0 : (answered / total),
+                    backgroundColor: Colors.grey[100],
+                    color: _courseColor,
+                    minHeight: 4,
+                  ),
 
-                  // Lista de Preguntas
-                  if (_questions.isEmpty)
-                    const Center(child: Text('No questions available'))
-                  else
-                    ..._questions.asMap().entries.map((e) => _buildQuestionCard(e.value, e.key)),
+                  // 3. CONTENIDO (Material + Preguntas)
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(24),
+                      children: [
+                        // Título de la Actividad
+                        Text(
+                          widget.quizTitle,
+                          style: GoogleFonts.ptSans(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _allSubmitted
+                              ? 'Activity Completed'
+                              : 'Answer all questions below',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Material (Si existe)
+                        if (_material != null) _buildMaterialCard(),
+                        if (_material != null) const SizedBox(height: 24),
+
+                        // Lista de Preguntas
+                        if (_questions.isEmpty)
+                          const Center(child: Text('No questions available'))
+                        else
+                          ..._questions.asMap().entries.map(
+                            (e) => _buildQuestionCard(e.value, e.key),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  // 4. BOTÓN INFERIOR
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey[100]!)),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: (_allSubmitted || !allAnswered)
+                            ? null
+                            : () => _submitAllAnswers(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _courseColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          _allSubmitted
+                              ? 'Answers Submitted'
+                              : allAnswered
+                              ? 'Submit Answers'
+                              : 'Answer all questions to submit ($answered/$total)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-
-            // 4. BOTÓN INFERIOR
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(top: BorderSide(color: Colors.grey[100]!)),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: (_allSubmitted || !allAnswered) ? null : () => _submitAllAnswers(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _courseColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    _allSubmitted
-                        ? 'Answers Submitted'
-                        : allAnswered
-                        ? 'Submit Answers'
-                        : 'Answer all questions to submit ($answered/$total)',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -476,7 +686,8 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   Widget _buildHeader() {
     final minutes = (_secondsRemaining / 60).floor();
     final seconds = _secondsRemaining % 60;
-    final timerText = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final timerText =
+        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -490,12 +701,21 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           if ((_quizTimeMinutes ?? 0) > 0 && !_allSubmitted)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(color: _courseColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                color: _courseColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Row(
                 children: [
                   Icon(Icons.timer_outlined, size: 16, color: _courseColor),
                   const SizedBox(width: 6),
-                  Text(timerText, style: TextStyle(color: _courseColor, fontWeight: FontWeight.bold)),
+                  Text(
+                    timerText,
+                    style: TextStyle(
+                      color: _courseColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -568,10 +788,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
                     const SizedBox(height: 4),
                     Text(
                       typeLabel,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ],
                 ),
@@ -580,7 +797,11 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
               // Acciones a la derecha (Play o Abrir PDF)
               if (type.contains('audio') && (m.archivoUrl?.isNotEmpty ?? false))
                 IconButton(
-                  icon: Icon(Icons.play_circle_fill_rounded, color: _courseColor, size: 36),
+                  icon: Icon(
+                    Icons.play_circle_fill_rounded,
+                    color: _courseColor,
+                    size: 36,
+                  ),
                   onPressed: () async {
                     try {
                       await _audioPlayer.stop();
@@ -588,13 +809,20 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
                     } catch (_) {}
                   },
                 )
-              else if (type.contains('pdf') && (m.archivoUrl?.isNotEmpty ?? false))
+              else if (type.contains('pdf') &&
+                  (m.archivoUrl?.isNotEmpty ?? false))
                 IconButton(
-                  icon: const Icon(Icons.open_in_new_rounded, color: Colors.grey),
+                  icon: const Icon(
+                    Icons.open_in_new_rounded,
+                    color: Colors.grey,
+                  ),
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PDFViewerWidget(pdfUrl: m.archivoUrl!, title: m.titulo),
+                      builder: (_) => PDFViewerWidget(
+                        pdfUrl: m.archivoUrl!,
+                        title: m.titulo,
+                      ),
                     ),
                   ),
                 ),
@@ -602,7 +830,6 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           ),
 
           // --- CONTENIDO EXPANDIDO (Para Texto e Imágenes) ---
-
           if (type.contains('text') || type.contains('texto')) ...[
             const SizedBox(height: 16),
             const Divider(),
@@ -610,11 +837,19 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             MarkdownBody(
               data: m.contenidoTexto ?? '',
               styleSheet: MarkdownStyleSheet(
-                p: TextStyle(color: Colors.grey[800], height: 1.5, fontSize: 15),
-                strong: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                p: TextStyle(
+                  color: Colors.grey[800],
+                  height: 1.5,
+                  fontSize: 15,
+                ),
+                strong: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ] else if ((type.contains('image') || type.contains('imagen')) && (m.archivoUrl?.isNotEmpty ?? false)) ...[
+          ] else if ((type.contains('image') || type.contains('imagen')) &&
+              (m.archivoUrl?.isNotEmpty ?? false)) ...[
             const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -628,7 +863,8 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
                     child: CircularProgressIndicator(
                       color: _courseColor,
                       value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
                           : null,
                     ),
                   );
@@ -655,7 +891,9 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           final isCorrect = o.esCorrecta;
           Color borderColor = Colors.grey[200]!;
           Color bgColor = Colors.white;
-          IconData icon = isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked;
+          IconData icon = isSelected
+              ? Icons.check_circle_rounded
+              : Icons.radio_button_unchecked;
           Color iconColor = isSelected ? _courseColor : Colors.grey[400]!;
 
           if (_allSubmitted) {
@@ -676,27 +914,50 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           }
 
           return GestureDetector(
-            onTap: _allSubmitted ? null : () {
-              setState(() {
-                final set = _selectedOptionsByQuestion.putIfAbsent(q.id, () => <int>{});
-                // Lógica para single selection (si quieres multiple, quita el clear)
-                // set.clear();
-                if (set.contains(o.id)) set.remove(o.id); else set.add(o.id);
-              });
-            },
+            onTap: _allSubmitted
+                ? null
+                : () {
+                    setState(() {
+                      final set = _selectedOptionsByQuestion.putIfAbsent(
+                        q.id,
+                        () => <int>{},
+                      );
+                      // Lógica para single selection (si quieres multiple, quita el clear)
+                      // set.clear();
+                      if (set.contains(o.id))
+                        set.remove(o.id);
+                      else
+                        set.add(o.id);
+                    });
+                  },
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: borderColor, width: isSelected || _allSubmitted ? 1.5 : 1),
+                border: Border.all(
+                  color: borderColor,
+                  width: isSelected || _allSubmitted ? 1.5 : 1,
+                ),
               ),
               child: Row(
                 children: [
                   Icon(icon, color: iconColor),
                   const SizedBox(width: 12),
-                  Expanded(child: MarkdownBody(data: o.textoOpcion, styleSheet: MarkdownStyleSheet(p: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: Colors.black87)))),
+                  Expanded(
+                    child: MarkdownBody(
+                      data: o.textoOpcion,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -721,64 +982,79 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             decoration: BoxDecoration(
               color: Colors.grey[50],
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _allSubmitted ? (isCorrect ? Color(0xFF1A3075) : Color(
-                  0xFFD9232A)) : Colors.grey[200]!),
-            ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: MarkdownBody(
-                      data: s.texto,
-                      styleSheet: MarkdownStyleSheet(p: const TextStyle(fontWeight: FontWeight.w500)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  SizedBox(
-                    width: 100,
-                    child: DropdownMenu<int>(
-                      initialSelection: selectedVal,
-
-                      hintText: 'Select',
-
-                      textStyle: const TextStyle(
-                        fontSize: 14, // texto cuando hay un valor seleccionado
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF1A3075),
-                      ),
-
-                      inputDecorationTheme: const InputDecorationTheme(
-                        hintStyle: TextStyle(
-                          fontSize: 14, // 🔥 tamaño del texto "Select"
-                          color: Colors.grey,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-
-                      menuStyle: MenuStyle(
-                        backgroundColor: MaterialStatePropertyAll(Colors.white),
-                        elevation: const MaterialStatePropertyAll(8),
-                        shadowColor: MaterialStatePropertyAll(Colors.black26),
-                        padding: MaterialStatePropertyAll(const EdgeInsets.symmetric(vertical: 6)),
-                        shape: MaterialStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-
-                      trailingIcon: Icon(Icons.arrow_drop_down_rounded, color: _courseColor),
-
-                      dropdownMenuEntries: answers
-                          .map((a) => DropdownMenuEntry(value: a.id, label: a.texto,),).toList(),
-                      onSelected: _allSubmitted ? null : (v) {
-                        setState(() => map[s.id] = v!);
-                      },
-                    ),
-                  ),
-                ],
+              border: Border.all(
+                color: _allSubmitted
+                    ? (isCorrect ? Color(0xFF1A3075) : Color(0xFFD9232A))
+                    : Colors.grey[200]!,
               ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: MarkdownBody(
+                    data: s.texto,
+                    styleSheet: MarkdownStyleSheet(
+                      p: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                SizedBox(
+                  width: 100,
+                  child: DropdownMenu<int>(
+                    initialSelection: selectedVal,
+
+                    hintText: 'Select',
+
+                    textStyle: const TextStyle(
+                      fontSize: 14, // texto cuando hay un valor seleccionado
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1A3075),
+                    ),
+
+                    inputDecorationTheme: const InputDecorationTheme(
+                      hintStyle: TextStyle(
+                        fontSize: 14, // 🔥 tamaño del texto "Select"
+                        color: Colors.grey,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+
+                    menuStyle: MenuStyle(
+                      backgroundColor: MaterialStatePropertyAll(Colors.white),
+                      elevation: const MaterialStatePropertyAll(8),
+                      shadowColor: MaterialStatePropertyAll(Colors.black26),
+                      padding: MaterialStatePropertyAll(
+                        const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      shape: MaterialStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+
+                    trailingIcon: Icon(
+                      Icons.arrow_drop_down_rounded,
+                      color: _courseColor,
+                    ),
+
+                    dropdownMenuEntries: answers
+                        .map(
+                          (a) => DropdownMenuEntry(value: a.id, label: a.texto),
+                        )
+                        .toList(),
+                    onSelected: _allSubmitted
+                        ? null
+                        : (v) {
+                            setState(() => map[s.id] = v!);
+                          },
+                  ),
+                ),
+              ],
+            ),
           );
         }).toList(),
       );
@@ -796,37 +1072,80 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           final reg = RegExp(r'\{\{(\d+)\}\}');
           int last = 0;
           for (final m in reg.allMatches(s.textoTemplate)) {
-             if (m.start > last) parts.add(MarkdownBody(data: s.textoTemplate.substring(last, m.start), styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 16, height: 1.5))));
+            if (m.start > last)
+              parts.add(
+                MarkdownBody(
+                  data: s.textoTemplate.substring(last, m.start),
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(fontSize: 16, height: 1.5),
+                  ),
+                ),
+              );
 
             final gapIndex = int.parse(m.group(1)!);
             final gap = s.gaps.firstWhere((g) => g.gapIndex == gapIndex);
-            final ctrl = ctrls.putIfAbsent(gap.id, () => TextEditingController(text: map[gap.id] ?? ''));
-            final isCorrect = _allSubmitted && ctrl.text.trim().toLowerCase() == gap.correctText.trim().toLowerCase();
+            final ctrl = ctrls.putIfAbsent(
+              gap.id,
+              () => TextEditingController(text: map[gap.id] ?? ''),
+            );
+            final isCorrect =
+                _allSubmitted &&
+                ctrl.text.trim().toLowerCase() ==
+                    gap.correctText.trim().toLowerCase();
 
-            parts.add(SizedBox(
-              width: 120,
-              child: TextField(
-                controller: ctrl,
-                readOnly: _allSubmitted,
-                onChanged: (v) => map[gap.id] = v,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: _allSubmitted ? (isCorrect ? Colors.green : Colors.red) : Colors.black),
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  isDense: true,
-                  filled: true,
-                  fillColor: _allSubmitted ? (isCorrect ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1)) : Colors.grey[100],
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            parts.add(
+              SizedBox(
+                width: 120,
+                child: TextField(
+                  controller: ctrl,
+                  readOnly: _allSubmitted,
+                  onChanged: (v) => map[gap.id] = v,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _allSubmitted
+                        ? (isCorrect ? Colors.green : Colors.red)
+                        : Colors.black,
+                  ),
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    isDense: true,
+                    filled: true,
+                    fillColor: _allSubmitted
+                        ? (isCorrect
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1))
+                        : Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
                 ),
               ),
-            ));
+            );
             last = m.end;
           }
-          if (last < s.textoTemplate.length) parts.add(MarkdownBody(data: s.textoTemplate.substring(last), styleSheet: MarkdownStyleSheet(p: const TextStyle(fontSize: 16, height: 1.5))));
+          if (last < s.textoTemplate.length)
+            parts.add(
+              MarkdownBody(
+                data: s.textoTemplate.substring(last),
+                styleSheet: MarkdownStyleSheet(
+                  p: const TextStyle(fontSize: 16, height: 1.5),
+                ),
+              ),
+            );
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 8, spacing: 4, children: parts),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: 8,
+              spacing: 4,
+              children: parts,
+            ),
           );
         }).toList(),
       );
@@ -834,7 +1153,10 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
     // 4. Write Text
     else if (q.isWriteText) {
       final max = q.maxWords ?? 0;
-      final ctrl = _writeTextControllers.putIfAbsent(q.id, () => TextEditingController(text: _writeTextByQuestion[q.id] ?? ''));
+      final ctrl = _writeTextControllers.putIfAbsent(
+        q.id,
+        () => TextEditingController(text: _writeTextByQuestion[q.id] ?? ''),
+      );
 
       body = Column(
         children: [
@@ -842,7 +1164,12 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             controller: ctrl,
             readOnly: _allSubmitted,
             maxLines: 6,
-            onChanged: (v) { if (!_allSubmitted) { _writeTextByQuestion[q.id] = v; setState((){}); } },
+            onChanged: (v) {
+              if (!_allSubmitted) {
+                _writeTextByQuestion[q.id] = v;
+                setState(() {});
+              }
+            },
             decoration: _inputDeco('Type your answer here...'),
           ),
           if (max > 0)
@@ -850,7 +1177,10 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
               padding: const EdgeInsets.only(top: 8.0),
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Text('${_wordCount(ctrl.text)} / $max words', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                child: Text(
+                  '${_wordCount(ctrl.text)} / $max words',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
               ),
             ),
         ],
@@ -870,7 +1200,13 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey[200]!, width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,22 +1214,49 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Question ${index + 1}", style: TextStyle(color: Colors.grey[500], fontWeight: FontWeight.bold, fontSize: 12)),
+              Text(
+                "Question ${index + 1}",
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
               if (q.puntaje > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: Color(0xFFE5E8EE), borderRadius: BorderRadius.circular(4)),
-                  child: Text("${q.puntaje} pts", style: const TextStyle(color: Color(
-                      0xFF1A3075), fontSize: 10, fontWeight: FontWeight.bold)),
-                )
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFE5E8EE),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    "${q.puntaje} pts",
+                    style: const TextStyle(
+                      color: Color(0xFF1A3075),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
-MarkdownBody(
+          MarkdownBody(
             data: q.textoPregunta,
             styleSheet: MarkdownStyleSheet(
-              p: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-              strong: GoogleFonts.ptSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87), // Ensure bold stays bold matches regular text style
+              p: GoogleFonts.ptSans(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              strong: GoogleFonts.ptSans(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ), // Ensure bold stays bold matches regular text style
             ),
           ),
           const SizedBox(height: 24),
@@ -902,12 +1265,24 @@ MarkdownBody(
             Container(
               margin: const EdgeInsets.only(top: 24),
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Color(0xFFECEEF3), borderRadius: BorderRadius.circular(12)),
-              child: Row(children: [
-                Icon(Icons.lightbulb, color: Color(0xFF1A3075), size: 20),
-                const SizedBox(width: 12),
-                Expanded(child: MarkdownBody(data: q.explicacionGeneral!, styleSheet: MarkdownStyleSheet(p: TextStyle(color: Color(0xFF1A3075), fontSize: 13)))),
-              ]),
+              decoration: BoxDecoration(
+                color: Color(0xFFECEEF3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb, color: Color(0xFF1A3075), size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: MarkdownBody(
+                      data: q.explicacionGeneral!,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(color: Color(0xFF1A3075), fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
         ],
       ),
@@ -993,14 +1368,21 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
     }
 
     // Mantener cuenta regresiva de preparación solo si es > 0
-    setState(() { _isThinking = true; _remaining = widget.thinkSeconds; });
+    setState(() {
+      _isThinking = true;
+      _remaining = widget.thinkSeconds;
+    });
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (_remaining > 0) {
         setState(() => _remaining--);
       } else {
         t.cancel();
-        setState(() { _isThinking = false; _isRecording = true; _remaining = widget.maxRecordSeconds; });
+        setState(() {
+          _isThinking = false;
+          _isRecording = true;
+          _remaining = widget.maxRecordSeconds;
+        });
         await _startRecording();
       }
     });
@@ -1009,8 +1391,12 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
   Future<void> _startRecording() async {
     if (!await _recorder.hasPermission()) return;
     final dir = await getTemporaryDirectory();
-    final filePath = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000), path: filePath);
+    final filePath =
+        '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000),
+      path: filePath,
+    );
     _timer?.cancel();
 
     // Si hay límite de grabación (>0), iniciar countdown; si no, grabación sin límite hasta detener manualmente
@@ -1036,7 +1422,11 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
       final file = File(path);
       final name = 'rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
       final storage = SupabaseStorageService();
-      final res = await storage.uploadAudio(userId: 'temp', audioFile: file, fileName: name); // Ajusta userID real si puedes
+      final res = await storage.uploadAudio(
+        userId: 'temp',
+        audioFile: file,
+        fileName: name,
+      ); // Ajusta userID real si puedes
       if (res['success'] == true) {
         setState(() => _uploadedUrl = res['url'] as String);
         widget.onUploaded(_uploadedUrl!);
@@ -1050,20 +1440,48 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
       if (_uploadedUrl != null) {
         return Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-          child: const Row(children: [Icon(Icons.mic_rounded, color: Colors.green), SizedBox(width: 12), Text("Audio Recorded", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))]),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.mic_rounded, color: Colors.green),
+              SizedBox(width: 12),
+              Text(
+                "Audio Recorded",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         );
       }
-      return const Text("No audio recorded", style: TextStyle(color: Colors.grey));
+      return const Text(
+        "No audio recorded",
+        style: TextStyle(color: Colors.grey),
+      );
     }
 
     if (_isThinking) {
       return Center(
         child: Column(
           children: [
-            const Text("Prepare your answer...", style: TextStyle(color: Colors.grey)),
+            const Text(
+              "Prepare your answer...",
+              style: TextStyle(color: Colors.grey),
+            ),
             const SizedBox(height: 8),
-            Text("$_remaining s", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: widget.activeColor)),
+            Text(
+              "$_remaining s",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: widget.activeColor,
+              ),
+            ),
           ],
         ),
       );
@@ -1077,11 +1495,26 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
             const SizedBox(height: 8),
             // Si no hay límite, no mostramos cuenta regresiva
             if (widget.maxRecordSeconds > 0)
-              Text("Recording... $_remaining s", style: const TextStyle(color: Color(0xFFD9232A), fontWeight: FontWeight.bold))
+              Text(
+                "Recording... $_remaining s",
+                style: const TextStyle(
+                  color: Color(0xFFD9232A),
+                  fontWeight: FontWeight.bold,
+                ),
+              )
             else
-              const Text("Recording...", style: TextStyle(color: Color(0xFFD9232A), fontWeight: FontWeight.bold)),
+              const Text(
+                "Recording...",
+                style: TextStyle(
+                  color: Color(0xFFD9232A),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: _stopRecording, child: const Text("Stop Recording"))
+            OutlinedButton(
+              onPressed: _stopRecording,
+              child: const Text("Stop Recording"),
+            ),
           ],
         ),
       );
@@ -1091,10 +1524,23 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
       return Center(
         child: Column(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Color(0xFF1A3075), size: 48),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Color(0xFF1A3075),
+              size: 48,
+            ),
             const SizedBox(height: 8),
-            const Text("Audio Saved", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1A3075))),
-            TextButton(onPressed: () => setState(() => _uploadedUrl = null), child: const Text("Record Again"))
+            const Text(
+              "Audio Saved",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A3075),
+              ),
+            ),
+            TextButton(
+              onPressed: () => setState(() => _uploadedUrl = null),
+              child: const Text("Record Again"),
+            ),
           ],
         ),
       );
@@ -1104,8 +1550,12 @@ class _RecordAudioWidgetState extends State<_RecordAudioWidget> {
       child: GestureDetector(
         onTap: _start,
         child: Container(
-          width: 80, height: 80,
-          decoration: BoxDecoration(color: widget.activeColor.withOpacity(0.1), shape: BoxShape.circle),
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: widget.activeColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
           child: Icon(Icons.mic_rounded, color: widget.activeColor, size: 32),
         ),
       ),

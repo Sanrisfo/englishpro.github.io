@@ -36,4 +36,3 @@ void main() {
     expect(find.byType(TeacherMaterialsScreen), findsOneWidget);
   });
 }
-

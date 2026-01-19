@@ -38,7 +38,9 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     try {
       var query = supabase
           .from('usuarios')
-          .select('id_usuario, nombre_completo, email, rol, es_docente, id_plan')
+          .select(
+            'id_usuario, nombre_completo, email, rol, es_docente, id_plan',
+          )
           .eq('rol', 'Estudiante');
 
       final selectedPlanId = _selectedPlanId;
@@ -46,7 +48,9 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
         query = query.eq('id_plan', selectedPlanId);
       }
       final response = await query.order('nombre_completo', ascending: true);
-      setState(() => _students = List<Map<String, dynamic>>.from(response as List));
+      setState(
+        () => _students = List<Map<String, dynamic>>.from(response as List),
+      );
     } catch (e) {
       setState(() => _errorMessage = 'Error loading students: $e');
     } finally {
@@ -76,7 +80,9 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     final filtered = _students.where((s) {
       if (_query.isEmpty) return true;
       final q = _query.toLowerCase();
-      return (s['nombre_completo'] as String? ?? '').toLowerCase().contains(q) ||
+      return (s['nombre_completo'] as String? ?? '').toLowerCase().contains(
+            q,
+          ) ||
           (s['email'] as String? ?? '').toLowerCase().contains(q);
     }).toList();
 
@@ -94,45 +100,48 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
 
       body: SafeArea(
         child: _isLoading
-        // Circulo de carga
+            // Circulo de carga
             ? Center(
-          child: CircularProgressIndicator(
-            color: const Color(0xFFD9232A),
-            strokeWidth: 5.0,
-          ),
-        )
-
-        // En caso no carga
+                child: CircularProgressIndicator(
+                  color: const Color(0xFFD9232A),
+                  strokeWidth: 5.0,
+                ),
+              )
+            // En caso no carga
             : _errorMessage != null
             ? _buildErrorView()
-
-        // Tdo lo que pasa dentro (cuando si carga)
+            // Tdo lo que pasa dentro (cuando si carga)
             : Column(
-          children: [
-            _buildSearchBar(), //metodo que llama a la barra de busqueda
-            _buildPlanFilter(), //filtros
+                children: [
+                  _buildSearchBar(), //metodo que llama a la barra de busqueda
+                  _buildPlanFilter(), //filtros
 
-            const SizedBox(height: 8),
+                  const SizedBox(height: 8),
 
-            // Lista de estudiantes
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                color: const Color(0xFFD9232A),
-                child: filtered.isEmpty
-                    ? _buildEmptyState() // cuando esta vacio se llama esto
-                    : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final u = filtered[index];
-                    return _buildStudentTile(u); //si tdo ta bien pasa la lista
-                  },
-                ),
+                  // Lista de estudiantes
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _load,
+                      color: const Color(0xFFD9232A),
+                      child: filtered.isEmpty
+                          ? _buildEmptyState() // cuando esta vacio se llama esto
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final u = filtered[index];
+                                return _buildStudentTile(
+                                  u,
+                                ); //si tdo ta bien pasa la lista
+                              },
+                            ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -212,15 +221,17 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
                     ),
                   ),
                 ),
-                ..._plans.map((p) => DropdownMenuEntry<int?>(
-                  value: (p['id_plan'] as num).toInt(),
-                  label: p['nombre_plan'] as String? ?? 'Plan',
-                  style: MenuItemButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                ..._plans.map(
+                  (p) => DropdownMenuEntry<int?>(
+                    value: (p['id_plan'] as num).toInt(),
+                    label: p['nombre_plan'] as String? ?? 'Plan',
+                    style: MenuItemButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
                     ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
@@ -230,16 +241,15 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
             onPressed: _selectedPlanId == null
                 ? null
                 : () {
-              setState(() => _selectedPlanId = null);
-              _load();
-            },
+                    setState(() => _selectedPlanId = null);
+                    _load();
+                  },
             icon: const Icon(Icons.clear),
           ),
         ],
       ),
     );
   }
-
 
   // Lista de estudiantes
   Widget _buildStudentTile(Map<String, dynamic> u) {
@@ -276,7 +286,11 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
                 color: const Color(0xFF23408E).withOpacity(0.1), // Azul
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.person_outline_outlined, color: const Color(0xFF23408E), size: 28),
+              child: Icon(
+                Icons.person_outline_outlined,
+                color: const Color(0xFF23408E),
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
 
@@ -296,10 +310,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
                   const SizedBox(height: 4),
                   Text(
                     u['email'] as String? ?? '',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
               ),
@@ -328,16 +339,22 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
             ),
             IconButton(
               tooltip: 'Copy email',
-              icon: const Icon(Icons.content_copy, color: Colors.grey, size: 20),
+              icon: const Icon(
+                Icons.content_copy,
+                color: Colors.grey,
+                size: 20,
+              ),
               onPressed: () async {
                 final email = (u['email'] as String?) ?? '';
                 if (email.isEmpty) return;
                 await Clipboard.setData(ClipboardData(text: email));
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Email copied to clipboard',
-                  style: TextStyle(color: Color(0xFFFFFFFF)),
-                  ),
+                  const SnackBar(
+                    content: Text(
+                      'Email copied to clipboard',
+                      style: TextStyle(color: Color(0xFFFFFFFF)),
+                    ),
                     backgroundColor: const Color(0xFF23408E),
                   ),
                 );
@@ -373,10 +390,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
             const SizedBox(width: 16),
             Text(
               'No students found',
-              style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
           ],
         ),
@@ -414,21 +428,25 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     );
   }
 
-
   String _planCodeById(int? idPlan) {
     final name = _planNameById(idPlan)?.toLowerCase();
     if (name == null) return '?';
     if (name.contains('premium')) return 'P+';
     if (name.contains('pro')) return 'P';
     if (name.contains('básico') || name.contains('basico')) return 'B';
-    if (name.contains('free') || name.contains('freemium') || name.contains('gratis')) return 'F';
+    if (name.contains('free') ||
+        name.contains('freemium') ||
+        name.contains('gratis'))
+      return 'F';
     return name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
   }
 
   String? _planNameById(int? idPlan) {
     if (idPlan == null) return null;
     try {
-      final m = _plans.firstWhere((p) => (p['id_plan'] as num).toInt() == idPlan);
+      final m = _plans.firstWhere(
+        (p) => (p['id_plan'] as num).toInt() == idPlan,
+      );
       return m['nombre_plan'] as String?;
     } catch (_) {
       return null;

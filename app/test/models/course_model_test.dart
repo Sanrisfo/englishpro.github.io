@@ -28,4 +28,3 @@ void main() {
     expect(business.colorHex, '#F59E0B');
   });
 }
-

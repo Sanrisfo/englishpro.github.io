@@ -144,44 +144,47 @@ void main() {
       expect(reading.isSpeaking, false);
     });
 
-    test('requiresManualFeedback should return true for Writing and Speaking', () {
-      final writing = SkillModel(
-        id: 2,
-        cursoId: 1,
-        nombre: 'Writing',
-        descripcion: 'Writing skill',
-        orden: 2,
-      );
+    test(
+      'requiresManualFeedback should return true for Writing and Speaking',
+      () {
+        final writing = SkillModel(
+          id: 2,
+          cursoId: 1,
+          nombre: 'Writing',
+          descripcion: 'Writing skill',
+          orden: 2,
+        );
 
-      final speaking = SkillModel(
-        id: 4,
-        cursoId: 1,
-        nombre: 'Speaking',
-        descripcion: 'Speaking skill',
-        orden: 4,
-      );
+        final speaking = SkillModel(
+          id: 4,
+          cursoId: 1,
+          nombre: 'Speaking',
+          descripcion: 'Speaking skill',
+          orden: 4,
+        );
 
-      final reading = SkillModel(
-        id: 1,
-        cursoId: 1,
-        nombre: 'Reading',
-        descripcion: 'Reading skill',
-        orden: 1,
-      );
+        final reading = SkillModel(
+          id: 1,
+          cursoId: 1,
+          nombre: 'Reading',
+          descripcion: 'Reading skill',
+          orden: 1,
+        );
 
-      final listening = SkillModel(
-        id: 3,
-        cursoId: 1,
-        nombre: 'Listening',
-        descripcion: 'Listening skill',
-        orden: 3,
-      );
+        final listening = SkillModel(
+          id: 3,
+          cursoId: 1,
+          nombre: 'Listening',
+          descripcion: 'Listening skill',
+          orden: 3,
+        );
 
-      expect(writing.requiresManualFeedback, true);
-      expect(speaking.requiresManualFeedback, true);
-      expect(reading.requiresManualFeedback, false);
-      expect(listening.requiresManualFeedback, false);
-    });
+        expect(writing.requiresManualFeedback, true);
+        expect(speaking.requiresManualFeedback, true);
+        expect(reading.requiresManualFeedback, false);
+        expect(listening.requiresManualFeedback, false);
+      },
+    );
 
     test('skill type checkers should be case insensitive', () {
       final reading = SkillModel(

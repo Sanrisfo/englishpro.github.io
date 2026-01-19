@@ -14,8 +14,18 @@ void main() {
       state._isLoading = false;
       state._errorMessage = null;
       state._courses = [
-        {'id': 1, 'nombre_curso': 'TOEFL', 'tipo_curso': 'Examen', 'estilo_progreso': 'Porcentaje'},
-        {'id': 2, 'nombre_curso': 'IELTS', 'tipo_curso': 'Examen', 'estilo_progreso': 'Porcentaje'},
+        {
+          'id': 1,
+          'nombre_curso': 'TOEFL',
+          'tipo_curso': 'Examen',
+          'estilo_progreso': 'Porcentaje',
+        },
+        {
+          'id': 2,
+          'nombre_curso': 'IELTS',
+          'tipo_curso': 'Examen',
+          'estilo_progreso': 'Porcentaje',
+        },
       ];
     });
     await tester.pumpAndSettle();
@@ -25,4 +35,3 @@ void main() {
     expect(find.text('IELTS'), findsWidgets);
   });
 }
-

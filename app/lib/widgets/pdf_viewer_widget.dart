@@ -94,7 +94,9 @@ class _PDFViewerWidgetState extends State<PDFViewerWidget> {
       final response = await http.get(Uri.parse(widget.pdfUrl));
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/temp_pdf_${DateTime.now().millisecondsSinceEpoch}.pdf');
+        final file = File(
+          '${dir.path}/temp_pdf_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        );
         await file.writeAsBytes(response.bodyBytes);
 
         if (mounted) {
@@ -252,10 +254,7 @@ class PDFViewerButton extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PDFViewerWidget(
-              pdfUrl: pdfUrl,
-              title: title,
-            ),
+            builder: (context) => PDFViewerWidget(pdfUrl: pdfUrl, title: title),
           ),
         );
       },

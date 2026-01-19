@@ -3,54 +3,63 @@ import 'package:englishpro_app/models/progress_model.dart';
 
 void main() {
   group('ProgressModel Tests', () {
-    test('ProgressModel.fromJson should correctly parse JSON with percentage-based progress', () {
-      final json = {
-        'id': 1,
-        'usuario_id': 100,
-        'curso_id': 1,
-        'avance_porcentaje': 75.5,
-        'modulos_completados': null,
-        'ultima_actividad': '2024-01-15T10:30:00.000Z',
-        'tiempo_total_minutos': 120,
-        'preguntas_respondidas': 50,
-        'preguntas_correctas': 40,
-      };
+    test(
+      'ProgressModel.fromJson should correctly parse JSON with percentage-based progress',
+      () {
+        final json = {
+          'id': 1,
+          'usuario_id': 100,
+          'curso_id': 1,
+          'avance_porcentaje': 75.5,
+          'modulos_completados': null,
+          'ultima_actividad': '2024-01-15T10:30:00.000Z',
+          'tiempo_total_minutos': 120,
+          'preguntas_respondidas': 50,
+          'preguntas_correctas': 40,
+        };
 
-      final progress = ProgressModel.fromJson(json);
+        final progress = ProgressModel.fromJson(json);
 
-      expect(progress.id, 1);
-      expect(progress.usuarioId, 100);
-      expect(progress.cursoId, 1);
-      expect(progress.avancePorcentaje, 75.5);
-      expect(progress.modulosCompletados, null);
-      expect(progress.ultimaActividad, DateTime.parse('2024-01-15T10:30:00.000Z'));
-      expect(progress.tiempoTotalMinutos, 120);
-      expect(progress.preguntasRespondidas, 50);
-      expect(progress.preguntasCorrectas, 40);
-    });
+        expect(progress.id, 1);
+        expect(progress.usuarioId, 100);
+        expect(progress.cursoId, 1);
+        expect(progress.avancePorcentaje, 75.5);
+        expect(progress.modulosCompletados, null);
+        expect(
+          progress.ultimaActividad,
+          DateTime.parse('2024-01-15T10:30:00.000Z'),
+        );
+        expect(progress.tiempoTotalMinutos, 120);
+        expect(progress.preguntasRespondidas, 50);
+        expect(progress.preguntasCorrectas, 40);
+      },
+    );
 
-    test('ProgressModel.fromJson should correctly parse JSON with module-based progress', () {
-      final json = {
-        'id': 2,
-        'usuario_id': 101,
-        'curso_id': 3,
-        'avance_porcentaje': null,
-        'modulos_completados': 5,
-        'ultima_actividad': '2024-01-20T14:00:00.000Z',
-        'tiempo_total_minutos': 200,
-        'preguntas_respondidas': 30,
-        'preguntas_correctas': 27,
-      };
+    test(
+      'ProgressModel.fromJson should correctly parse JSON with module-based progress',
+      () {
+        final json = {
+          'id': 2,
+          'usuario_id': 101,
+          'curso_id': 3,
+          'avance_porcentaje': null,
+          'modulos_completados': 5,
+          'ultima_actividad': '2024-01-20T14:00:00.000Z',
+          'tiempo_total_minutos': 200,
+          'preguntas_respondidas': 30,
+          'preguntas_correctas': 27,
+        };
 
-      final progress = ProgressModel.fromJson(json);
+        final progress = ProgressModel.fromJson(json);
 
-      expect(progress.id, 2);
-      expect(progress.usuarioId, 101);
-      expect(progress.cursoId, 3);
-      expect(progress.avancePorcentaje, null);
-      expect(progress.modulosCompletados, 5);
-      expect(progress.tiempoTotalMinutos, 200);
-    });
+        expect(progress.id, 2);
+        expect(progress.usuarioId, 101);
+        expect(progress.cursoId, 3);
+        expect(progress.avancePorcentaje, null);
+        expect(progress.modulosCompletados, 5);
+        expect(progress.tiempoTotalMinutos, 200);
+      },
+    );
 
     test('ProgressModel.toJson should correctly convert to JSON', () {
       final progress = ProgressModel(
@@ -135,50 +144,59 @@ void main() {
       expect(overCompleted.isCompleted, true);
     });
 
-    test('isCompleted should return false when percentage is less than 100', () {
-      final incomplete = ProgressModel(
-        id: 1,
-        usuarioId: 100,
-        cursoId: 1,
-        avancePorcentaje: 75.0,
-        ultimaActividad: DateTime.now(),
-        tiempoTotalMinutos: 100,
-        preguntasRespondidas: 50,
-        preguntasCorrectas: 40,
-      );
+    test(
+      'isCompleted should return false when percentage is less than 100',
+      () {
+        final incomplete = ProgressModel(
+          id: 1,
+          usuarioId: 100,
+          cursoId: 1,
+          avancePorcentaje: 75.0,
+          ultimaActividad: DateTime.now(),
+          tiempoTotalMinutos: 100,
+          preguntasRespondidas: 50,
+          preguntasCorrectas: 40,
+        );
 
-      expect(incomplete.isCompleted, false);
-    });
+        expect(incomplete.isCompleted, false);
+      },
+    );
 
-    test('isCompleted should return false for module-based progress (no total modules)', () {
-      final moduleProgress = ProgressModel(
-        id: 1,
-        usuarioId: 100,
-        cursoId: 3,
-        modulosCompletados: 5,
-        ultimaActividad: DateTime.now(),
-        tiempoTotalMinutos: 100,
-        preguntasRespondidas: 30,
-        preguntasCorrectas: 25,
-      );
+    test(
+      'isCompleted should return false for module-based progress (no total modules)',
+      () {
+        final moduleProgress = ProgressModel(
+          id: 1,
+          usuarioId: 100,
+          cursoId: 3,
+          modulosCompletados: 5,
+          ultimaActividad: DateTime.now(),
+          tiempoTotalMinutos: 100,
+          preguntasRespondidas: 30,
+          preguntasCorrectas: 25,
+        );
 
-      expect(moduleProgress.isCompleted, false);
-    });
+        expect(moduleProgress.isCompleted, false);
+      },
+    );
 
-    test('progresoString should return percentage format for percentage-based', () {
-      final progress = ProgressModel(
-        id: 1,
-        usuarioId: 100,
-        cursoId: 1,
-        avancePorcentaje: 75.5,
-        ultimaActividad: DateTime.now(),
-        tiempoTotalMinutos: 100,
-        preguntasRespondidas: 50,
-        preguntasCorrectas: 40,
-      );
+    test(
+      'progresoString should return percentage format for percentage-based',
+      () {
+        final progress = ProgressModel(
+          id: 1,
+          usuarioId: 100,
+          cursoId: 1,
+          avancePorcentaje: 75.5,
+          ultimaActividad: DateTime.now(),
+          tiempoTotalMinutos: 100,
+          preguntasRespondidas: 50,
+          preguntasCorrectas: 40,
+        );
 
-      expect(progress.progresoString, '75.5%');
-    });
+        expect(progress.progresoString, '75.5%');
+      },
+    );
 
     test('progresoString should return modules format for module-based', () {
       final progress = ProgressModel(

@@ -75,22 +75,25 @@ void main() {
       }
     });
 
-    test('NotificationModel.fromJson should handle missing optional fields', () {
-      final json = {
-        'id_notificacion': 1,
-        'id_usuario': 5,
-        'titulo': 'Minimal Notification',
-        'mensaje': 'Minimal Message',
-      };
+    test(
+      'NotificationModel.fromJson should handle missing optional fields',
+      () {
+        final json = {
+          'id_notificacion': 1,
+          'id_usuario': 5,
+          'titulo': 'Minimal Notification',
+          'mensaje': 'Minimal Message',
+        };
 
-      final notification = NotificationModel.fromJson(json);
+        final notification = NotificationModel.fromJson(json);
 
-      expect(notification.idNotificacion, 1);
-      expect(notification.idUsuario, 5);
-      expect(notification.titulo, 'Minimal Notification');
-      expect(notification.mensaje, 'Minimal Message');
-      expect(notification.tipo, 'Info'); // default
-      expect(notification.leida, false); // default
-    });
+        expect(notification.idNotificacion, 1);
+        expect(notification.idUsuario, 5);
+        expect(notification.titulo, 'Minimal Notification');
+        expect(notification.mensaje, 'Minimal Message');
+        expect(notification.tipo, 'Info'); // default
+        expect(notification.leida, false); // default
+      },
+    );
   });
 }

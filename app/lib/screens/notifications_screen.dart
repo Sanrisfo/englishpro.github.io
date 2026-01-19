@@ -47,7 +47,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (result['success'] == true) {
       final notificationsData = result['notifications'] as List<dynamic>;
       final notifications = notificationsData
-          .map((json) => NotificationModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => NotificationModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
 
       setState(() {
@@ -71,7 +73,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAsRead(NotificationModel notification) async {
     if (notification.leida) return;
 
-    final result = await ApiService.markNotificationAsRead(notification.idNotificacion);
+    final result = await ApiService.markNotificationAsRead(
+      notification.idNotificacion,
+    );
 
     if (result['success'] == true) {
       await _loadNotifications();
@@ -99,7 +103,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Notification'),
-        content: const Text('Are you sure you want to delete this notification?'),
+        content: const Text(
+          'Are you sure you want to delete this notification?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -115,7 +121,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
 
     if (confirmed == true) {
-      final result = await ApiService.deleteNotification(notification.idNotificacion);
+      final result = await ApiService.deleteNotification(
+        notification.idNotificacion,
+      );
 
       if (result['success'] == true) {
         await _loadNotifications();
@@ -184,178 +192,186 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.notifications_none,
-                        size: 80,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No notifications yet',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_none,
+                    size: 80,
+                    color: Colors.grey[400],
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadNotifications,
-                  child: ListView.builder(
-                    itemCount: _notifications.length,
-                    padding: const EdgeInsets.all(16),
-                    itemBuilder: (context, index) {
-                      final notification = _notifications[index];
-                      final isUnread = !notification.leida;
+                  const SizedBox(height: 16),
+                  Text(
+                    'No notifications yet',
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadNotifications,
+              child: ListView.builder(
+                itemCount: _notifications.length,
+                padding: const EdgeInsets.all(16),
+                itemBuilder: (context, index) {
+                  final notification = _notifications[index];
+                  final isUnread = !notification.leida;
 
-                      return Dismissible(
-                        key: Key(notification.idNotificacion.toString()),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          child: const Icon(
-                            Icons.delete,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                        onDismissed: (direction) {
-                          _deleteNotification(notification);
-                        },
-                        child: GestureDetector(
-                          onTap: () => _markAsRead(notification),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: isUnread ? Colors.blue[50] : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: _getColorForType(notification.tipo).withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _getIconForType(notification.tipo),
-                                  color: _getColorForType(notification.tipo),
-                                  size: 24,
-                                ),
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      notification.titulo,
-                                      style: TextStyle(
-                                        fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ),
-                                  if (isUnread)
-                                    Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.blue,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    notification.mensaje,
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    notification.fechaCreacion != null
-                                        ? timeago.format(
-                                            notification.fechaCreacion!,
-                                            locale: 'en',
-                                          )
-                                        : 'Just now',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_vert),
-                                onSelected: (value) {
-                                  if (value == 'mark_read') {
-                                    _markAsRead(notification);
-                                  } else if (value == 'delete') {
-                                    _deleteNotification(notification);
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  if (isUnread)
-                                    const PopupMenuItem(
-                                      value: 'mark_read',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.done, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Mark as read'),
-                                        ],
-                                      ),
-                                    ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.delete, size: 20, color: Colors.red),
-                                        SizedBox(width: 8),
-                                        Text('Delete', style: TextStyle(color: Colors.red)),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
+                  return Dismissible(
+                    key: Key(notification.idNotificacion.toString()),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                    onDismissed: (direction) {
+                      _deleteNotification(notification);
                     },
-                  ),
-                ),
+                    child: GestureDetector(
+                      onTap: () => _markAsRead(notification),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: isUnread ? Colors.blue[50] : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          leading: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: _getColorForType(
+                                notification.tipo,
+                              ).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _getIconForType(notification.tipo),
+                              color: _getColorForType(notification.tipo),
+                              size: 24,
+                            ),
+                          ),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  notification.titulo,
+                                  style: TextStyle(
+                                    fontWeight: isUnread
+                                        ? FontWeight.bold
+                                        : FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              if (isUnread)
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.blue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(
+                                notification.mensaje,
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 14,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                notification.fechaCreacion != null
+                                    ? timeago.format(
+                                        notification.fechaCreacion!,
+                                        locale: 'en',
+                                      )
+                                    : 'Just now',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert),
+                            onSelected: (value) {
+                              if (value == 'mark_read') {
+                                _markAsRead(notification);
+                              } else if (value == 'delete') {
+                                _deleteNotification(notification);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              if (isUnread)
+                                const PopupMenuItem(
+                                  value: 'mark_read',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.done, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Mark as read'),
+                                    ],
+                                  ),
+                                ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      size: 20,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

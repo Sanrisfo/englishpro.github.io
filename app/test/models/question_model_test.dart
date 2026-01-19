@@ -11,18 +11,8 @@ void main() {
       'nivel_dificultad': 'easy',
       'puntaje': 5,
       'opciones': [
-        {
-          'id': 1,
-          'pregunta_id': 10,
-          'texto_opcion': 'A',
-          'es_correcta': false,
-        },
-        {
-          'id': 2,
-          'pregunta_id': 10,
-          'texto_opcion': 'B',
-          'es_correcta': true,
-        },
+        {'id': 1, 'pregunta_id': 10, 'texto_opcion': 'A', 'es_correcta': false},
+        {'id': 2, 'pregunta_id': 10, 'texto_opcion': 'B', 'es_correcta': true},
       ],
     };
 
@@ -34,4 +24,3 @@ void main() {
     expect((out['opciones'] as List).length, 2);
   });
 }
-

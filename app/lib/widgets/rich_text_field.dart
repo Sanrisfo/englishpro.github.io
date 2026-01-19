@@ -34,12 +34,14 @@ class RichTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Si pasaron decoration, úsala, si no, construye una básica
-    final inputDecoration = decoration ?? InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: Colors.grey[100],
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    );
+    final inputDecoration =
+        decoration ??
+        InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: Colors.grey[100],
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,7 +62,8 @@ class RichTextField extends StatelessWidget {
         ),
         CallbackShortcuts(
           bindings: {
-            const SingleActivator(LogicalKeyboardKey.keyB, control: true): _addBold,
+            const SingleActivator(LogicalKeyboardKey.keyB, control: true):
+                _addBold,
           },
           child: TextField(
             controller: controller,

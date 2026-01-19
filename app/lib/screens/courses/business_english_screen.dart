@@ -28,7 +28,10 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       // 1. Find the course ID for 'Business English'
       // We try exact match first, or 'Business' if that fails
@@ -37,15 +40,15 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
           .select('*')
           .eq('nombre_curso', 'Business English')
           .maybeSingle();
-      
+
       if (courseRow == null) {
-         // Fallback try
-         courseRow = await supabase
-          .from('cursos')
-          .select('*')
-          .ilike('nombre_curso', '%Business%') // Loose match if exact fails
-          .limit(1)
-          .maybeSingle();
+        // Fallback try
+        courseRow = await supabase
+            .from('cursos')
+            .select('*')
+            .ilike('nombre_curso', '%Business%') // Loose match if exact fails
+            .limit(1)
+            .maybeSingle();
       }
 
       int? cid;
@@ -58,7 +61,9 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
       }
 
       if (cid == null) {
-        setState(() { _error = 'Business English Course not found'; });
+        setState(() {
+          _error = 'Business English Course not found';
+        });
         return;
       }
       _courseId = cid;
@@ -66,14 +71,23 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
       // 2. Load skills
       final skillsRes = await ApiService.getSkillsByCourse(_courseId!);
       if (skillsRes['success'] != true) {
-        setState(() { _error = skillsRes['message'] ?? 'Could not load skills'; });
+        setState(() {
+          _error = skillsRes['message'] ?? 'Could not load skills';
+        });
         return;
       }
-      setState(() { _skills = skillsRes['skills'] as List<SkillModel>; });
+      setState(() {
+        _skills = skillsRes['skills'] as List<SkillModel>;
+      });
     } catch (e) {
-      setState(() { _error = 'Error: $e'; });
+      setState(() {
+        _error = 'Error: $e';
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -159,9 +173,7 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
       width: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(32),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 28.0),
@@ -179,49 +191,55 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
                     ),
                   )
                 : _error != null
-                    ? _buildErrorView()
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 100.0,
-                                vertical: 0.0,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _themeColor,
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              child: Text(
-                                'Practice skills',
-                                style: GoogleFonts.ptSans(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                ),
-                              ),
+                ? _buildErrorView()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 100.0,
+                            vertical: 0.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _themeColor,
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Text(
+                            'Practice skills',
+                            style: GoogleFonts.ptSans(
+                              color: Colors.white,
+                              fontSize: 20,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          if (_skills.isEmpty)
-                             Center(child: Padding(
-                               padding: const EdgeInsets.all(16.0),
-                               child: Text('No skills found for this course.', style: TextStyle(color: Colors.grey)),
-                             ))
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _skills.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final skill = _skills[index];
-                                return _skillTile(skill, textTheme, index);
-                              },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (_skills.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              'No skills found for this course.',
+                              style: TextStyle(color: Colors.grey),
                             ),
-                          const SizedBox(height: 80),
-                        ],
-                      )
+                          ),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _skills.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final skill = _skills[index];
+                            return _skillTile(skill, textTheme, index);
+                          },
+                        ),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
           ],
         ),
       ),
@@ -280,10 +298,7 @@ class _BusinessEnglishScreenState extends State<BusinessEnglishScreen> {
                     skill.descripcion,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
               ),

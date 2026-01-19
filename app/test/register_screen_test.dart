@@ -35,51 +35,61 @@ void main() {
     await tester.pumpAndSettle();
 
     // Expect validation errors
-    expect(find.text('Please enter your full name'), findsNothing); // name has no validator in current UI
+    expect(
+      find.text('Please enter your full name'),
+      findsNothing,
+    ); // name has no validator in current UI
     expect(find.text('Please enter your email'), findsOneWidget);
   });
 
-  testWidgets('RegisterScreen registers and navigates to HomeScreen for student', (tester) async {
-    final mockAuth = MockSupabaseAuthService();
-    final user = models.User(
-      idUsuario: 1,
-      nombreCompleto: 'John Doe',
-      email: 'john@example.com',
-      idPlan: 1,
-      rol: 'Estudiante',
-    );
-    when(mockAuth.register(
-      nombreCompleto: 'any_nombre_completo',
-      email: 'any_email@example.com',
-      password: 'any_password',
-      profesion: anyNamed('profesion'),
-    )).thenAnswer((_) async => {
+  testWidgets(
+    'RegisterScreen registers and navigates to HomeScreen for student',
+    (tester) async {
+      final mockAuth = MockSupabaseAuthService();
+      final user = models.User(
+        idUsuario: 1,
+        nombreCompleto: 'John Doe',
+        email: 'john@example.com',
+        idPlan: 1,
+        rol: 'Estudiante',
+      );
+      when(
+        mockAuth.register(
+          nombreCompleto: 'any_nombre_completo',
+          email: 'any_email@example.com',
+          password: 'any_password',
+          profesion: anyNamed('profesion'),
+        ),
+      ).thenAnswer(
+        (_) async => {
           'success': true,
           'user': user,
           'session': _FakeSession('token-xyz'),
-        });
+        },
+      );
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
-        child: MaterialApp(
-          home: RegisterScreen(authService: mockAuth),
-          routes: {
-            '/home': (_) => const HomeScreen(),
-          },
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+          child: MaterialApp(
+            home: RegisterScreen(authService: mockAuth),
+            routes: {'/home': (_) => const HomeScreen()},
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'John Doe');
-    await tester.enterText(find.byType(TextFormField).at(1), 'john@example.com');
-    await tester.enterText(find.byType(TextFormField).at(2), 'secret123');
-    await tester.enterText(find.byType(TextFormField).at(3), 'secret123');
+      await tester.enterText(find.byType(TextFormField).at(0), 'John Doe');
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'john@example.com',
+      );
+      await tester.enterText(find.byType(TextFormField).at(2), 'secret123');
+      await tester.enterText(find.byType(TextFormField).at(3), 'secret123');
 
-    await tester.tap(find.text('Sign Up'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign Up'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Your fluency starts here.'), findsOneWidget);
-  });
+      expect(find.text('Your fluency starts here.'), findsOneWidget);
+    },
+  );
 }
-

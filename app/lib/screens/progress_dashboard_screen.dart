@@ -8,7 +8,8 @@ class ProgressDashboardScreen extends StatefulWidget {
   const ProgressDashboardScreen({super.key});
 
   @override
-  State<ProgressDashboardScreen> createState() => _ProgressDashboardScreenState();
+  State<ProgressDashboardScreen> createState() =>
+      _ProgressDashboardScreenState();
 }
 
 class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
@@ -76,46 +77,46 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(errorMessage!, style: const TextStyle(fontSize: 16)),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            isLoading = true;
-                            errorMessage = null;
-                          });
-                          _loadDashboardData();
-                        },
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(errorMessage!, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isLoading = true;
+                        errorMessage = null;
+                      });
+                      _loadDashboardData();
+                    },
+                    child: const Text('Reintentar'),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadDashboardData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildStatsOverview(),
-                        const SizedBox(height: 24),
-                        _buildAccuracyChart(),
-                        const SizedBox(height: 24),
-                        _buildCoursesProgress(),
-                        const SizedBox(height: 24),
-                        _buildPointsChart(),
-                      ],
-                    ),
-                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadDashboardData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStatsOverview(),
+                    const SizedBox(height: 24),
+                    _buildAccuracyChart(),
+                    const SizedBox(height: 24),
+                    _buildCoursesProgress(),
+                    const SizedBox(height: 24),
+                    _buildPointsChart(),
+                  ],
                 ),
+              ),
+            ),
     );
   }
 
@@ -286,10 +287,7 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
         Container(
           width: 16,
           height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
         Text(label),
@@ -329,7 +327,9 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ...userProgress!.map((progress) => _buildCourseProgressItem(progress)),
+            ...userProgress!.map(
+              (progress) => _buildCourseProgressItem(progress),
+            ),
           ],
         ),
       ),
@@ -412,12 +412,7 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
     }
 
     // Nombres de cursos
-    final courseNames = {
-      1: 'TOEFL',
-      2: 'IELTS',
-      3: 'Business',
-      4: 'Action',
-    };
+    final courseNames = {1: 'TOEFL', 2: 'IELTS', 3: 'Business', 4: 'Action'};
 
     return Card(
       elevation: 4,
@@ -489,10 +484,7 @@ class _ProgressDashboardScreenState extends State<ProgressDashboardScreen> {
                       sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                  ),
+                  gridData: FlGridData(show: true, drawVerticalLine: false),
                   borderData: FlBorderData(show: false),
                   barGroups: _buildBarGroups(),
                 ),

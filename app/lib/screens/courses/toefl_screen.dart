@@ -25,29 +25,44 @@ class _ToeflScreenState extends State<ToeflScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final courseRow = await supabase
           .from('cursos')
           .select('*')
           .eq('nombre_curso', 'TOEFL')
           .maybeSingle();
-      if (courseRow == null || (courseRow['id'] == null && courseRow['id_curso'] == null)) {
-        setState(() { _error = 'TOEFL Course not found'; });
+      if (courseRow == null ||
+          (courseRow['id'] == null && courseRow['id_curso'] == null)) {
+        setState(() {
+          _error = 'TOEFL Course not found';
+        });
         return;
       }
       _courseId = (courseRow['id'] ?? courseRow['id_curso'] as num).toInt();
 
       final skillsRes = await ApiService.getSkillsByCourse(_courseId!);
       if (skillsRes['success'] != true) {
-        setState(() { _error = skillsRes['message'] ?? 'Could not load skills'; });
+        setState(() {
+          _error = skillsRes['message'] ?? 'Could not load skills';
+        });
         return;
       }
-      setState(() { _skills = skillsRes['skills'] as List<SkillModel>; });
+      setState(() {
+        _skills = skillsRes['skills'] as List<SkillModel>;
+      });
     } catch (e) {
-      setState(() { _error = 'Error: $e'; });
+      setState(() {
+        _error = 'Error: $e';
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -89,7 +104,6 @@ class _ToeflScreenState extends State<ToeflScreen> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-
               Positioned(
                 right: -20,
                 bottom: -20,
@@ -116,9 +130,9 @@ class _ToeflScreenState extends State<ToeflScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'The TOEFL test measures your academic English skills '
-                        'for university. Here you ll find everything you need '
-                        'to prepare—practice questions, audio drills, and writing '
-                        'guides—for all four sections.',
+                    'for university. Here you ll find everything you need '
+                    'to prepare—practice questions, audio drills, and writing '
+                    'guides—for all four sections.',
                     style: GoogleFonts.ptSans(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 15,
@@ -133,7 +147,6 @@ class _ToeflScreenState extends State<ToeflScreen> {
     );
   }
 
-
   //Contenido
   Widget _buildContentPanel(TextTheme textTheme) {
     return Container(
@@ -142,9 +155,7 @@ class _ToeflScreenState extends State<ToeflScreen> {
       height: double.infinity,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(32),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
 
       child: SingleChildScrollView(
@@ -154,64 +165,64 @@ class _ToeflScreenState extends State<ToeflScreen> {
           children: [
             _loading
                 ? Padding(
-              padding: const EdgeInsets.only(top: 48.0),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: const Color(0xFFD9232A),
-                  strokeWidth: 5.0,
-                ),
-              ),
-            )
+                    padding: const EdgeInsets.only(top: 48.0),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: const Color(0xFFD9232A),
+                        strokeWidth: 5.0,
+                      ),
+                    ),
+                  )
                 : _error != null
                 ? _buildErrorView()
                 : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 100.0,
-                      vertical: 0.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD9232A),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: Text(
-                      'Practice skills',
-                      style: GoogleFonts.ptSans(
-                        color: Colors.white,
-                        fontSize: 20,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 100.0,
+                            vertical: 0.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD9232A),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Text(
+                            'Practice skills',
+                            style: GoogleFonts.ptSans(
+                              color: Colors.white,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _skills.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final skill = _skills[index];
-                    return _skillTile(skill, textTheme, index);
-                  },
-                ),
-                const SizedBox(height: 80),
-              ],
-            )
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _skills.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final skill = _skills[index];
+                          return _skillTile(skill, textTheme, index);
+                        },
+                      ),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
           ],
         ),
       ),
     );
   }
 
-
   Widget _skillTile(SkillModel skill, TextTheme textTheme, int index) {
-    final color = (index % 2 == 0) ? const Color(0xFFD9232A) : const Color(
-        0xFFD9232A);
+    final color = (index % 2 == 0)
+        ? const Color(0xFFD9232A)
+        : const Color(0xFFD9232A);
     final icon = _skillIcon(skill.nombre);
 
     return InkWell(
@@ -265,10 +276,7 @@ class _ToeflScreenState extends State<ToeflScreen> {
                     skill.descripcion,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
               ),

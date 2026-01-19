@@ -69,11 +69,7 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.light,
           ),
           useMaterial3: true,
-          textTheme: GoogleFonts.ptSansTextTheme(
-            Theme
-                .of(context)
-                .textTheme,
-          ),
+          textTheme: GoogleFonts.ptSansTextTheme(Theme.of(context).textTheme),
         ),
         home: const SplashScreen(),
       ),

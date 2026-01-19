@@ -45,4 +45,3 @@ void main() {
     expect(find.text('Quick actions'), findsOneWidget);
   });
 }
-

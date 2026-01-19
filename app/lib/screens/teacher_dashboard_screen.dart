@@ -101,7 +101,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         return;
       }
 
-      final teacherData = await SupabaseTeacherService.getTeacherByUserId(userId);
+      final teacherData = await SupabaseTeacherService.getTeacherByUserId(
+        userId,
+      );
 
       if (teacherData != null) {
         _teacherData = teacherData;
@@ -110,13 +112,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _teacherStats = await SupabaseTeacherService.getTeacherStats(teacherId);
         _pendingFeedbacks = await SupabaseTeacherService.getPendingFeedbacks();
       } else {
-        _errorMessage = 'No se encontró información de docente para este usuario. '
+        _errorMessage =
+            'No se encontró información de docente para este usuario. '
             'Por favor contacte al administrador para que lo registre como docente.';
       }
     } catch (e) {
       _errorMessage = 'Error al cargar datos: $e';
     } finally {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -138,7 +141,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -152,32 +155,32 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       body: SafeArea(
         child: _isLoading
             ? Center(
-          child: CircularProgressIndicator(
-            color: const Color(0xFFD9232A),
-            strokeWidth: 5.0,
-          ),
-        )
+                child: CircularProgressIndicator(
+                  color: const Color(0xFFD9232A),
+                  strokeWidth: 5.0,
+                ),
+              )
             : _errorMessage != null
             ? _buildErrorView()
             : RefreshIndicator(
-          onRefresh: _loadTeacherData,
-          color: const Color(0xFFD9232A),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTeacherHeader(context, textTheme),
-                const SizedBox(height: 32),
-                _buildModulesSection(context, textTheme),
-                const SizedBox(height: 32),
-                _buildStatsSection(textTheme),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-        ),
+                onRefresh: _loadTeacherData,
+                color: const Color(0xFFD9232A),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildTeacherHeader(context, textTheme),
+                      const SizedBox(height: 32),
+                      _buildModulesSection(context, textTheme),
+                      const SizedBox(height: 32),
+                      _buildStatsSection(textTheme),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -194,9 +197,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             children: [
               Text(
                 "¡Bienvenido!",
-                style: textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                style: textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
               ),
               const SizedBox(height: 4),
               Text(
@@ -228,7 +229,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   children: const [
                     Icon(Icons.logout, color: Color(0xFFD9232A)),
                     SizedBox(width: 8),
-                    Text("Cerrar Sesión", style: TextStyle(color: Color(0xFFD9232A))),
+                    Text(
+                      "Cerrar Sesión",
+                      style: TextStyle(color: Color(0xFFD9232A)),
+                    ),
                   ],
                 ),
               ),
@@ -262,10 +266,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
             child: Text(
               'Módulos de Control',
-              style: GoogleFonts.ptSans(
-                color: Colors.white,
-                fontSize: 20,
-              ),
+              style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20),
             ),
           ),
         ),
@@ -276,7 +277,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           icon: Icons.dashboard_customize_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const TeacherCoursesScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TeacherCoursesScreen(),
+              ),
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -286,7 +292,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           icon: Icons.remove_red_eye_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const PendingReviewsScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PendingReviewsScreen(),
+              ),
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -296,7 +307,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           icon: Icons.group_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentRosterScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StudentRosterScreen(),
+              ),
+            );
           },
         ),
       ],
@@ -310,7 +326,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     final int total = _teacherStats!['total_calificaciones'] ?? 0;
     final int calificadas = _teacherStats!['calificadas'] ?? 0;
     final int pendientes = _teacherStats!['pendientes'] ?? 0;
-    final double promedio = (_teacherStats!['promedio_puntuacion'] ?? 0.0).toDouble();
+    final double promedio = (_teacherStats!['promedio_puntuacion'] ?? 0.0)
+        .toDouble();
 
     final double calificadasPct = (total == 0) ? 0.0 : calificadas / total;
     final double pendientesPct = (total == 0) ? 0.0 : pendientes / total;
@@ -331,10 +348,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
             child: Text(
               'Estadísticas',
-              style: GoogleFonts.ptSans(
-                color: Colors.white,
-                fontSize: 20,
-              ),
+              style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20),
             ),
           ),
         ),

@@ -27,7 +27,8 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   int _currentQuestionIndex = 0;
-  Map<int, dynamic> _answers = {}; // questionId -> answer (optionId or audioUrl)
+  Map<int, dynamic> _answers =
+      {}; // questionId -> answer (optionId or audioUrl)
   int? _selectedOptionId;
   String? _audioUrl; // Firebase URL for audio responses
   Timer? _timer;
@@ -221,282 +222,293 @@ class _QuizScreenState extends State<QuizScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
-        children: [
-          // Progress bar
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-            minHeight: 8,
-          ),
+              children: [
+                // Progress bar
+                LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                  minHeight: 8,
+                ),
 
-          // Timer (if applicable)
-          if (question.hasTimeLimit)
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: _getTimerColor().withOpacity(0.1),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(_getTimerColor() == Colors.red ? Icons.warning : Icons.timer,
-                      color: _getTimerColor()),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Tiempo restante: $_secondsRemaining segundos',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: _getTimerColor(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Question counter
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Pregunta ${_currentQuestionIndex + 1} de ${widget.questions.length}',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ),
-
-          // Question content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Question text
+                // Timer (if applicable)
+                if (question.hasTimeLimit)
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      question.textoPregunta,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: _getTimerColor().withOpacity(0.1),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _getTimerColor() == Colors.red
+                              ? Icons.warning
+                              : Icons.timer,
+                          color: _getTimerColor(),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Tiempo restante: $_secondsRemaining segundos',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _getTimerColor(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                // Question counter
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Pregunta ${_currentQuestionIndex + 1} de ${widget.questions.length}',
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
 
-                  // Multimedia content (if any)
-                  if (question.imagenUrl != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          question.imagenUrl!,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.image, size: 100),
+                // Question content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Question text
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            question.textoPregunta,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
 
-                  if (question.audioUrl != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Play audio
-                        },
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('Reproducir Audio'),
-                      ),
-                    ),
+                        const SizedBox(height: 24),
 
-                  // Answer options (for multiple choice)
-                  if (question.isMultipleChoice && question.opciones != null)
-                    ...question.opciones!.map((option) {
-                      final isSelected = _selectedOptionId == option.id;
-                      final isCorrect = option.esCorrecta;
-                      final showCorrect = _isAnswerSubmitted && isCorrect;
-                      final showIncorrect =
-                          _isAnswerSubmitted && isSelected && !isCorrect;
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: InkWell(
-                          onTap: _isAnswerSubmitted
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _selectedOptionId = option.id;
-                                  });
-                                },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: showCorrect
-                                  ? Colors.green.withOpacity(0.2)
-                                  : showIncorrect
-                                      ? Colors.red.withOpacity(0.2)
-                                      : isSelected
-                                          ? Colors.blue.withOpacity(0.2)
-                                          : Colors.grey.withOpacity(0.1),
+                        // Multimedia content (if any)
+                        if (question.imagenUrl != null)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: showCorrect
-                                    ? Colors.green
-                                    : showIncorrect
-                                        ? Colors.red
-                                        : isSelected
-                                            ? Colors.blue
-                                            : Colors.grey,
-                                width: 2,
+                              child: Image.network(
+                                question.imagenUrl!,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.image, size: 100),
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  showCorrect
-                                      ? Icons.check_circle
-                                      : showIncorrect
-                                          ? Icons.cancel
-                                          : isSelected
-                                              ? Icons.radio_button_checked
-                                              : Icons.radio_button_unchecked,
-                                  color: showCorrect
-                                      ? Colors.green
-                                      : showIncorrect
+                          ),
+
+                        if (question.audioUrl != null)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // TODO: Play audio
+                              },
+                              icon: const Icon(Icons.play_arrow),
+                              label: const Text('Reproducir Audio'),
+                            ),
+                          ),
+
+                        // Answer options (for multiple choice)
+                        if (question.isMultipleChoice &&
+                            question.opciones != null)
+                          ...question.opciones!.map((option) {
+                            final isSelected = _selectedOptionId == option.id;
+                            final isCorrect = option.esCorrecta;
+                            final showCorrect = _isAnswerSubmitted && isCorrect;
+                            final showIncorrect =
+                                _isAnswerSubmitted && isSelected && !isCorrect;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: InkWell(
+                                onTap: _isAnswerSubmitted
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _selectedOptionId = option.id;
+                                        });
+                                      },
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: showCorrect
+                                        ? Colors.green.withOpacity(0.2)
+                                        : showIncorrect
+                                        ? Colors.red.withOpacity(0.2)
+                                        : isSelected
+                                        ? Colors.blue.withOpacity(0.2)
+                                        : Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: showCorrect
+                                          ? Colors.green
+                                          : showIncorrect
                                           ? Colors.red
                                           : isSelected
-                                              ? Colors.blue
-                                              : Colors.grey,
+                                          ? Colors.blue
+                                          : Colors.grey,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        showCorrect
+                                            ? Icons.check_circle
+                                            : showIncorrect
+                                            ? Icons.cancel
+                                            : isSelected
+                                            ? Icons.radio_button_checked
+                                            : Icons.radio_button_unchecked,
+                                        color: showCorrect
+                                            ? Colors.green
+                                            : showIncorrect
+                                            ? Colors.red
+                                            : isSelected
+                                            ? Colors.blue
+                                            : Colors.grey,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          option.textoOpcion,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+
+                        // Feedback text after answer submission (general)
+                        if (_isAnswerSubmitted &&
+                            (question.explicacionGeneral != null &&
+                                question.explicacionGeneral!.trim().isNotEmpty))
+                          Container(
+                            margin: const EdgeInsets.only(top: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.amber.shade700),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.amber.shade700,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    option.textoOpcion,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
+                                    question.explicacionGeneral!,
+                                    style: const TextStyle(fontSize: 14),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
 
-                  // Feedback text after answer submission (general)
-                  if (_isAnswerSubmitted &&
-                      (question.explicacionGeneral != null && question.explicacionGeneral!.trim().isNotEmpty))
-                    Container(
-                      margin: const EdgeInsets.only(top: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.shade700),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.amber.shade700),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              question.explicacionGeneral!,
-                              style: const TextStyle(fontSize: 14),
+                        // Open text answer
+                        if (question.isOpenText)
+                          TextField(
+                            maxLines: 5,
+                            decoration: const InputDecoration(
+                              hintText: 'Escribe tu respuesta aquí...',
+                              border: OutlineInputBorder(),
                             ),
+                            enabled: !_isAnswerSubmitted,
                           ),
-                        ],
+
+                        // Audio response
+                        if (question.isAudioResponse)
+                          AudioRecorderWidget(
+                            userId: widget.userId.toString(),
+                            maxDurationSeconds: question.tiempoLimiteSegundos,
+                            autoUpload: true,
+                            onRecordingComplete: (path) {
+                              // Local path saved
+                            },
+                            onUploadComplete: (firebaseUrl) {
+                              setState(() {
+                                _audioUrl = firebaseUrl;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Navigation buttons
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        blurRadius: 5,
+                        offset: const Offset(0, -2),
                       ),
-                    ),
-
-                  // Open text answer
-                  if (question.isOpenText)
-                    TextField(
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        hintText: 'Escribe tu respuesta aquí...',
-                        border: OutlineInputBorder(),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed:
+                            _currentQuestionIndex > 0 && !_isAnswerSubmitted
+                            ? _previousQuestion
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                        ),
+                        child: const Text('Anterior'),
                       ),
-                      enabled: !_isAnswerSubmitted,
-                    ),
-
-                  // Audio response
-                  if (question.isAudioResponse)
-                    AudioRecorderWidget(
-                      userId: widget.userId.toString(),
-                      maxDurationSeconds: question.tiempoLimiteSegundos,
-                      autoUpload: true,
-                      onRecordingComplete: (path) {
-                        // Local path saved
-                      },
-                      onUploadComplete: (firebaseUrl) {
-                        setState(() {
-                          _audioUrl = firebaseUrl;
-                        });
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-
-          // Navigation buttons
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  blurRadius: 5,
-                  offset: const Offset(0, -2),
+                      if (!_isAnswerSubmitted)
+                        ElevatedButton(
+                          onPressed:
+                              _selectedOptionId != null ||
+                                  question.isOpenText ||
+                                  (question.isAudioResponse &&
+                                      _audioUrl != null)
+                              ? _submitAnswer
+                              : null,
+                          child: const Text('Enviar'),
+                        )
+                      else
+                        ElevatedButton(
+                          onPressed: _nextQuestion,
+                          child: Text(
+                            _currentQuestionIndex < widget.questions.length - 1
+                                ? 'Siguiente'
+                                : 'Finalizar',
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed:
-                      _currentQuestionIndex > 0 && !_isAnswerSubmitted
-                          ? _previousQuestion
-                          : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                  ),
-                  child: const Text('Anterior'),
-                ),
-                if (!_isAnswerSubmitted)
-                  ElevatedButton(
-                    onPressed: _selectedOptionId != null ||
-                            question.isOpenText ||
-                            (question.isAudioResponse && _audioUrl != null)
-                        ? _submitAnswer
-                        : null,
-                    child: const Text('Enviar'),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: _nextQuestion,
-                    child: Text(
-                      _currentQuestionIndex < widget.questions.length - 1
-                          ? 'Siguiente'
-                          : 'Finalizar',
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -99,10 +99,7 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
         final path =
             '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-        await _audioRecorder.start(
-          const RecordConfig(),
-          path: path,
-        );
+        await _audioRecorder.start(const RecordConfig(), path: path);
 
         setState(() {
           _isRecording = true;
@@ -121,9 +118,9 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
       }
     } catch (e) {
       print('Error al iniciar grabación: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al iniciar grabación: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al iniciar grabación: $e')));
     }
   }
 
@@ -275,9 +272,9 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -377,22 +374,22 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
               _isUploading
                   ? 'Subiendo audio...'
                   : _isRecording
-                      ? (_isPaused ? 'Grabación pausada' : 'Grabando...')
-                      : _hasRecording
-                          ? (_firebaseUrl != null
-                              ? 'Audio subido ✓'
-                              : 'Grabación completada')
-                          : 'Listo para grabar',
+                  ? (_isPaused ? 'Grabación pausada' : 'Grabando...')
+                  : _hasRecording
+                  ? (_firebaseUrl != null
+                        ? 'Audio subido ✓'
+                        : 'Grabación completada')
+                  : 'Listo para grabar',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: _isUploading
                     ? Colors.orange
                     : _isRecording
-                        ? Colors.red
-                        : _firebaseUrl != null
-                            ? Colors.green
-                            : Colors.grey[700],
+                    ? Colors.red
+                    : _firebaseUrl != null
+                    ? Colors.green
+                    : Colors.grey[700],
               ),
             ),
             const SizedBox(height: 8),
@@ -440,8 +437,10 @@ class _AudioRecorderWidgetState extends State<AudioRecorderWidget> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
                 ),
               ),
 

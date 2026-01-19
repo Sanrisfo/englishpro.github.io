@@ -29,7 +29,8 @@ class TeacherActivitiesScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<TeacherActivitiesScreen> createState() => _TeacherActivitiesScreenState();
+  State<TeacherActivitiesScreen> createState() =>
+      _TeacherActivitiesScreenState();
 }
 
 class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
@@ -54,15 +55,20 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
     try {
       var query = supabase
           .from('cuestionarios')
-          .select('id_cuestionario, titulo, descripcion, tiempo_limite_minutos, tipo_evaluacion, activo');
+          .select(
+            'id_cuestionario, titulo, descripcion, tiempo_limite_minutos, tipo_evaluacion, activo',
+          );
       if (widget.activityTypeId != null) {
         query = query.eq('id_tipo_actividad', widget.activityTypeId!);
       } else {
         query = query.eq('id_habilidad', widget.skillId);
       }
-      final response = await query.eq('activo', true).order('id_cuestionario', ascending: true);
-      setState(() => _quizzes = List<Map<String, dynamic>>.from(response as List));
-
+      final response = await query
+          .eq('activo', true)
+          .order('id_cuestionario', ascending: true);
+      setState(
+        () => _quizzes = List<Map<String, dynamic>>.from(response as List),
+      );
     } catch (e) {
       setState(() => _errorMessage = 'Error loading activities: $e');
     } finally {
@@ -84,37 +90,50 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
 
   ButtonStyle _dialogButtonStyle({bool isDestructive = false}) {
     return ElevatedButton.styleFrom(
-      backgroundColor: isDestructive ? const Color(0xFFD9232A) : _courseColor.withOpacity(0.1),
+      backgroundColor: isDestructive
+          ? const Color(0xFFD9232A)
+          : _courseColor.withOpacity(0.1),
       foregroundColor: isDestructive ? Colors.white : _courseColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 0,
-
     );
   }
 
   Future<void> _createQuizDialog({Map<String, dynamic>? quizToEdit}) async {
     final isEdit = quizToEdit != null;
-    final titleCtrl = TextEditingController(text: isEdit ? quizToEdit!['titulo'] : '');
-    final descCtrl = TextEditingController(text: isEdit ? quizToEdit!['descripcion'] : '');
-    final timeCtrl = TextEditingController(text: isEdit ? (quizToEdit!['tiempo_limite_minutos']?.toString() ?? '') : '');
-    String tipo = isEdit ? (quizToEdit!['tipo_evaluacion'] ?? 'Practica') : 'Practica';
+    final titleCtrl = TextEditingController(
+      text: isEdit ? quizToEdit!['titulo'] : '',
+    );
+    final descCtrl = TextEditingController(
+      text: isEdit ? quizToEdit!['descripcion'] : '',
+    );
+    final timeCtrl = TextEditingController(
+      text: isEdit
+          ? (quizToEdit!['tiempo_limite_minutos']?.toString() ?? '')
+          : '',
+    );
+    String tipo = isEdit
+        ? (quizToEdit!['tipo_evaluacion'] ?? 'Practica')
+        : 'Practica';
 
     // Material logic (Editing material is complex, for MVP we might only allow creating new material or keep existing)
-    // For now, in Edit mode, we won't show the "Add material" toggle to avoid complexity if one already exists, 
-    // or we leave it as "Add NEW material". 
+    // For now, in Edit mode, we won't show the "Add material" toggle to avoid complexity if one already exists,
+    // or we leave it as "Add NEW material".
     // Simplifying: Hide material section in Edit mode for this iteration OR allow adding new.
     // Let's hide it for now to prevent confusion/data loss, as requested "Edit Activity" usually means metadata.
     bool addMaterial = false;
     final materialTitleCtrl = TextEditingController();
     final materialTextCtrl = TextEditingController();
-    String materialType = 'pdf'; 
+    String materialType = 'pdf';
     File? selectedFile;
 
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             isEdit ? 'Edit Activity' : 'Create Activity',
             style: GoogleFonts.ptSans(color: _courseColor, fontSize: 20),
@@ -138,15 +157,23 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                 TextField(
                   controller: timeCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: _dialogTextFieldDecoration('Time limit (minutes)'),
+                  decoration: _dialogTextFieldDecoration(
+                    'Time limit (minutes)',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: tipo,
                   decoration: _dialogTextFieldDecoration('Evaluation type'),
                   items: const [
-                    DropdownMenuItem(value: 'Practica', child: Text('Practice')),
-                    DropdownMenuItem(value: 'Simulacro', child: Text('Mock Test')),
+                    DropdownMenuItem(
+                      value: 'Practica',
+                      child: Text('Practice'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Simulacro',
+                      child: Text('Mock Test'),
+                    ),
                     DropdownMenuItem(value: 'Examen', child: Text('Exam')),
                   ],
                   onChanged: (v) => tipo = v ?? 'Practica',
@@ -177,7 +204,8 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                         DropdownMenuItem(value: 'image', child: Text('Image')),
                         DropdownMenuItem(value: 'audio', child: Text('Audio')),
                       ],
-                      onChanged: (v) => setDialogState(() => materialType = v ?? 'pdf'),
+                      onChanged: (v) =>
+                          setDialogState(() => materialType = v ?? 'pdf'),
                     ),
                     const SizedBox(height: 8),
                     if (materialType == 'text')
@@ -188,7 +216,9 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                             controller: materialTextCtrl,
                             label: 'Text content (Supports Markdown)',
                             maxLines: 6,
-                            decoration: _dialogTextFieldDecoration('Text content (Supports Markdown)'),
+                            decoration: _dialogTextFieldDecoration(
+                              'Text content (Supports Markdown)',
+                            ),
                           ),
                         ],
                       )
@@ -197,7 +227,10 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              selectedFile?.path.split(Platform.pathSeparator).last ?? 'No file selected',
+                              selectedFile?.path
+                                      .split(Platform.pathSeparator)
+                                      .last ??
+                                  'No file selected',
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: Colors.grey[600]),
                             ),
@@ -211,12 +244,18 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                                   : materialType == 'image'
                                   ? ['png', 'jpg', 'jpeg']
                                   : ['mp3', 'm4a', 'wav'];
-                              final result = await FilePicker.platform.pickFiles(
-                                type: FileType.custom,
-                                allowedExtensions: extensions,
-                              );
-                              if (result != null && result.files.single.path != null) {
-                                setDialogState(() => selectedFile = File(result.files.single.path!));
+                              final result = await FilePicker.platform
+                                  .pickFiles(
+                                    type: FileType.custom,
+                                    allowedExtensions: extensions,
+                                  );
+                              if (result != null &&
+                                  result.files.single.path != null) {
+                                setDialogState(
+                                  () => selectedFile = File(
+                                    result.files.single.path!,
+                                  ),
+                                );
                               }
                             },
                             child: const Icon(Icons.attach_file),
@@ -229,14 +268,19 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               style: _dialogButtonStyle(),
               onPressed: () async {
                 try {
                   final titulo = titleCtrl.text.trim();
                   if (titulo.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Title is required')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Title is required')),
+                    );
                     return;
                   }
                   final tiempo = int.tryParse(timeCtrl.text.trim());
@@ -248,17 +292,20 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                     'tipo_evaluacion': tipo,
                     'activo': true,
                   };
-                  
+
                   if (isEdit) {
-                     // UPDATE
-                     await supabase.from('cuestionarios')
+                    // UPDATE
+                    await supabase
+                        .from('cuestionarios')
                         .update(payload)
                         .eq('id_cuestionario', quizToEdit!['id_cuestionario']);
-                     
-                     if (!mounted) return;
-                     Navigator.pop(context);
-                     await _load();
-                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity updated')));
+
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    await _load();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Activity updated')),
+                    );
                   } else {
                     // INSERT
                     if (widget.activityTypeId != null) {
@@ -266,23 +313,33 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                     } else {
                       payload['id_habilidad'] = widget.skillId;
                     }
-                    if (descCtrl.text.trim().isEmpty) payload.remove('descripcion'); // clean if empty for insert
+                    if (descCtrl.text.trim().isEmpty)
+                      payload.remove(
+                        'descripcion',
+                      ); // clean if empty for insert
 
                     final insertedQuiz = await supabase
                         .from('cuestionarios')
                         .insert(payload)
                         .select('id_cuestionario')
                         .single();
-                    final insertedQuizId = insertedQuiz['id_cuestionario'] as int;
+                    final insertedQuizId =
+                        insertedQuiz['id_cuestionario'] as int;
 
                     if (addMaterial) {
-                      final mTitle = (materialTitleCtrl.text.trim().isEmpty) ? titulo : materialTitleCtrl.text.trim();
+                      final mTitle = (materialTitleCtrl.text.trim().isEmpty)
+                          ? titulo
+                          : materialTitleCtrl.text.trim();
                       String? publicUrl;
                       String? contenidoTexto;
                       if (materialType == 'text') {
                         contenidoTexto = materialTextCtrl.text.trim();
                         if (contenidoTexto.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text content is required')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Text content is required'),
+                            ),
+                          );
                         } else {
                           await ApiService.createMaterial(
                             habilidadId: widget.skillId,
@@ -296,24 +353,47 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                         }
                       } else {
                         if (selectedFile == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a file for the material')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Please select a file for the material',
+                              ),
+                            ),
+                          );
                         } else {
                           final storage = SupabaseStorageService();
-                          final fileName = '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split(Platform.pathSeparator).last}';
+                          final fileName =
+                              '${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split(Platform.pathSeparator).last}';
                           try {
                             if (materialType == 'pdf') {
-                              final r = await storage.uploadPDF(pdfFile: selectedFile!, fileName: fileName);
-                              if (r['success'] == true) publicUrl = r['url'] as String;
+                              final r = await storage.uploadPDF(
+                                pdfFile: selectedFile!,
+                                fileName: fileName,
+                              );
+                              if (r['success'] == true)
+                                publicUrl = r['url'] as String;
                             } else if (materialType == 'image') {
-                              final r = await storage.uploadImage(imageFile: selectedFile!, fileName: fileName);
-                              if (r['success'] == true) publicUrl = r['url'] as String;
+                              final r = await storage.uploadImage(
+                                imageFile: selectedFile!,
+                                fileName: fileName,
+                              );
+                              if (r['success'] == true)
+                                publicUrl = r['url'] as String;
                             } else if (materialType == 'audio') {
                               final path = 'materials/$fileName';
-                              await supabase.storage.from('audios').upload(path, selectedFile!);
-                              publicUrl = supabase.storage.from('audios').getPublicUrl(path);
+                              await supabase.storage
+                                  .from('audios')
+                                  .upload(path, selectedFile!);
+                              publicUrl = supabase.storage
+                                  .from('audios')
+                                  .getPublicUrl(path);
                             }
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error uploading material: $e')));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error uploading material: $e'),
+                              ),
+                            );
                           }
                           if (publicUrl != null) {
                             await ApiService.createMaterial(
@@ -333,10 +413,14 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                     if (!mounted) return;
                     Navigator.pop(context);
                     await _load();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity created')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Activity created')),
+                    );
                   }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               },
               child: Text(isEdit ? 'Save' : 'Create'),
@@ -355,7 +439,10 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
         title: const Text('Confirm Deletion'),
         content: Text('Delete "$title"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: _dialogButtonStyle(isDestructive: true),
@@ -369,16 +456,19 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
         await supabase.from('cuestionarios').delete().eq('id_cuestionario', id);
         await _load();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity deleted')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Activity deleted')));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -415,7 +505,9 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                     if (created == true) {
                       await _load();
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Activity created')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Activity created')),
+                        );
                       }
                     }
                   },
@@ -444,69 +536,77 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       // --- Body Rediseñado ---
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5.0,
+                ),
+              )
             : _errorMessage != null
             ? Center(child: Text(_errorMessage!))
             : _quizzes.isEmpty
             ? const Center(child: Text('No activities found yet'))
             : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Encabezado Estándar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
-                      decoration: BoxDecoration(
-                        color: _courseColor,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Text(
-                        headerTitle, // Título dinámico
-                        style: GoogleFonts.ptSans(
-                          color: Colors.white,
-                          fontSize: 20,
+                  // 1. Encabezado Estándar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40.0,
+                              vertical: 0.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _courseColor,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Text(
+                              headerTitle, // Título dinámico
+                              style: GoogleFonts.ptSans(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          breadcrumb, // Migas de pan dinámicas
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    breadcrumb, // Migas de pan dinámicas
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                  // 2. Lista Estándar (envuelta en Expanded)
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _load,
+                      color: _courseColor,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        itemCount: _quizzes.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final q = _quizzes[index];
+                          return _buildActivityTile(q);
+                        },
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-            ),
-            // 2. Lista Estándar (envuelta en Expanded)
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                color: _courseColor,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  itemCount: _quizzes.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final q = _quizzes[index];
-                    return _buildActivityTile(q);
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -549,7 +649,11 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                 color: _courseColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.assignment_outlined, color: _courseColor, size: 28),
+              child: Icon(
+                Icons.assignment_outlined,
+                color: _courseColor,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
 
@@ -569,11 +673,9 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
                   const SizedBox(height: 4),
                   // Subtítulos (Tipo y Tiempo)
                   Text(
-                    "Type: $tipo" + (minutos != null ? "  •  $minutos min" : ""),
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    "Type: $tipo" +
+                        (minutos != null ? "  •  $minutos min" : ""),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                   if (desc.isNotEmpty)
                     Padding(
@@ -609,7 +711,6 @@ class _TeacherActivitiesScreenState extends State<TeacherActivitiesScreen> {
       ),
     );
   }
-
 
   Color _getCourseColor(String courseName) {
     String lower = courseName.toLowerCase();

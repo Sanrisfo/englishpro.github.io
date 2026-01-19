@@ -56,13 +56,20 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
   /// Actualiza el estado para reflejar el proceso de carga y maneja
   /// los posibles errores durante la obtención de datos.
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final res = await ApiService.getActivityTypesBySkill(widget.skillId);
       if (res['success'] == true) {
         final items = res['types'] as List<dynamic>;
         _types = items
-            .map((e) => e is Map<String, dynamic> ? e : (e as dynamic).toJson() as Map<String, dynamic>)
+            .map(
+              (e) => e is Map<String, dynamic>
+                  ? e
+                  : (e as dynamic).toJson() as Map<String, dynamic>,
+            )
             .toList();
       } else {
         _error = res['message'] ?? 'No se encontraron tipos de actividad';
@@ -70,7 +77,10 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
     } catch (e) {
       _error = 'Error: $e';
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -85,7 +95,8 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final breadcrumb = "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos";
+    final breadcrumb =
+        "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -98,32 +109,42 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: _loading
-            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5.0,
+                ),
+              )
             : _error != null
-                ? Center(child: Text(_error!))
-                : _types.isEmpty
-                    ? const Center(child: Text('No se encontraron tipos de actividad'))
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(breadcrumb),
-                          Expanded(
-                            child: RefreshIndicator(
-                              onRefresh: _load,
-                              color: _courseColor,
-                              child: ListView.separated(
-                                padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 100),
-                                itemCount: _types.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final t = _types[index];
-                                  return _buildTypeTile(t);
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
+            ? Center(child: Text(_error!))
+            : _types.isEmpty
+            ? const Center(child: Text('No se encontraron tipos de actividad'))
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(breadcrumb),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _load,
+                      color: _courseColor,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          top: 0,
+                          bottom: 100,
+                        ),
+                        itemCount: _types.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final t = _types[index];
+                          return _buildTypeTile(t);
+                        },
                       ),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -147,17 +168,17 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40.0,
+                  vertical: 0.0,
+                ),
                 decoration: BoxDecoration(
                   color: _courseColor,
                   borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: Text(
                   widget.skillName,
-                  style: GoogleFonts.ptSans(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
+                  style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -167,10 +188,7 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
           const SizedBox(height: 16),
           Text(
             breadcrumb,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -217,7 +235,11 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
                 color: _courseColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.category_rounded, color: _courseColor, size: 28),
+              child: Icon(
+                Icons.category_rounded,
+                color: _courseColor,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -239,10 +261,7 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
                         desc,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ),
                 ],

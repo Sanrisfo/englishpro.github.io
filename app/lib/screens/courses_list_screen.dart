@@ -68,43 +68,43 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadCourses,
-                        child: const Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                    textAlign: TextAlign.center,
                   ),
-                )
-              : _courses.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No courses available',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadCourses,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _courses.length,
-                        itemBuilder: (context, index) {
-                          final course = _courses[index];
-                          return _buildCourseCard(course);
-                        },
-                      ),
-                    ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadCourses,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : _courses.isEmpty
+          ? const Center(
+              child: Text(
+                'No courses available',
+                style: TextStyle(fontSize: 18),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadCourses,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _courses.length,
+                itemBuilder: (context, index) {
+                  final course = _courses[index];
+                  return _buildCourseCard(course);
+                },
+              ),
+            ),
     );
   }
 
@@ -115,9 +115,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           // Navigate to course details or skills screen
@@ -179,10 +177,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                 const SizedBox(height: 8),
                 Text(
                   course.descripcion,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.white),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -291,10 +286,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     final color = _hexToColor(widget.course.colorHex);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.course.nombre),
-        backgroundColor: color,
-      ),
+      appBar: AppBar(title: Text(widget.course.nombre), backgroundColor: color),
       body: Column(
         children: [
           // Course Header
@@ -322,10 +314,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   widget.course.descripcion,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ],
             ),
@@ -336,42 +325,47 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline,
-                                size: 64, color: Colors.red),
-                            const SizedBox(height: 16),
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                  color: Colors.red, fontSize: 16),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadSkills,
-                              child: const Text('Retry'),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
                         ),
-                      )
-                    : _skills.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No skills available for this course',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: _skills.length,
-                            itemBuilder: (context, index) {
-                              final skill = _skills[index];
-                              return _buildSkillCard(skill, color);
-                            },
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 16,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadSkills,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                : _skills.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No skills available for this course',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _skills.length,
+                    itemBuilder: (context, index) {
+                      final skill = _skills[index];
+                      return _buildSkillCard(skill, color);
+                    },
+                  ),
           ),
         ],
       ),
@@ -382,23 +376,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: courseColor.withOpacity(0.2),
-          child: Icon(
-            _getSkillIcon(skill.nombre),
-            color: courseColor,
-          ),
+          child: Icon(_getSkillIcon(skill.nombre), color: courseColor),
         ),
         title: Text(
           skill.nombre,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
           skill.descripcion,

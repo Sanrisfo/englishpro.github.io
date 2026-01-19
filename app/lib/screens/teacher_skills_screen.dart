@@ -8,7 +8,11 @@ class TeacherSkillsScreen extends StatefulWidget {
   final int courseId;
   final String courseName;
 
-  const TeacherSkillsScreen({Key? key, required this.courseId, required this.courseName}) : super(key: key);
+  const TeacherSkillsScreen({
+    Key? key,
+    required this.courseId,
+    required this.courseName,
+  }) : super(key: key);
 
   @override
   State<TeacherSkillsScreen> createState() => _TeacherSkillsScreenState();
@@ -38,10 +42,14 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
     try {
       final response = await supabase
           .from('habilidades')
-          .select('id_habilidad, nombre_habilidad, descripcion, orden, curso_id')
+          .select(
+            'id_habilidad, nombre_habilidad, descripcion, orden, curso_id',
+          )
           .eq('curso_id', widget.courseId)
           .order('orden', ascending: true);
-      setState(() => _skills = List<Map<String, dynamic>>.from(response as List));
+      setState(
+        () => _skills = List<Map<String, dynamic>>.from(response as List),
+      );
     } catch (e) {
       setState(() => _errorMessage = 'Error loading skills: $e');
     } finally {
@@ -66,70 +74,69 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
       body: SafeArea(
         child: _isLoading
             ? Center(
-          child: CircularProgressIndicator(
-            color: _courseColor,
-            strokeWidth: 5.0,
-          ),
-        )
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5.0,
+                ),
+              )
             : _errorMessage != null
             ? Center(child: Text(_errorMessage!))
             : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  //Barra
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 100.0,
-                        vertical: 0.0,
-                      ),
-                      decoration: BoxDecoration(
-                          color: _courseColor,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Text(
-                        widget.courseName,
-                        style: GoogleFonts.ptSans(
-                          color: Colors.white,
-                          fontSize: 20,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        //Barra
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 100.0,
+                              vertical: 0.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _courseColor,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Text(
+                              widget.courseName,
+                              style: GoogleFonts.ptSans(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+
+                        Text(
+                          "My courses > " + widget.courseName + " > Skills",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  Text(
-                    "My courses > " + widget.courseName + " > Skills",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: _skills.length,
+                      itemBuilder: (context, index) {
+                        final s = _skills[index];
+                        return _buildSkillTile(s);
+                      },
                     ),
                   ),
                 ],
               ),
-            ),
-
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: _skills.length,
-                itemBuilder: (context, index) {
-                  final s = _skills[index];
-                  return _buildSkillTile(s);
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
-
 
   Widget _buildSkillTile(Map<String, dynamic> s) {
     final id = s['id_habilidad'] as int;
@@ -168,7 +175,11 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
                 color: _courseColor.withOpacity(0.1), // Color del curso
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: _courseColor, size: 28), // Color del curso
+              child: Icon(
+                icon,
+                color: _courseColor,
+                size: 28,
+              ), // Color del curso
             ),
             const SizedBox(width: 16),
 
@@ -192,10 +203,7 @@ class _TeacherSkillsScreenState extends State<TeacherSkillsScreen> {
                         desc,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ),
                 ],

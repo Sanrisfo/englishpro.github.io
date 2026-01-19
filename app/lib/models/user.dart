@@ -78,20 +78,29 @@ class User {
       // Supabase a veces usa mayúsculas en columnas (Nombre_Completo),
       // pero también puede retornar en minúsculas por compatibilidad.
       idUsuario: json['ID_Usuario'] ?? json['id_usuario'] as int,
-      nombreCompleto: json['Nombre_Completo'] ?? json['nombre_completo'] as String,
+      nombreCompleto:
+          json['Nombre_Completo'] ?? json['nombre_completo'] as String,
       email: json['Email'] ?? json['email'] as String,
       profesion: json['Profesion'] ?? json['profesion'] as String?,
       idPlan: (json['ID_Plan'] ?? json['id_plan'] as int?) ?? 1,
       esDocente: (json['Es_Docente'] ?? json['es_docente'] as bool?) ?? false,
       rol: (json['Rol'] ?? json['rol'] as String?) ?? 'Estudiante',
-      fechaRegistro: json['Fecha_Registro'] != null || json['fecha_registro'] != null
-          ? DateTime.parse((json['Fecha_Registro'] ?? json['fecha_registro']) as String)
+      fechaRegistro:
+          json['Fecha_Registro'] != null || json['fecha_registro'] != null
+          ? DateTime.parse(
+              (json['Fecha_Registro'] ?? json['fecha_registro']) as String,
+            )
           : null,
-      ultimoAcceso: json['Ultimo_Acceso'] != null || json['ultimo_acceso'] != null
-          ? DateTime.parse((json['Ultimo_Acceso'] ?? json['ultimo_acceso']) as String)
+      ultimoAcceso:
+          json['Ultimo_Acceso'] != null || json['ultimo_acceso'] != null
+          ? DateTime.parse(
+              (json['Ultimo_Acceso'] ?? json['ultimo_acceso']) as String,
+            )
           : null,
       firebaseUid: json['Firebase_UID'] ?? json['firebase_uid'] as String?,
-      emailVerificado: (json['Email_Verificado'] ?? json['email_verificado'] as bool?) ?? false,
+      emailVerificado:
+          (json['Email_Verificado'] ?? json['email_verificado'] as bool?) ??
+          false,
     );
   }
 

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'courses/toefl_screen.dart';
@@ -24,19 +24,15 @@ class HomeScreen extends StatelessWidget {
 
     if (!context.mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
-  Future<void> _load() async{
+  Future<void> _load() async {
     try {
-      final userName = await supabase
-          .from('usuarios')
-          .select('id_usuario');
-      } catch (e) {
-    }
-
+      final userName = await supabase.from('usuarios').select('id_usuario');
+    } catch (e) {}
   }
 
   @override
@@ -44,8 +40,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body:
-      Column(
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 50),
@@ -57,7 +52,22 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [const Text("Welcome!", style: TextStyle(fontSize: 16, color: Colors.grey)), const SizedBox(height: 4), Text(context.watch<AuthProvider>().user?.nombreCompleto ?? "Student", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF23408E)))],
+                  children: [
+                    const Text(
+                      "Welcome!",
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.watch<AuthProvider>().user?.nombreCompleto ??
+                          "Student",
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF23408E),
+                      ),
+                    ),
+                  ],
                 ),
                 PopupMenuButton(
                   onSelected: (value) {
@@ -79,7 +89,10 @@ class HomeScreen extends StatelessWidget {
                         children: const [
                           Icon(Icons.logout, color: Color(0xFFD9232A)),
                           SizedBox(width: 8),
-                          Text('Sign Out', style: TextStyle(color: Color(0xFFD9232A))),
+                          Text(
+                            'Sign Out',
+                            style: TextStyle(color: Color(0xFFD9232A)),
+                          ),
                         ],
                       ),
                     ),
@@ -87,10 +100,10 @@ class HomeScreen extends StatelessWidget {
                   child: const CircleAvatar(
                     radius: 22,
                     backgroundColor: Color(0xFFD9D9D9),
-                      child: const CircleAvatar(
-                        radius: 22,
-                        backgroundImage: AssetImage('assets/images/avatar.png'),
-                      ),
+                    child: const CircleAvatar(
+                      radius: 22,
+                      backgroundImage: AssetImage('assets/images/avatar.png'),
+                    ),
                   ),
                 ),
               ],
@@ -104,17 +117,11 @@ class HomeScreen extends StatelessWidget {
               children: [
                 const SizedBox(height: 24),
 
-                Image.asset(
-                  'assets/images/logo_completo.png',
-                  height: 100,
-                ),
+                Image.asset('assets/images/logo_completo.png', height: 100),
                 const SizedBox(height: 16),
                 const Text(
                   'Your fluency starts here.',
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 24, color: Colors.grey),
                 ),
 
                 const SizedBox(height: 40),
@@ -223,8 +230,6 @@ class HomeScreen extends StatelessWidget {
         return;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => screen),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 }

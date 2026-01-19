@@ -6,14 +6,20 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   Widget _wrap(Widget child) => MaterialApp(home: child);
 
-  testWidgets('TeacherQuestionsScreen: FAB navega a CreateQuestionScreen', (tester) async {
-    await tester.pumpWidget(_wrap(const TeacherQuestionsScreen(
-      quizId: 1,
-      skillId: 1,
-      quizTitle: 'Quiz A',
-      courseName: 'TOEFL',
-      skillName: 'Reading',
-    )));
+  testWidgets('TeacherQuestionsScreen: FAB navega a CreateQuestionScreen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        const TeacherQuestionsScreen(
+          quizId: 1,
+          skillId: 1,
+          quizTitle: 'Quiz A',
+          courseName: 'TOEFL',
+          skillName: 'Reading',
+        ),
+      ),
+    );
 
     // Destrabar loading
     final state = tester.state(find.byType(TeacherQuestionsScreen)) as dynamic;
@@ -26,7 +32,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap en FAB "New Question"
-    final newQuestionFab = find.widgetWithText(FloatingActionButton, 'New Question');
+    final newQuestionFab = find.widgetWithText(
+      FloatingActionButton,
+      'New Question',
+    );
     expect(newQuestionFab, findsOneWidget);
     await tester.tap(newQuestionFab);
     await tester.pumpAndSettle();
@@ -37,4 +46,3 @@ void main() {
     expect(find.text('Choice'), findsOneWidget);
   });
 }
-

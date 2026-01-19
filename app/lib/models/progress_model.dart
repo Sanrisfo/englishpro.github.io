@@ -1,4 +1,4 @@
-﻿/// Representa el progreso de un usuario en un curso específico.
+/// Representa el progreso de un usuario en un curso específico.
 ///
 /// Este modelo almacena diversas métricas sobre el avance del usuario,
 /// incluyendo porcentaje completado, módulos finalizados, tiempo de estudio,
@@ -208,4 +208,3 @@ class ProgressModel {
         preguntasCorrectas.hashCode;
   }
 }
-

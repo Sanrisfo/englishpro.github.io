@@ -27,8 +27,8 @@ class SupabaseAuthService {
   /// Permite inyectar un `SupabaseClient` personalizado para facilitar
   /// las pruebas. Si no se proporciona un cliente, utiliza la instancia
   /// global de Supabase.
-  SupabaseAuthService({SupabaseClient? client}) : _supabase = client ?? supabase;
-
+  SupabaseAuthService({SupabaseClient? client})
+    : _supabase = client ?? supabase;
 
   /// Registra un nuevo usuario en Supabase Auth y en la tabla `usuarios`.
   ///
@@ -59,17 +59,11 @@ class SupabaseAuthService {
       final authResponse = await _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'nombre_completo': nombreCompleto,
-          'profesion': profesion ?? '',
-        },
+        data: {'nombre_completo': nombreCompleto, 'profesion': profesion ?? ''},
       );
 
       if (authResponse.user == null) {
-        return {
-          'success': false,
-          'message': 'Error al crear usuario',
-        };
+        return {'success': false, 'message': 'Error al crear usuario'};
       }
 
       await Future.delayed(const Duration(milliseconds: 500));
@@ -82,21 +76,11 @@ class SupabaseAuthService {
 
       final user = models.User.fromJson(userData);
 
-      return {
-        'success': true,
-        'user': user,
-        'session': authResponse.session,
-      };
+      return {'success': true, 'user': user, 'session': authResponse.session};
     } on AuthException catch (e) {
-      return {
-        'success': false,
-        'message': _getErrorMessage(e.message),
-      };
+      return {'success': false, 'message': _getErrorMessage(e.message)};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
   }
 
@@ -125,10 +109,7 @@ class SupabaseAuthService {
       );
 
       if (response.user == null) {
-        return {
-          'success': false,
-          'message': 'Credenciales inválidas',
-        };
+        return {'success': false, 'message': 'Credenciales inválidas'};
       }
 
       final userData = await _supabase
@@ -139,21 +120,11 @@ class SupabaseAuthService {
 
       final user = models.User.fromJson(userData);
 
-      return {
-        'success': true,
-        'user': user,
-        'session': response.session,
-      };
+      return {'success': true, 'user': user, 'session': response.session};
     } on AuthException catch (e) {
-      return {
-        'success': false,
-        'message': _getErrorMessage(e.message),
-      };
+      return {'success': false, 'message': _getErrorMessage(e.message)};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
   }
 
@@ -195,15 +166,9 @@ class SupabaseAuthService {
         'message': 'Se ha enviado un email para restablecer tu contraseña',
       };
     } on AuthException catch (e) {
-      return {
-        'success': false,
-        'message': _getErrorMessage(e.message),
-      };
+      return {'success': false, 'message': _getErrorMessage(e.message)};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
   }
 
@@ -213,24 +178,16 @@ class SupabaseAuthService {
   /// @return Un mapa indicando el resultado de la operación.
   Future<Map<String, dynamic>> updatePassword(String newPassword) async {
     try {
-      await _supabase.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
 
       return {
         'success': true,
         'message': 'Contraseña actualizada correctamente',
       };
     } on AuthException catch (e) {
-      return {
-        'success': false,
-        'message': _getErrorMessage(e.message),
-      };
+      return {'success': false, 'message': _getErrorMessage(e.message)};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Error: ${e.toString()}'};
     }
   }
 
@@ -246,7 +203,7 @@ class SupabaseAuthService {
     } else if (error.contains('User already registered')) {
       return 'El email ya está registrado';
     } else if (error.contains('weak password') ||
-               error.contains('Password should be at least 6 characters')) {
+        error.contains('Password should be at least 6 characters')) {
       return 'La contraseña debe tener al menos 6 caracteres';
     } else if (error.contains('Invalid email')) {
       return 'Email inválido';
@@ -292,15 +249,9 @@ class SupabaseAuthService {
       if (nombreCompleto != null) updates['nombre_completo'] = nombreCompleto;
       if (profesion != null) updates['profesion'] = profesion;
 
-      await _supabase
-          .from('usuarios')
-          .update(updates)
-          .eq('id_usuario', userId);
+      await _supabase.from('usuarios').update(updates).eq('id_usuario', userId);
 
-      return {
-        'success': true,
-        'message': 'Perfil actualizado correctamente',
-      };
+      return {'success': true, 'message': 'Perfil actualizado correctamente'};
     } catch (e) {
       return {
         'success': false,

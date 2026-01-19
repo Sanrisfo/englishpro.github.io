@@ -68,10 +68,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -88,10 +85,7 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$baseUrl/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -103,16 +97,10 @@ class ApiService {
           'token': data['token'] as String,
         };
       } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Login failed',
-        };
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -144,10 +132,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -171,10 +156,7 @@ class ApiService {
             .map((json) => CourseModel.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        return {
-          'success': true,
-          'courses': courses,
-        };
+        return {'success': true, 'courses': courses};
       } else {
         return {
           'success': false,
@@ -182,10 +164,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -214,10 +193,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -261,7 +237,10 @@ class ApiService {
 
       return {'success': true, 'skills': skills};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase getSkillsByCourse): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase getSkillsByCourse): $e',
+      };
     }
   }
 
@@ -277,7 +256,10 @@ class ApiService {
           .eq('id', id)
           .single();
 
-      return {'success': true, 'skill': SkillModel.fromJson(row as Map<String, dynamic>)};
+      return {
+        'success': true,
+        'skill': SkillModel.fromJson(row as Map<String, dynamic>),
+      };
     } catch (e) {
       return {'success': false, 'message': 'Error (Supabase getSkillById): $e'};
     }
@@ -289,7 +271,9 @@ class ApiService {
   ///
   /// @param skillId El ID de la habilidad.
   /// @return Un mapa con una lista de los tipos de actividad para la habilidad.
-  static Future<Map<String, dynamic>> getActivityTypesBySkill(int skillId) async {
+  static Future<Map<String, dynamic>> getActivityTypesBySkill(
+    int skillId,
+  ) async {
     try {
       final response = await supabase
           .from('tipos_actividad')
@@ -304,7 +288,10 @@ class ApiService {
 
       return {'success': true, 'types': items};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase getActivityTypesBySkill): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase getActivityTypesBySkill): $e',
+      };
     }
   }
 
@@ -329,15 +316,22 @@ class ApiService {
           .insert({
             'id_habilidad': skillId,
             'nombre': nombre,
-            if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
+            if (descripcion != null && descripcion.isNotEmpty)
+              'descripcion': descripcion,
             'orden': orden,
             'activo': activo,
           })
           .select()
           .single();
-      return {'success': true, 'type': ActivityTypeModel.fromJson(inserted as Map<String, dynamic>)};
+      return {
+        'success': true,
+        'type': ActivityTypeModel.fromJson(inserted as Map<String, dynamic>),
+      };
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase createActivityType): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase createActivityType): $e',
+      };
     }
   }
 
@@ -369,9 +363,15 @@ class ApiService {
           .eq('id', id)
           .select()
           .single();
-      return {'success': true, 'type': ActivityTypeModel.fromJson(updated as Map<String, dynamic>)};
+      return {
+        'success': true,
+        'type': ActivityTypeModel.fromJson(updated as Map<String, dynamic>),
+      };
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase updateActivityType): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase updateActivityType): $e',
+      };
     }
   }
 
@@ -384,7 +384,10 @@ class ApiService {
       await supabase.from('tipos_actividad').delete().eq('id', id);
       return {'success': true};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase deleteActivityType): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase deleteActivityType): $e',
+      };
     }
   }
 
@@ -394,15 +397,17 @@ class ApiService {
   ///
   /// @param activityTypeId El ID del tipo de actividad.
   /// @return Una lista de los tipos de pregunta permitidos.
-  static Future<List<String>> getAllowedQuestionTypes(int activityTypeId) async {
+  static Future<List<String>> getAllowedQuestionTypes(
+    int activityTypeId,
+  ) async {
     try {
       final rows = await supabase
           .from('tipo_actividad_pregunta_permitida')
           .select('tipo_pregunta')
           .eq('id_tipo_actividad', activityTypeId);
-      return List<Map<String, dynamic>>.from(rows as List)
-          .map((e) => (e['tipo_pregunta'] as String).toLowerCase())
-          .toList();
+      return List<Map<String, dynamic>>.from(
+        rows as List,
+      ).map((e) => (e['tipo_pregunta'] as String).toLowerCase()).toList();
     } catch (_) {
       return [];
     }
@@ -426,10 +431,9 @@ class ApiService {
 
       if (allowed.isNotEmpty) {
         final payload = allowed
-            .map((t) => {
-                  'id_tipo_actividad': activityTypeId,
-                  'tipo_pregunta': t,
-                })
+            .map(
+              (t) => {'id_tipo_actividad': activityTypeId, 'tipo_pregunta': t},
+            )
             .toList();
         await supabase
             .from('tipo_actividad_pregunta_permitida')
@@ -481,7 +485,10 @@ class ApiService {
 
       return {'success': true, 'materials': materials};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase getMaterialsBySkill): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase getMaterialsBySkill): $e',
+      };
     }
   }
 
@@ -496,9 +503,15 @@ class ApiService {
           .select('*')
           .eq('id_material', id)
           .single();
-      return {'success': true, 'material': MaterialModel.fromJson(row as Map<String, dynamic>)};
+      return {
+        'success': true,
+        'material': MaterialModel.fromJson(row as Map<String, dynamic>),
+      };
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase getMaterialById): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase getMaterialById): $e',
+      };
     }
   }
 
@@ -560,8 +573,10 @@ class ApiService {
         'id_habilidad': habilidadId,
         'titulo': titulo,
         'tipo_material': tipoDb,
-        if (archivoUrl != null && archivoUrl.isNotEmpty) 'url_recurso': archivoUrl,
-        if (contenidoTexto != null && contenidoTexto.isNotEmpty) 'contenido_texto': contenidoTexto,
+        if (archivoUrl != null && archivoUrl.isNotEmpty)
+          'url_recurso': archivoUrl,
+        if (contenidoTexto != null && contenidoTexto.isNotEmpty)
+          'contenido_texto': contenidoTexto,
         if (cuestionarioId != null) 'id_cuestionario': cuestionarioId,
         if (duracionMinutos != null) 'duracion_minutos': duracionMinutos,
         'orden': orden,
@@ -581,7 +596,10 @@ class ApiService {
         'message': 'Material creado en Supabase',
       };
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase createMaterial): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase createMaterial): $e',
+      };
     }
   }
 
@@ -607,7 +625,10 @@ class ApiService {
         'message': 'Material actualizado en Supabase',
       };
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase updateMaterial): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase updateMaterial): $e',
+      };
     }
   }
 
@@ -617,10 +638,16 @@ class ApiService {
   /// @return Un mapa indicando si la operación fue exitosa.
   static Future<Map<String, dynamic>> deleteMaterial(int materialId) async {
     try {
-      await supabase.from('materiales_estudio').delete().eq('id_material', materialId);
+      await supabase
+          .from('materiales_estudio')
+          .delete()
+          .eq('id_material', materialId);
       return {'success': true, 'message': 'Material eliminado en Supabase'};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase deleteMaterial): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase deleteMaterial): $e',
+      };
     }
   }
 
@@ -644,7 +671,10 @@ class ApiService {
 
       return {'success': true, 'modules': modules};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase getModulesBySkill): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase getModulesBySkill): $e',
+      };
     }
   }
 
@@ -669,7 +699,8 @@ class ApiService {
           .insert({
             'id_habilidad': habilidadId,
             'nombre_modulo': nombre,
-            if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
+            if (descripcion != null && descripcion.isNotEmpty)
+              'descripcion': descripcion,
             'orden': orden,
             'activo': activo,
           })
@@ -693,15 +724,16 @@ class ApiService {
     try {
       final updated = await supabase
           .from('cuestionarios')
-          .update({
-            'id_modulo': moduloId,
-          })
+          .update({'id_modulo': moduloId})
           .eq('id_cuestionario', cuestionarioId)
           .select()
           .single();
       return {'success': true, 'quiz': updated};
     } catch (e) {
-      return {'success': false, 'message': 'Error (Supabase updateActivityModule): $e'};
+      return {
+        'success': false,
+        'message': 'Error (Supabase updateActivityModule): $e',
+      };
     }
   }
 
@@ -726,10 +758,7 @@ class ApiService {
             .map((json) => QuestionModel.fromJson(json as Map<String, dynamic>))
             .toList();
 
-        return {
-          'success': true,
-          'questions': questions,
-        };
+        return {'success': true, 'questions': questions};
       } else {
         return {
           'success': false,
@@ -737,10 +766,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -760,7 +786,9 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
-          'question': QuestionModel.fromJson(data['data'] as Map<String, dynamic>),
+          'question': QuestionModel.fromJson(
+            data['data'] as Map<String, dynamic>,
+          ),
         };
       } else {
         return {
@@ -769,10 +797,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -797,7 +822,8 @@ class ApiService {
       final payload = <String, dynamic>{
         'id_usuario': userId,
         'id_pregunta': preguntaId,
-        if (opcionSeleccionadaId != null) 'id_opcion_seleccionada': opcionSeleccionadaId,
+        if (opcionSeleccionadaId != null)
+          'id_opcion_seleccionada': opcionSeleccionadaId,
         if (respuestaTexto != null) 'respuesta_texto': respuestaTexto,
         if (audioUrl != null) 'respuesta_audio_url': audioUrl,
         if (quizId != null) 'id_cuestionario': quizId,
@@ -809,10 +835,7 @@ class ApiService {
           .select()
           .single();
 
-      return {
-        'success': true,
-        'answer': inserted,
-      };
+      return {'success': true, 'answer': inserted};
     } catch (e) {
       return {'success': false, 'message': 'Error (Supabase submitAnswer): $e'};
     }
@@ -859,14 +882,23 @@ class ApiService {
     int? quizId,
   }) async {
     try {
-      final rid = await _createRespuestaBase(userId: userId, preguntaId: preguntaId, quizId: quizId);
+      final rid = await _createRespuestaBase(
+        userId: userId,
+        preguntaId: preguntaId,
+        quizId: quizId,
+      );
       if (optionIds.isNotEmpty) {
-        final list = optionIds.map((oid) => {'id_respuesta': rid, 'id_opcion': oid}).toList();
+        final list = optionIds
+            .map((oid) => {'id_respuesta': rid, 'id_opcion': oid})
+            .toList();
         await supabase.from('respuestas_usuario_opciones').insert(list);
       }
       return {'success': true, 'id_respuesta': rid};
     } catch (e) {
-      return {'success': false, 'message': 'Error (submitAnswerMultipleChoice): $e'};
+      return {
+        'success': false,
+        'message': 'Error (submitAnswerMultipleChoice): $e',
+      };
     }
   }
 
@@ -884,14 +916,20 @@ class ApiService {
     int? quizId,
   }) async {
     try {
-      final rid = await _createRespuestaBase(userId: userId, preguntaId: preguntaId, quizId: quizId);
+      final rid = await _createRespuestaBase(
+        userId: userId,
+        preguntaId: preguntaId,
+        quizId: quizId,
+      );
       if (statementToAnswer.isNotEmpty) {
         final list = statementToAnswer.entries
-            .map((e) => {
-                  'id_respuesta': rid,
-                  'statement_id': e.key,
-                  'selected_answer_id': e.value,
-                })
+            .map(
+              (e) => {
+                'id_respuesta': rid,
+                'statement_id': e.key,
+                'selected_answer_id': e.value,
+              },
+            )
             .toList();
         await supabase.from('respuestas_usuario_matching').insert(list);
       }
@@ -915,20 +953,29 @@ class ApiService {
     int? quizId,
   }) async {
     try {
-      final rid = await _createRespuestaBase(userId: userId, preguntaId: preguntaId, quizId: quizId);
+      final rid = await _createRespuestaBase(
+        userId: userId,
+        preguntaId: preguntaId,
+        quizId: quizId,
+      );
       if (gapToText.isNotEmpty) {
         final list = gapToText.entries
-            .map((e) => {
-                  'id_respuesta': rid,
-                  'gap_id': e.key,
-                  'text_value': e.value,
-                })
+            .map(
+              (e) => {
+                'id_respuesta': rid,
+                'gap_id': e.key,
+                'text_value': e.value,
+              },
+            )
             .toList();
         await supabase.from('respuestas_usuario_completion').insert(list);
       }
       return {'success': true, 'id_respuesta': rid};
     } catch (e) {
-      return {'success': false, 'message': 'Error (submitAnswerCompletion): $e'};
+      return {
+        'success': false,
+        'message': 'Error (submitAnswerCompletion): $e',
+      };
     }
   }
 
@@ -1014,7 +1061,10 @@ class ApiService {
       );
       return {'success': true, 'id_respuesta': rid};
     } catch (e) {
-      return {'success': false, 'message': 'Error (submitAnswerRecordAudio): $e'};
+      return {
+        'success': false,
+        'message': 'Error (submitAnswerRecordAudio): $e',
+      };
     }
   }
 
@@ -1036,10 +1086,7 @@ class ApiService {
       if (response.statusCode == 200 && data['success'] == true) {
         final quizzesData = data['data'] as List<dynamic>;
 
-        return {
-          'success': true,
-          'quizzes': quizzesData,
-        };
+        return {'success': true, 'quizzes': quizzesData};
       } else {
         return {
           'success': false,
@@ -1047,10 +1094,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1074,15 +1118,13 @@ class ApiService {
         List<QuestionModel> questions = [];
         if (quizData['questions'] != null) {
           questions = (quizData['questions'] as List)
-              .map((json) => QuestionModel.fromJson(json as Map<String, dynamic>))
+              .map(
+                (json) => QuestionModel.fromJson(json as Map<String, dynamic>),
+              )
               .toList();
         }
 
-        return {
-          'success': true,
-          'quiz': quizData,
-          'questions': questions,
-        };
+        return {'success': true, 'quiz': quizData, 'questions': questions};
       } else {
         return {
           'success': false,
@@ -1090,10 +1132,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1121,10 +1160,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'attempt': data['data'],
-        };
+        return {'success': true, 'attempt': data['data']};
       } else {
         return {
           'success': false,
@@ -1132,10 +1168,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1165,10 +1198,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'attempt': data['data'],
-        };
+        return {'success': true, 'attempt': data['data']};
       } else {
         return {
           'success': false,
@@ -1176,10 +1206,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1201,15 +1228,9 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'attempt': data['data'],
-        };
+        return {'success': true, 'attempt': data['data']};
       } else if (response.statusCode == 404) {
-        return {
-          'success': true,
-          'attempt': null,
-        };
+        return {'success': true, 'attempt': null};
       } else {
         return {
           'success': false,
@@ -1217,10 +1238,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1240,10 +1258,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'progress': data['data'],
-        };
+        return {'success': true, 'progress': data['data']};
       } else {
         return {
           'success': false,
@@ -1251,10 +1266,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1272,10 +1284,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'stats': data['data'],
-        };
+        return {'success': true, 'stats': data['data']};
       } else {
         return {
           'success': false,
@@ -1283,10 +1292,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1319,10 +1325,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'progress': data['data'],
-        };
+        return {'success': true, 'progress': data['data']};
       } else {
         return {
           'success': false,
@@ -1330,10 +1333,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1353,10 +1353,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'planInfo': data['data'],
-        };
+        return {'success': true, 'planInfo': data['data']};
       } else {
         return {
           'success': false,
@@ -1364,10 +1361,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1385,10 +1379,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'validation': data['data'],
-        };
+        return {'success': true, 'validation': data['data']};
       } else {
         return {
           'success': false,
@@ -1396,10 +1387,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1414,17 +1402,16 @@ class ApiService {
   }) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/plan-validation/user/$userId/course/$courseId/access'),
+        Uri.parse(
+          '$baseUrl/api/plan-validation/user/$userId/course/$courseId/access',
+        ),
         headers: {'Content-Type': 'application/json'},
       );
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'access': data['data'],
-        };
+        return {'success': true, 'access': data['data']};
       } else {
         return {
           'success': false,
@@ -1432,10 +1419,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1458,10 +1442,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -1469,10 +1450,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1517,10 +1495,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1537,9 +1512,7 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$baseUrl/api/payments/confirm/$paymentId'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'payment_intent_id': paymentIntentId,
-        }),
+        body: jsonEncode({'payment_intent_id': paymentIntentId}),
       );
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -1557,10 +1530,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1578,10 +1548,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'payment': data['data'],
-        };
+        return {'success': true, 'payment': data['data']};
       } else {
         return {
           'success': false,
@@ -1589,10 +1556,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1622,10 +1586,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1655,10 +1616,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1676,15 +1634,9 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'subscription': data['data'],
-        };
+        return {'success': true, 'subscription': data['data']};
       } else if (response.statusCode == 404) {
-        return {
-          'success': true,
-          'subscription': null,
-        };
+        return {'success': true, 'subscription': null};
       } else {
         return {
           'success': false,
@@ -1692,10 +1644,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1703,7 +1652,9 @@ class ApiService {
   ///
   /// @param subscriptionId El ID de la suscripción a cancelar.
   /// @return Un mapa indicando si la operación fue exitosa.
-  static Future<Map<String, dynamic>> cancelSubscription(int subscriptionId) async {
+  static Future<Map<String, dynamic>> cancelSubscription(
+    int subscriptionId,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/payments/subscriptions/$subscriptionId/cancel'),
@@ -1713,10 +1664,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -1724,10 +1672,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1766,7 +1711,8 @@ class ApiService {
           if (docenteId != null) 'docente_id': docenteId,
           'tipo_respuesta': tipoRespuesta,
           if (respuestaTexto != null) 'respuesta_texto': respuestaTexto,
-          if (respuestaAudioUrl != null) 'respuesta_audio_url': respuestaAudioUrl,
+          if (respuestaAudioUrl != null)
+            'respuesta_audio_url': respuestaAudioUrl,
           if (puntuacion != null) 'puntuacion': puntuacion,
           if (comentarios != null) 'comentarios': comentarios,
           if (estado != null) 'estado': estado,
@@ -1776,10 +1722,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'feedback': data['data'],
-        };
+        return {'success': true, 'feedback': data['data']};
       } else {
         return {
           'success': false,
@@ -1787,10 +1730,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1808,10 +1748,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'feedback': data['data'],
-        };
+        return {'success': true, 'feedback': data['data']};
       } else {
         return {
           'success': false,
@@ -1819,10 +1756,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1852,10 +1786,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1884,10 +1815,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1895,7 +1823,9 @@ class ApiService {
   ///
   /// @param teacherId El ID del docente.
   /// @return Un mapa con una lista de las retroalimentaciones del docente.
-  static Future<Map<String, dynamic>> getFeedbacksByTeacher(int teacherId) async {
+  static Future<Map<String, dynamic>> getFeedbacksByTeacher(
+    int teacherId,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/feedback/teacher/$teacherId'),
@@ -1917,10 +1847,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1951,10 +1878,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -1962,10 +1886,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -1983,10 +1904,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'stats': data['data'],
-        };
+        return {'success': true, 'stats': data['data']};
       } else {
         return {
           'success': false,
@@ -1994,10 +1912,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2034,10 +1949,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 201 && data['success'] == true) {
-        return {
-          'success': true,
-          'teacher': data['data'],
-        };
+        return {'success': true, 'teacher': data['data']};
       } else {
         return {
           'success': false,
@@ -2045,10 +1957,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2066,10 +1975,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'teacher': data['data'],
-        };
+        return {'success': true, 'teacher': data['data']};
       } else {
         return {
           'success': false,
@@ -2077,10 +1983,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2098,15 +2001,9 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'teacher': data['data'],
-        };
+        return {'success': true, 'teacher': data['data']};
       } else if (response.statusCode == 404) {
-        return {
-          'success': true,
-          'teacher': null,
-        };
+        return {'success': true, 'teacher': null};
       } else {
         return {
           'success': false,
@@ -2114,10 +2011,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2152,10 +2046,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2173,10 +2064,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'stats': data['data'],
-        };
+        return {'success': true, 'stats': data['data']};
       } else {
         return {
           'success': false,
@@ -2184,10 +2072,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2210,10 +2095,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -2221,10 +2103,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2242,10 +2121,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -2253,10 +2129,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2274,10 +2147,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -2285,10 +2155,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2322,10 +2189,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'notification': data['notification'],
-        };
+        return {'success': true, 'notification': data['notification']};
       } else {
         return {
           'success': false,
@@ -2333,10 +2197,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2344,7 +2205,9 @@ class ApiService {
   ///
   /// @param userId El ID del usuario.
   /// @return Un mapa con una lista de las notificaciones del usuario.
-  static Future<Map<String, dynamic>> getNotificationsByUserId(int userId) async {
+  static Future<Map<String, dynamic>> getNotificationsByUserId(
+    int userId,
+  ) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/notifications/$userId'),
@@ -2366,10 +2229,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2399,10 +2259,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2432,10 +2289,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2443,7 +2297,9 @@ class ApiService {
   ///
   /// @param notificationId El ID de la notificación a marcar como leída.
   /// @return Un mapa con los datos de la notificación actualizada.
-  static Future<Map<String, dynamic>> markNotificationAsRead(int notificationId) async {
+  static Future<Map<String, dynamic>> markNotificationAsRead(
+    int notificationId,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/api/notifications/$notificationId/read'),
@@ -2453,10 +2309,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'notification': data['notification'],
-        };
+        return {'success': true, 'notification': data['notification']};
       } else {
         return {
           'success': false,
@@ -2464,10 +2317,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2475,7 +2325,9 @@ class ApiService {
   ///
   /// @param userId El ID del usuario.
   /// @return Un mapa indicando si la operación fue exitosa.
-  static Future<Map<String, dynamic>> markAllNotificationsAsRead(int userId) async {
+  static Future<Map<String, dynamic>> markAllNotificationsAsRead(
+    int userId,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/api/notifications/$userId/read-all'),
@@ -2485,21 +2337,16 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? 'Failed to mark all notifications as read',
+          'message':
+              data['message'] ?? 'Failed to mark all notifications as read',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -2507,7 +2354,9 @@ class ApiService {
   ///
   /// @param notificationId El ID de la notificación a eliminar.
   /// @return Un mapa indicando si la operación fue exitosa.
-  static Future<Map<String, dynamic>> deleteNotification(int notificationId) async {
+  static Future<Map<String, dynamic>> deleteNotification(
+    int notificationId,
+  ) async {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/api/notifications/$notificationId'),
@@ -2517,10 +2366,7 @@ class ApiService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && data['success'] == true) {
-        return {
-          'success': true,
-          'message': data['message'],
-        };
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,
@@ -2528,10 +2374,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 }

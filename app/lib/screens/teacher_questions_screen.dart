@@ -59,9 +59,9 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
               .from('tipo_actividad_pregunta_permitida')
               .select('tipo_pregunta')
               .eq('id_tipo_actividad', localTypeId);
-          _allowedTypes = List<Map<String, dynamic>>.from(rows as List)
-              .map((e) => (e['tipo_pregunta'] as String).toLowerCase())
-              .toList();
+          _allowedTypes = List<Map<String, dynamic>>.from(
+            rows as List,
+          ).map((e) => (e['tipo_pregunta'] as String).toLowerCase()).toList();
         }
       } catch (_) {}
 
@@ -76,29 +76,66 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
         setState(() => _items = []);
         return;
       }
-      final ids = cpList.map((e) => e['id_pregunta']).where((e) => e != null).toList();
+      final ids = cpList
+          .map((e) => e['id_pregunta'])
+          .where((e) => e != null)
+          .toList();
 
       // 3) Obtener preguntas
       final qs = await supabase
           .from('preguntas')
-          .select('id_pregunta, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos, explicacion')
+          .select(
+            'id_pregunta, texto_pregunta, tipo_pregunta, nivel_dificultad, puntos, explicacion',
+          )
           .inFilter('id_pregunta', ids);
       final qList = List<Map<String, dynamic>>.from(qs as List);
 
-      // 4) Obtener opciones
-      final opts = await supabase
+      // 4) Obtener opciones y datos de completion
+      final optList = List<Map<String, dynamic>>.from(await supabase
           .from('opciones_respuesta')
           .select('id_opcion, id_pregunta, texto_opcion, es_correcta, orden')
           .inFilter('id_pregunta', ids)
-          .order('orden', ascending: true);
-      final optList = List<Map<String, dynamic>>.from(opts as List);
+          .order('orden', ascending: true));
+
+      final completionIds = qList
+          .where((q) => (q['tipo_pregunta'] as String? ?? '').toLowerCase() == 'completion')
+          .map((q) => q['id_pregunta'] as int)
+          .toList();
+
+      List<Map<String, dynamic>> cSentences = [];
+      List<Map<String, dynamic>> cGaps = [];
+      if (completionIds.isNotEmpty) {
+        final cs = await supabase
+            .from('completion_sentences')
+            .select('id, id_pregunta, texto_template, orden')
+            .inFilter('id_pregunta', completionIds)
+            .order('orden');
+        cSentences = List<Map<String, dynamic>>.from(cs as List);
+        final sentIds = cSentences.map((e) => e['id'] as int).toList();
+        if (sentIds.isNotEmpty) {
+          final cg = await supabase
+              .from('completion_gaps')
+              .select('id, sentence_id, gap_index, correct_text')
+              .inFilter('sentence_id', sentIds)
+              .order('gap_index');
+          cGaps = List<Map<String, dynamic>>.from(cg as List);
+        }
+      }
 
       // 5) Unir
       final byId = {
-        for (final q in qList) q['id_pregunta']: {
-          ...q,
-          'opciones': optList.where((o) => o['id_pregunta'] == q['id_pregunta']).toList(),
-        }
+        for (final q in qList)
+          q['id_pregunta']: {
+            ...q,
+            'opciones': optList.where((o) => o['id_pregunta'] == q['id_pregunta']).toList(),
+            'completion_sentences': cSentences
+                .where((s) => s['id_pregunta'] == q['id_pregunta'])
+                .map((s) => {
+                      ...s,
+                      'gaps': cGaps.where((g) => g['sentence_id'] == s['id']).toList(),
+                    })
+                .toList(),
+          },
       };
       final items = <Map<String, dynamic>>[];
       for (final row in cpList) {
@@ -121,22 +158,42 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
     String nivel = 'Basico';
     final explanationCtrl = TextEditingController();
 
-    final allTypes = const ['multiple_choice', 'matching', 'completion', 'record_audio', 'write_text'];
+    final allTypes = const [
+      'multiple_choice',
+      'matching',
+      'completion',
+      'record_audio',
+      'write_text',
+    ];
     final availableTypes = _allowedTypes.isEmpty ? allTypes : _allowedTypes;
     String type = availableTypes.first;
 
     // MC
-    List<TextEditingController> mcOptCtrls = [TextEditingController(), TextEditingController(), TextEditingController()];
+    List<TextEditingController> mcOptCtrls = [
+      TextEditingController(),
+      TextEditingController(),
+      TextEditingController(),
+    ];
     final Set<int> mcCorrect = {};
     // Matching
-    List<TextEditingController> matchAnswersCtrls = [TextEditingController(), TextEditingController(), TextEditingController()];
+    List<TextEditingController> matchAnswersCtrls = [
+      TextEditingController(),
+      TextEditingController(),
+      TextEditingController(),
+    ];
     List<Map<String, dynamic>> matchStatements = [
       {'text': TextEditingController(), 'answer': null},
       {'text': TextEditingController(), 'answer': null},
       {'text': TextEditingController(), 'answer': null},
     ];
     // Completion
-    List<Map<String, TextEditingController>> completionRows = List.generate(5, (_) => {'sentence': TextEditingController(), 'correct': TextEditingController()});
+    List<Map<String, TextEditingController>> completionRows = List.generate(
+      5,
+      (_) => {
+        'sentence': TextEditingController(),
+        'correct': TextEditingController(),
+      },
+    );
     // Write Text
     final maxWordsCtrl = TextEditingController(text: '120');
 
@@ -145,7 +202,9 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text('Create Question'),
             content: SingleChildScrollView(
               child: Column(
@@ -153,136 +212,387 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                 children: [
                   DropdownButtonFormField<String>(
                     value: type,
-                    decoration: const InputDecoration(labelText: 'Question Type'),
-                    items: availableTypes.map((t) => DropdownMenuItem(value: t, child: Text(t.replaceAll('_', ' ')))).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'Question Type',
+                    ),
+                    items: availableTypes
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(t.replaceAll('_', ' ')),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (v) => setStateDialog(() => type = v ?? type),
                   ),
                   const SizedBox(height: 8),
-                  TextField(controller: textCtrl, decoration: const InputDecoration(labelText: 'Question text'), maxLines: 3),
+                  TextField(
+                    controller: textCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Question text',
+                    ),
+                    maxLines: 3,
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: explanationCtrl, decoration: const InputDecoration(labelText: 'General explanation (optional)'), maxLines: 3),
+                  TextField(
+                    controller: explanationCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'General explanation (optional)',
+                    ),
+                    maxLines: 3,
+                  ),
                   const SizedBox(height: 8),
-                  TextField(controller: pointsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Points')),
+                  TextField(
+                    controller: pointsCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Points'),
+                  ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     value: nivel,
-                    decoration: const InputDecoration(labelText: 'Difficulty level'),
+                    decoration: const InputDecoration(
+                      labelText: 'Difficulty level',
+                    ),
                     items: const [
                       DropdownMenuItem(value: 'Basico', child: Text('Basic')),
-                      DropdownMenuItem(value: 'Intermedio', child: Text('Intermediate')),
-                      DropdownMenuItem(value: 'Avanzado', child: Text('Advanced')),
+                      DropdownMenuItem(
+                        value: 'Intermedio',
+                        child: Text('Intermediate'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Avanzado',
+                        child: Text('Advanced'),
+                      ),
                     ],
-                    onChanged: (v) => setStateDialog(() => nivel = v ?? 'Basico'),
+                    onChanged: (v) =>
+                        setStateDialog(() => nivel = v ?? 'Basico'),
                   ),
                   const SizedBox(height: 12),
                   if (_allowedTypes.isNotEmpty)
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Allowed types for this activity: ${_allowedTypes.map((e) => e.replaceAll('_',' ')).join(', ')}',
+                        'Allowed types for this activity: ${_allowedTypes.map((e) => e.replaceAll('_', ' ')).join(', ')}',
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ),
                   if (type == 'multiple_choice') ...[
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Options (3 to 5)', style: TextStyle(fontWeight: FontWeight.w600)),
-                      TextButton.icon(onPressed: mcOptCtrls.length < 5 ? () => setStateDialog(() => mcOptCtrls.add(TextEditingController())) : null, icon: const Icon(Icons.add), label: const Text('Add')),
-                    ]),
-                    ...mcOptCtrls.asMap().entries.map((e) => Row(children: [
-                      Checkbox(value: mcCorrect.contains(e.key), onChanged: (v) => setStateDialog(() => v == true ? mcCorrect.add(e.key) : mcCorrect.remove(e.key))),
-                      Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Option ${e.key + 1}'))),
-                      IconButton(icon: const Icon(Icons.close), onPressed: mcOptCtrls.length > 3 ? () => setStateDialog(() { mcCorrect.remove(e.key); mcOptCtrls.removeAt(e.key); }) : null),
-                    ])),
-                  ]
-                  else if (type == 'matching') ...[
-                    const Align(alignment: Alignment.centerLeft, child: Text('Answers (B) 1..7', style: TextStyle(fontWeight: FontWeight.w600))),
-                    ...matchAnswersCtrls.asMap().entries.map((e) => Row(children: [
-                      Expanded(child: TextField(controller: e.value, decoration: InputDecoration(labelText: 'Answer B${e.key + 1}'))),
-                      IconButton(icon: const Icon(Icons.close), onPressed: matchAnswersCtrls.length > 1 ? () => setStateDialog(() => matchAnswersCtrls.removeAt(e.key)) : null),
-                    ])),
-                    Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: matchAnswersCtrls.length < 7 ? () => setStateDialog(() => matchAnswersCtrls.add(TextEditingController())) : null, icon: const Icon(Icons.add), label: const Text('Add answer'))),
-                    const SizedBox(height: 8),
-                    const Align(alignment: Alignment.centerLeft, child: Text('Statements (A) 1..5', style: TextStyle(fontWeight: FontWeight.w600))),
-                    ...matchStatements.asMap().entries.map((e) {
-                      final i = e.key; final row = e.value;
-                      return Row(children: [
-                        Expanded(child: TextField(controller: row['text'], decoration: InputDecoration(labelText: 'Statement A${i + 1}'))),
-                        const SizedBox(width: 8),
-                        DropdownButton<int>(
-                          value: row['answer'] as int?, hint: const Text('B?'),
-                          items: matchAnswersCtrls.asMap().entries.map((a) => DropdownMenuItem(value: a.key, child: Text('B${a.key + 1}'))).toList(),
-                          onChanged: (v) => setStateDialog(() => row['answer'] = v),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Options (3 to 5)',
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
-                        IconButton(icon: const Icon(Icons.close), onPressed: matchStatements.length > 1 ? () => setStateDialog(() => matchStatements.removeAt(i)) : null),
-                      ]);
-                    }),
-                    Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: matchStatements.length < 5 ? () => setStateDialog(() => matchStatements.add({'text': TextEditingController(), 'answer': null})) : null, icon: const Icon(Icons.add), label: const Text('Add statement'))),
-                  ]
-                  else if (type == 'completion') ...[
-                      const Align(alignment: Alignment.centerLeft, child: Text('Completion (5..6)', style: TextStyle(fontWeight: FontWeight.w600))),
-                      const Align(alignment: Alignment.centerLeft, child: Text('Write the full sentence and the word to be gapped. We generate the spaces automatically.')),
-                      ...completionRows.asMap().entries.map((e) => Row(children: [
-                        Expanded(child: TextField(controller: e.value['sentence'], decoration: InputDecoration(labelText: 'Sentence ${e.key + 1}'))),
-                        const SizedBox(width: 8),
-                        SizedBox(width: 180, child: TextField(controller: e.value['correct'], decoration: const InputDecoration(labelText: 'Gap Word'))),
-                      ])),
-                      Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: completionRows.length < 6 ? () => setStateDialog(() => completionRows.add({'sentence': TextEditingController(), 'correct': TextEditingController()})) : null, icon: const Icon(Icons.add), label: const Text('Add sentence'))),
-                    ]
-                    else if (type == 'write_text') ...[
-                        TextField(controller: maxWordsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Max Words')),
-                      ]
-                      else if (type == 'record_audio') ...[
-                          const Text('The student will record audio (no time limit).'),
+                        TextButton.icon(
+                          onPressed: mcOptCtrls.length < 5
+                              ? () => setStateDialog(
+                                  () => mcOptCtrls.add(TextEditingController()),
+                                )
+                              : null,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add'),
+                        ),
+                      ],
+                    ),
+                    ...mcOptCtrls.asMap().entries.map(
+                      (e) => Row(
+                        children: [
+                          Checkbox(
+                            value: mcCorrect.contains(e.key),
+                            onChanged: (v) => setStateDialog(
+                              () => v == true
+                                  ? mcCorrect.add(e.key)
+                                  : mcCorrect.remove(e.key),
+                            ),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: e.value,
+                              decoration: InputDecoration(
+                                labelText: 'Option ${e.key + 1}',
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: mcOptCtrls.length > 3
+                                ? () => setStateDialog(() {
+                                    mcCorrect.remove(e.key);
+                                    mcOptCtrls.removeAt(e.key);
+                                  })
+                                : null,
+                          ),
                         ],
+                      ),
+                    ),
+                  ] else if (type == 'matching') ...[
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Answers (B) 1..7',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    ...matchAnswersCtrls.asMap().entries.map(
+                      (e) => Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: e.value,
+                              decoration: InputDecoration(
+                                labelText: 'Answer B${e.key + 1}',
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: matchAnswersCtrls.length > 1
+                                ? () => setStateDialog(
+                                    () => matchAnswersCtrls.removeAt(e.key),
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: matchAnswersCtrls.length < 7
+                            ? () => setStateDialog(
+                                () => matchAnswersCtrls.add(
+                                  TextEditingController(),
+                                ),
+                              )
+                            : null,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add answer'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Statements (A) 1..5',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    ...matchStatements.asMap().entries.map((e) {
+                      final i = e.key;
+                      final row = e.value;
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: row['text'],
+                              decoration: InputDecoration(
+                                labelText: 'Statement A${i + 1}',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          DropdownButton<int>(
+                            value: row['answer'] as int?,
+                            hint: const Text('B?'),
+                            items: matchAnswersCtrls
+                                .asMap()
+                                .entries
+                                .map(
+                                  (a) => DropdownMenuItem(
+                                    value: a.key,
+                                    child: Text('B${a.key + 1}'),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) =>
+                                setStateDialog(() => row['answer'] = v),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: matchStatements.length > 1
+                                ? () => setStateDialog(
+                                    () => matchStatements.removeAt(i),
+                                  )
+                                : null,
+                          ),
+                        ],
+                      );
+                    }),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: matchStatements.length < 5
+                            ? () => setStateDialog(
+                                () => matchStatements.add({
+                                  'text': TextEditingController(),
+                                  'answer': null,
+                                }),
+                              )
+                            : null,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add statement'),
+                      ),
+                    ),
+                  ] else if (type == 'completion') ...[
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Completion (5..6)',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Write the full sentence and the word to be gapped. We generate the spaces automatically.',
+                      ),
+                    ),
+                    ...completionRows.asMap().entries.map(
+                      (e) => Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: e.value['sentence'],
+                              decoration: InputDecoration(
+                                labelText: 'Sentence ${e.key + 1}',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 180,
+                            child: TextField(
+                              controller: e.value['correct'],
+                              decoration: const InputDecoration(
+                                labelText: 'Gap Word',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: completionRows.length < 6
+                            ? () => setStateDialog(
+                                () => completionRows.add({
+                                  'sentence': TextEditingController(),
+                                  'correct': TextEditingController(),
+                                }),
+                              )
+                            : null,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add sentence'),
+                      ),
+                    ),
+                  ] else if (type == 'write_text') ...[
+                    TextField(
+                      controller: maxWordsCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Max Words'),
+                    ),
+                  ] else if (type == 'record_audio') ...[
+                    const Text(
+                      'The student will record audio (no time limit).',
+                    ),
+                  ],
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF23408E).withOpacity(0.1), foregroundColor: const Color(0xFF23408E)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF23408E).withOpacity(0.1),
+                  foregroundColor: const Color(0xFF23408E),
+                ),
                 onPressed: () async {
                   final texto = textCtrl.text.trim();
-                  if (texto.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Text required'))); return; }
+                  if (texto.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Text required')),
+                    );
+                    return;
+                  }
                   final puntos = int.tryParse(pointsCtrl.text.trim()) ?? 1;
                   try {
                     if (type == 'multiple_choice') {
-                      final nonEmpty = mcOptCtrls.where((c) => c.text.trim().isNotEmpty).toList();
-                      if (nonEmpty.length < 3 || nonEmpty.length > 5) throw 'Multiple Choice: 3 to 5 options required';
-                      if (mcCorrect.isEmpty) throw 'Select at least one correct option';
-                      final inserted = await supabase.from('preguntas').insert({
-                        'id_habilidad': widget.skillId,
-                        'texto_pregunta': texto,
-                        'tipo_pregunta': 'multiple_choice',
-                        'nivel_dificultad': nivel,
-                        'puntos': puntos,
-                        'explicacion': explanationCtrl.text.trim(),
-                      }).select('id_pregunta').single();
+                      final nonEmpty = mcOptCtrls
+                          .where((c) => c.text.trim().isNotEmpty)
+                          .toList();
+                      if (nonEmpty.length < 3 || nonEmpty.length > 5)
+                        throw 'Multiple Choice: 3 to 5 options required';
+                      if (mcCorrect.isEmpty)
+                        throw 'Select at least one correct option';
+                      final inserted = await supabase
+                          .from('preguntas')
+                          .insert({
+                            'id_habilidad': widget.skillId,
+                            'texto_pregunta': texto,
+                            'tipo_pregunta': 'multiple_choice',
+                            'nivel_dificultad': nivel,
+                            'puntos': puntos,
+                            'explicacion': explanationCtrl.text.trim(),
+                          })
+                          .select('id_pregunta')
+                          .single();
                       final qid = (inserted['id_pregunta'] as num).toInt();
                       final opts = <Map<String, dynamic>>[];
                       for (int i = 0; i < mcOptCtrls.length; i++) {
-                        final t = mcOptCtrls[i].text.trim(); if (t.isEmpty) continue;
-                        opts.add({'id_pregunta': qid, 'texto_opcion': t, 'es_correcta': mcCorrect.contains(i), 'orden': i + 1});
+                        final t = mcOptCtrls[i].text.trim();
+                        if (t.isEmpty) continue;
+                        opts.add({
+                          'id_pregunta': qid,
+                          'texto_opcion': t,
+                          'es_correcta': mcCorrect.contains(i),
+                          'orden': i + 1,
+                        });
                       }
                       await supabase.from('opciones_respuesta').insert(opts);
                       await _linkQuestionToQuiz(qid);
                     } else if (type == 'matching') {
-                      final answers = matchAnswersCtrls.map((c) => c.text.trim()).where((t) => t.isNotEmpty).toList();
-                      final statements = matchStatements
-                          .where((r) => (r['text'] as TextEditingController).text.trim().isNotEmpty && r['answer'] != null)
-                          .map((r) => {'texto': (r['text'] as TextEditingController).text.trim(), 'answer_index': (r['answer'] as int)})
+                      final answers = matchAnswersCtrls
+                          .map((c) => c.text.trim())
+                          .where((t) => t.isNotEmpty)
                           .toList();
-                      if (statements.isEmpty || statements.length > 5) throw 'Matching: 1..5 statements';
-                      if (answers.length < statements.length || answers.length > 7) throw 'Matching: answers B between A..7';
-                      final res = await supabase.rpc('create_matching_question', params: {
-                        'p_id_habilidad': widget.skillId,
-                        'p_texto': texto,
-                        'p_nivel': nivel,
-                        'p_puntos': puntos,
-                        'p_explicacion': explanationCtrl.text.trim(),
-                        'p_answers': answers,
-                        'p_statements': statements,
-                      });
+                      final statements = matchStatements
+                          .where(
+                            (r) =>
+                                (r['text'] as TextEditingController).text
+                                    .trim()
+                                    .isNotEmpty &&
+                                r['answer'] != null,
+                          )
+                          .map(
+                            (r) => {
+                              'texto': (r['text'] as TextEditingController).text
+                                  .trim(),
+                              'answer_index': (r['answer'] as int),
+                            },
+                          )
+                          .toList();
+                      if (statements.isEmpty || statements.length > 5)
+                        throw 'Matching: 1..5 statements';
+                      if (answers.length < statements.length ||
+                          answers.length > 7)
+                        throw 'Matching: answers B between A..7';
+                      final res = await supabase.rpc(
+                        'create_matching_question',
+                        params: {
+                          'p_id_habilidad': widget.skillId,
+                          'p_texto': texto,
+                          'p_nivel': nivel,
+                          'p_puntos': puntos,
+                          'p_explicacion': explanationCtrl.text.trim(),
+                          'p_answers': answers,
+                          'p_statements': statements,
+                        },
+                      );
                       int qid;
                       if (res is List && res.isNotEmpty) {
                         qid = (res.first['qid'] as num).toInt();
@@ -293,30 +603,45 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                       }
                       await _linkQuestionToQuiz(qid);
                     } else if (type == 'completion') {
-                      if (completionRows.length < 5 || completionRows.length > 6) throw 'Completion: 5..6 sentences';
+                      if (completionRows.length < 5 ||
+                          completionRows.length > 6)
+                        throw 'Completion: 5..6 sentences';
                       final sentences = <Map<String, String>>[];
                       for (final r in completionRows) {
                         final sentence = r['sentence']!.text.trim();
                         final correct = r['correct']!.text.trim();
                         if (sentence.isEmpty || correct.isEmpty) continue;
                         String template;
-                        final idx = sentence.toLowerCase().indexOf(correct.toLowerCase());
+                        final idx = sentence.toLowerCase().indexOf(
+                          correct.toLowerCase(),
+                        );
                         if (idx >= 0) {
-                          template = sentence.replaceRange(idx, idx + correct.length, '{{1}}');
+                          template = sentence.replaceRange(
+                            idx,
+                            idx + correct.length,
+                            '{{1}}',
+                          );
                         } else {
                           template = '$sentence {{1}}';
                         }
-                        sentences.add({'texto_template': template, 'correct_text': correct});
+                        sentences.add({
+                          'texto_template': template,
+                          'correct_text': correct,
+                        });
                       }
-                      if (sentences.length < 5) throw 'Completion: complete 5 sentences';
-                      final res = await supabase.rpc('create_completion_question', params: {
-                        'p_id_habilidad': widget.skillId,
-                        'p_texto': texto,
-                        'p_nivel': nivel,
-                        'p_puntos': puntos,
-                        'p_explicacion': explanationCtrl.text.trim(),
-                        'p_sentences': sentences,
-                      });
+                      if (sentences.length < 5)
+                        throw 'Completion: complete 5 sentences';
+                      final res = await supabase.rpc(
+                        'create_completion_question',
+                        params: {
+                          'p_id_habilidad': widget.skillId,
+                          'p_texto': texto,
+                          'p_nivel': nivel,
+                          'p_puntos': puntos,
+                          'p_explicacion': explanationCtrl.text.trim(),
+                          'p_sentences': sentences,
+                        },
+                      );
                       int qid;
                       if (res is List && res.isNotEmpty) {
                         qid = (res.first['qid'] as num).toInt();
@@ -327,39 +652,56 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                       }
                       await _linkQuestionToQuiz(qid);
                     } else if (type == 'record_audio') {
-                      final inserted = await supabase.from('preguntas').insert({
-                        'id_habilidad': widget.skillId,
-                        'texto_pregunta': texto,
-                        'tipo_pregunta': 'record_audio',
-                        'nivel_dificultad': nivel,
-                        'puntos': puntos,
-                        'explicacion': explanationCtrl.text.trim(),
-                      }).select('id_pregunta').single();
+                      final inserted = await supabase
+                          .from('preguntas')
+                          .insert({
+                            'id_habilidad': widget.skillId,
+                            'texto_pregunta': texto,
+                            'tipo_pregunta': 'record_audio',
+                            'nivel_dificultad': nivel,
+                            'puntos': puntos,
+                            'explicacion': explanationCtrl.text.trim(),
+                          })
+                          .select('id_pregunta')
+                          .single();
                       final qid = (inserted['id_pregunta'] as num).toInt();
-                      await supabase.from('record_audio_config').insert({'id_pregunta': qid});
+                      await supabase.from('record_audio_config').insert({
+                        'id_pregunta': qid,
+                      });
                       await _linkQuestionToQuiz(qid);
                     } else if (type == 'write_text') {
-                      final inserted = await supabase.from('preguntas').insert({
-                        'id_habilidad': widget.skillId,
-                        'texto_pregunta': texto,
-                        'tipo_pregunta': 'write_text',
-                        'nivel_dificultad': nivel,
-                        'puntos': puntos,
-                        'explicacion': explanationCtrl.text.trim(),
-                      }).select('id_pregunta').single();
+                      final inserted = await supabase
+                          .from('preguntas')
+                          .insert({
+                            'id_habilidad': widget.skillId,
+                            'texto_pregunta': texto,
+                            'tipo_pregunta': 'write_text',
+                            'nivel_dificultad': nivel,
+                            'puntos': puntos,
+                            'explicacion': explanationCtrl.text.trim(),
+                          })
+                          .select('id_pregunta')
+                          .single();
                       final qid = (inserted['id_pregunta'] as num).toInt();
                       final mw = int.tryParse(maxWordsCtrl.text.trim()) ?? 120;
-                      await supabase.from('write_text_config').insert({'id_pregunta': qid, 'max_words': mw});
+                      await supabase.from('write_text_config').insert({
+                        'id_pregunta': qid,
+                        'max_words': mw,
+                      });
                       await _linkQuestionToQuiz(qid);
                     }
 
                     if (!mounted) return;
                     Navigator.pop(context);
                     await _load();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Question created')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Question created')),
+                    );
                   } catch (e) {
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
                   }
                 },
                 child: const Text('Create'),
@@ -378,7 +720,9 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
         .eq('id_cuestionario', widget.quizId)
         .order('orden', ascending: false)
         .limit(1);
-    final nextOrder = (current is List && current.isNotEmpty) ? ((current.first['orden'] as num).toInt() + 1) : 1;
+    final nextOrder = (current is List && current.isNotEmpty)
+        ? ((current.first['orden'] as num).toInt() + 1)
+        : 1;
     await supabase.from('cuestionario_preguntas').insert({
       'id_cuestionario': widget.quizId,
       'id_pregunta': qid,
@@ -392,12 +736,20 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Confirm Deletion'),
-        content: const Text('This action will delete the question and its options.'),
+        content: const Text(
+          'This action will delete the question and its options.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD9232A), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD9232A),
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -408,11 +760,15 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
         await supabase.from('preguntas').delete().eq('id_pregunta', questionId);
         await _load();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Question deleted')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Question deleted')));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -430,25 +786,27 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
             onPressed: _isLoading
                 ? null
                 : () async {
-              final created = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateQuestionScreen(
-                    quizId: widget.quizId,
-                    skillId: widget.skillId,
-                    courseName: widget.courseName,
-                    allowedTypes: _allowedTypes,
-                  ),
-                  fullscreenDialog: true,
-                ),
-              );
-              if (created == true) {
-                await _load();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Question created')));
-                }
-              }
-            },
+                    final created = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateQuestionScreen(
+                          quizId: widget.quizId,
+                          skillId: widget.skillId,
+                          courseName: widget.courseName,
+                          allowedTypes: _allowedTypes,
+                        ),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                    if (created == true) {
+                      await _load();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Question created')),
+                        );
+                      }
+                    }
+                  },
             icon: const Icon(Icons.add),
             label: const Text('New Question'),
             heroTag: null,
@@ -470,70 +828,84 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
 
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: _courseColor,
+                  strokeWidth: 5.0,
+                ),
+              )
             : _errorMessage != null
             ? Center(child: Text(_errorMessage!))
             : Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Encabezado Estándar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 0.0),
-                      decoration: BoxDecoration(
-                        color: _courseColor,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Text(
-                        widget.quizTitle,
-                        style: GoogleFonts.ptSans(
-                          color: Colors.white,
-                          fontSize: 20,
+                  // 1. Encabezado Estándar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40.0,
+                              vertical: 0.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _courseColor,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Text(
+                              widget.quizTitle,
+                              style: GoogleFonts.ptSans(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "... > ${widget.quizTitle} > Questions",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "... > ${widget.quizTitle} > Questions",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+
+                  // 2. Lista de Preguntas
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _load,
+                      color: _courseColor,
+                      child: _items.isEmpty
+                          ? const Center(child: Text('No questions'))
+                          : ListView.separated(
+                              padding: const EdgeInsets.only(
+                                left: 16,
+                                right: 16,
+                                top: 0,
+                                bottom: 150,
+                              ),
+                              itemCount: _items.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final q = _items[index];
+                                return _buildQuestionTile(q);
+                              },
+                            ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-            ),
-
-            // 2. Lista de Preguntas
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                color: _courseColor,
-                child: _items.isEmpty
-                    ? const Center(child: Text('No questions'))
-                    : ListView.separated(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 150),
-                  itemCount: _items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final q = _items[index];
-                    return _buildQuestionTile(q);
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -550,11 +922,16 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
 
     // Icono según tipo
     IconData icon;
-    if (tipo.contains('multiple')) icon = Icons.checklist_rtl_rounded;
-    else if (tipo.contains('matching')) icon = Icons.abc_rounded;
-    else if (tipo.contains('completion')) icon = Icons.short_text_rounded;
-    else if (tipo.contains('audio')) icon = Icons.multitrack_audio_rounded;
-    else icon = Icons.text_snippet_outlined;
+    if (tipo.contains('multiple'))
+      icon = Icons.checklist_rtl_rounded;
+    else if (tipo.contains('matching'))
+      icon = Icons.abc_rounded;
+    else if (tipo.contains('completion'))
+      icon = Icons.short_text_rounded;
+    else if (tipo.contains('audio'))
+      icon = Icons.multitrack_audio_rounded;
+    else
+      icon = Icons.text_snippet_outlined;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -585,12 +962,20 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                   children: [
                     Text(
                       orden != null ? 'Question #$orden' : 'Question',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       texto,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                     if (expGeneral != null && expGeneral.isNotEmpty)
                       Padding(
@@ -619,19 +1004,26 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                         quizId: widget.quizId,
                         skillId: widget.skillId,
                         courseName: widget.courseName,
-                        questionToEdit: q, // Pass the full question object (with options)
+                        questionToEdit:
+                            q, // Pass the full question object (with options)
                       ),
                       fullscreenDialog: true,
                     ),
                   );
                   if (updated == true) {
-                     _load(); 
-                     if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Question updated')));
+                    _load();
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Question updated')),
+                      );
                   }
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Color(0xFFD9232A)),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Color(0xFFD9232A),
+                ),
                 onPressed: () => _deleteQuestion(qid),
               ),
             ],
@@ -643,7 +1035,16 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
             child: Wrap(
               spacing: 8,
               children: [
-                _infoChip(nivel == 'Basico' ? 'Basic' : nivel == 'Intermedio' ? 'Intermediate' : nivel == 'Avanzado' ? 'Advanced' : nivel, const Color(0xFF23408E)),
+                _infoChip(
+                  nivel == 'Basico'
+                      ? 'Basic'
+                      : nivel == 'Intermedio'
+                      ? 'Intermediate'
+                      : nivel == 'Avanzado'
+                      ? 'Advanced'
+                      : nivel,
+                  const Color(0xFF23408E),
+                ),
                 _infoChip('$puntos pts', const Color(0xFF23408E)),
                 _infoChip(tipo.replaceAll('_', ' '), const Color(0xFFD9232A)),
               ],
@@ -660,17 +1061,24 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      correct ? Icons.circle_rounded : Icons.radio_button_unchecked,
+                      correct
+                          ? Icons.circle_rounded
+                          : Icons.radio_button_unchecked,
                       size: 14,
-                      color: correct ? Color(0xFF23408E)  : Colors.grey[400],
+                      color: correct ? Color(0xFF23408E) : Colors.grey[400],
                     ),
                     const SizedBox(width: 6),
-                    Expanded(child: Text(o['texto_opcion'] as String? ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
+                    Expanded(
+                      child: Text(
+                        o['texto_opcion'] as String? ?? '',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ),
                   ],
                 ),
               );
             }),
-          ]
+          ],
         ],
       ),
     );
@@ -685,7 +1093,11 @@ class _TeacherQuestionsScreenState extends State<TeacherQuestionsScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }

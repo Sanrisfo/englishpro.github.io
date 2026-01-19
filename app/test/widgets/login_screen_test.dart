@@ -17,20 +17,22 @@ void main() {
         providers: [
           ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ],
-        child: const MaterialApp(
-          home: LoginScreen(),
-        ),
+        child: const MaterialApp(home: LoginScreen()),
       );
     }
 
-    testWidgets('LoginScreen should display app title', (WidgetTester tester) async {
+    testWidgets('LoginScreen should display app title', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       expect(find.text('EnglishPro'), findsOneWidget);
       expect(find.text('Welcome Back!'), findsOneWidget);
     });
 
-    testWidgets('LoginScreen should have email and password fields', (WidgetTester tester) async {
+    testWidgets('LoginScreen should have email and password fields', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       expect(find.byType(TextFormField), findsNWidgets(2));
@@ -38,20 +40,26 @@ void main() {
       expect(find.text('Password'), findsOneWidget);
     });
 
-    testWidgets('LoginScreen should have login button', (WidgetTester tester) async {
+    testWidgets('LoginScreen should have login button', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
     });
 
-    testWidgets('LoginScreen should have Sign Up link', (WidgetTester tester) async {
+    testWidgets('LoginScreen should have Sign Up link', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       expect(find.text("Don't have an account? "), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Sign Up'), findsOneWidget);
     });
 
-    testWidgets('Email field should show error when empty', (WidgetTester tester) async {
+    testWidgets('Email field should show error when empty', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       // Find and tap the login button without entering data
@@ -62,7 +70,9 @@ void main() {
       expect(find.text('Please enter your email'), findsOneWidget);
     });
 
-    testWidgets('Email field should show error for invalid email', (WidgetTester tester) async {
+    testWidgets('Email field should show error for invalid email', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       // Enter invalid email
@@ -77,7 +87,9 @@ void main() {
       expect(find.text('Please enter a valid email'), findsOneWidget);
     });
 
-    testWidgets('Password field should show error when empty', (WidgetTester tester) async {
+    testWidgets('Password field should show error when empty', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       // Enter email only
@@ -92,7 +104,9 @@ void main() {
       expect(find.text('Please enter your password'), findsOneWidget);
     });
 
-    testWidgets('Password field should toggle visibility', (WidgetTester tester) async {
+    testWidgets('Password field should toggle visibility', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       // Find and tap visibility toggle button
@@ -114,14 +128,18 @@ void main() {
       expect(find.byIcon(Icons.visibility), findsOneWidget);
     });
 
-    testWidgets('Should have email and lock icons', (WidgetTester tester) async {
+    testWidgets('Should have email and lock icons', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       expect(find.byIcon(Icons.email), findsOneWidget);
       expect(find.byIcon(Icons.lock), findsOneWidget);
     });
 
-    testWidgets('Form fields should accept text input', (WidgetTester tester) async {
+    testWidgets('Form fields should accept text input', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(createLoginScreen());
 
       final emailField = find.byType(TextFormField).first;
