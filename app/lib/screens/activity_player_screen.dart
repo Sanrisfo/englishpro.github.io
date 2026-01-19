@@ -63,7 +63,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
   String? _errorMessage;
 
   /// El material de estudio asociado a esta actividad, si existe.
-  MaterialModel? _material;
+  List<MaterialModel> _materials = [];
 
   /// La lista de preguntas que componen la actividad.
   List<QuestionModel> _questions = [];
@@ -155,9 +155,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
             .eq('id_cuestionario', widget.quizId)
             .order('orden', ascending: true);
         final list = List<Map<String, dynamic>>.from(mats as List);
-        if (list.isNotEmpty) {
-          _material = MaterialModel.fromJson(list.first);
-        }
+        _materials = list.map((e) => MaterialModel.fromJson(e)).toList();
       } catch (_) {}
 
       // 3. Cargar preguntas
@@ -625,8 +623,17 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
                         const SizedBox(height: 24),
 
                         // Material (Si existe)
-                        if (_material != null) _buildMaterialCard(),
-                        if (_material != null) const SizedBox(height: 24),
+                        if (_materials.isNotEmpty)
+                          Column(
+                            children: _materials
+                                .map((m) => Column(
+                                      children: [
+                                        _buildMaterialCard(m),
+                                        const SizedBox(height: 24),
+                                      ],
+                                    ))
+                                .toList(),
+                          ),
 
                         // Lista de Preguntas
                         if (_questions.isEmpty)
@@ -724,8 +731,7 @@ class _ActivityPlayerScreenState extends State<ActivityPlayerScreen> {
     );
   }
 
-  Widget _buildMaterialCard() {
-    final m = _material;
+  Widget _buildMaterialCard(MaterialModel m) {
     if (m == null) return const SizedBox.shrink();
 
     final type = m.tipoMaterial.toLowerCase();

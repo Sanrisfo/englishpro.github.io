@@ -58,6 +58,14 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
   Uint8List? _selectedBytes;
   String? _selectedFileName;
 
+  bool _addMaterial2 = false;
+  final _materialTitleCtrl2 = TextEditingController();
+  final _materialTextCtrl2 = TextEditingController();
+  String _materialType2 = 'pdf';
+  File? _selectedFile2;
+  Uint8List? _selectedBytes2;
+  String? _selectedFileName2;
+
   bool _submitting = false;
 
   /// Color temático del curso.
@@ -89,13 +97,15 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
     _timeCtrl.dispose();
     _materialTitleCtrl.dispose();
     _materialTextCtrl.dispose();
+    _materialTitleCtrl2.dispose();
+    _materialTextCtrl2.dispose();
     super.dispose();
   }
 
   /// Abre el selector de archivos para que el usuario elija un material.
   ///
   /// Filtra los tipos de archivo permitidos según el `_materialType` seleccionado.
-  Future<void> _pickFile() async {
+  Future<void> _pickFile1() async {
     List<String> extensions = [];
     if (_materialType == 'pdf') extensions = ['pdf'];
     if (_materialType == 'image') extensions = ['png', 'jpg', 'jpeg'];
@@ -112,6 +122,28 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
           _selectedBytes = result.files.single.bytes;
         } else if (result.files.single.path != null) {
           _selectedFile = File(result.files.single.path!);
+        }
+      });
+    }
+  }
+
+  Future<void> _pickFile2() async {
+    List<String> extensions = [];
+    if (_materialType2 == 'pdf') extensions = ['pdf'];
+    if (_materialType2 == 'image') extensions = ['png', 'jpg', 'jpeg'];
+    if (_materialType2 == 'audio') extensions = ['mp3', 'wav', 'm4a'];
+    final result = await FilePicker.platform.pickFiles(
+      type: extensions.isEmpty ? FileType.any : FileType.custom,
+      allowedExtensions: extensions,
+      withData: true, // Crucial para Web
+    );
+    if (result != null) {
+      setState(() {
+        _selectedFileName2 = result.files.single.name;
+        if (kIsWeb) {
+          _selectedBytes2 = result.files.single.bytes;
+        } else if (result.files.single.path != null) {
+          _selectedFile2 = File(result.files.single.path!);
         }
       });
     }
@@ -242,6 +274,94 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                 cuestionarioId: insertedQuizId,
                 esPremium: false,
                 orden: 1,
+              );
+            }
+          }
+        }
+      }
+
+      if (_addMaterial2) {
+        final mTitle = (_materialTitleCtrl2.text.trim().isEmpty)
+            ? '$titulo (Adicional)'
+            : _materialTitleCtrl2.text.trim();
+        String? publicUrl;
+        String? contenidoTexto;
+        if (_materialType2 == 'text') {
+          contenidoTexto = _materialTextCtrl2.text.trim();
+          if (contenidoTexto.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('El contenido del texto es obligatorio para el material 2'),
+              ),
+            );
+          } else {
+            await ApiService.createMaterial(
+              habilidadId: widget.skillId,
+              titulo: mTitle,
+              tipoMaterial: 'text',
+              contenidoTexto: contenidoTexto,
+              cuestionarioId: insertedQuizId,
+              esPremium: false,
+              orden: 2,
+            );
+          }
+        } else {
+          if ((kIsWeb && _selectedBytes2 == null) ||
+              (!kIsWeb && _selectedFile2 == null)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Por favor, selecciona un archivo para el material 2',
+                ),
+              ),
+            );
+          } else {
+            final storage = SupabaseStorageService();
+            final nameToUse = _selectedFileName2 ?? 'file';
+            final fileName =
+                '${DateTime.now().millisecondsSinceEpoch}_2_$nameToUse';
+            try {
+              if (_materialType2 == 'pdf') {
+                final r = await storage.uploadPDF(
+                  pdfFile: _selectedFile2,
+                  bytes: _selectedBytes2,
+                  fileName: fileName,
+                );
+                if (r['success'] == true) publicUrl = r['url'] as String;
+              } else if (_materialType2 == 'image') {
+                final r = await storage.uploadImage(
+                  imageFile: _selectedFile2,
+                  bytes: _selectedBytes2,
+                  fileName: fileName,
+                );
+                if (r['success'] == true) publicUrl = r['url'] as String;
+              } else if (_materialType2 == 'audio') {
+                final path = 'materials/$fileName';
+                if (kIsWeb) {
+                  await supabase.storage
+                      .from('audios')
+                      .uploadBinary(path, _selectedBytes2!);
+                } else {
+                  await supabase.storage
+                      .from('audios')
+                      .upload(path, _selectedFile2!);
+                }
+                publicUrl = supabase.storage.from('audios').getPublicUrl(path);
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error al subir material 2: $e')),
+              );
+            }
+            if (publicUrl != null) {
+              await ApiService.createMaterial(
+                habilidadId: widget.skillId,
+                titulo: mTitle,
+                tipoMaterial: _materialType2,
+                archivoUrl: publicUrl,
+                cuestionarioId: insertedQuizId,
+                esPremium: false,
+                orden: 2,
               );
             }
           }
@@ -417,80 +537,175 @@ class _CreateActivityScreenState extends State<CreateActivityScreen> {
                         'Adjuntar PDF, Audio, Imagen o Texto',
                       ),
                     ),
-                    if (_addMaterial) ...[
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _materialTitleCtrl,
-                        decoration: _fieldDeco('Título del Material'),
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: _materialType,
-                        decoration: _fieldDeco('Tipo de Material'),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'pdf',
-                            child: Text('Documento PDF'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'text',
-                            child: Text('Texto de Lectura'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'image',
-                            child: Text('Imagen'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'audio',
-                            child: Text('Archivo de Audio'),
-                          ),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _materialType = v ?? 'pdf'),
-                      ),
-                      const SizedBox(height: 16),
-                      if (_materialType == 'text')
-                        TextField(
-                          controller: _materialTextCtrl,
-                          decoration: _fieldDeco('Contenido'),
-                          maxLines: 6,
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.attach_file, color: _courseColor),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _selectedFileName ??
-                                      'Ningún archivo seleccionado',
-                                  style: TextStyle(
-                                    color: _selectedFileName != null
-                                        ? Colors.black87
-                                        : Colors.grey,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: _pickFile,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: _courseColor,
-                                ),
-                                child: const Text('Elegir Archivo'),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                    const SizedBox(height: 40),
+                                          if (_addMaterial) ...[
+                                            const SizedBox(height: 16),
+                                            TextField(
+                                              controller: _materialTitleCtrl,
+                                              decoration: _fieldDeco('Título del Material'),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            DropdownButtonFormField<String>(
+                                              value: _materialType,
+                                              decoration: _fieldDeco('Tipo de Material'),
+                                              items: const [
+                                                DropdownMenuItem(
+                                                  value: 'pdf',
+                                                  child: Text('Documento PDF'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'text',
+                                                  child: Text('Texto de Lectura'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'image',
+                                                  child: Text('Imagen'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'audio',
+                                                  child: Text('Archivo de Audio'),
+                                                ),
+                                              ],
+                                              onChanged: (v) =>
+                                                  setState(() => _materialType = v ?? 'pdf'),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            if (_materialType == 'text')
+                                              TextField(
+                                                controller: _materialTextCtrl,
+                                                decoration: _fieldDeco('Contenido'),
+                                                maxLines: 6,
+                                              )
+                                            else
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[50],
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(color: Colors.grey[300]!),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.attach_file, color: _courseColor),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Text(
+                                                        _selectedFileName ??
+                                                            'Ningún archivo seleccionado',
+                                                        style: TextStyle(
+                                                          color: _selectedFileName != null
+                                                              ? Colors.black87
+                                                              : Colors.grey,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: _pickFile1,
+                                                      style: TextButton.styleFrom(
+                                                        foregroundColor: _courseColor,
+                                                      ),
+                                                      child: const Text('Elegir Archivo'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            if (!_addMaterial2) ...[
+                                              const SizedBox(height: 16),
+                                              Align(
+                                                alignment: Alignment.centerRight,
+                                                child: TextButton.icon(
+                                                  onPressed: () => setState(() => _addMaterial2 = true),
+                                                  icon: const Icon(Icons.add),
+                                                  label: const Text('Agregar material adicional'),
+                                                  style: TextButton.styleFrom(foregroundColor: _courseColor),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                          if (_addMaterial2) ...[
+                                            const SizedBox(height: 24),
+                                            const Divider(),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'Material de Estudio Adicional',
+                                              style: GoogleFonts.ptSans(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            TextField(
+                                              controller: _materialTitleCtrl2,
+                                              decoration: _fieldDeco('Título del Material 2'),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            DropdownButtonFormField<String>(
+                                              value: _materialType2,
+                                              decoration: _fieldDeco('Tipo de Material 2'),
+                                              items: const [
+                                                DropdownMenuItem(
+                                                  value: 'pdf',
+                                                  child: Text('Documento PDF'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'text',
+                                                  child: Text('Texto de Lectura'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'image',
+                                                  child: Text('Imagen'),
+                                                ),
+                                                DropdownMenuItem(
+                                                  value: 'audio',
+                                                  child: Text('Archivo de Audio'),
+                                                ),
+                                              ],
+                                              onChanged: (v) =>
+                                                  setState(() => _materialType2 = v ?? 'pdf'),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            if (_materialType2 == 'text')
+                                              TextField(
+                                                controller: _materialTextCtrl2,
+                                                decoration: _fieldDeco('Contenido 2'),
+                                                maxLines: 6,
+                                              )
+                                            else
+                                              Container(
+                                                padding: const EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[50],
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(color: Colors.grey[300]!),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.attach_file, color: _courseColor),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Text(
+                                                        _selectedFileName2 ??
+                                                            'Ningún archivo seleccionado',
+                                                        style: TextStyle(
+                                                          color: _selectedFileName2 != null
+                                                              ? Colors.black87
+                                                              : Colors.grey,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: _pickFile2,
+                                                      style: TextButton.styleFrom(
+                                                        foregroundColor: _courseColor,
+                                                      ),
+                                                      child: const Text('Elegir Archivo'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],                    const SizedBox(height: 40),
                   ],
                 ),
               ),
