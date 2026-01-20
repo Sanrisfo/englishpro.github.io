@@ -27,21 +27,6 @@ class ActivityListScreen extends StatefulWidget {
 }
 
 class _ActivityListScreenState extends State<ActivityListScreen> {
-  List<Map<String, dynamic>> _quizzesForPlan(BuildContext context) {
-    final user = context.read<AuthProvider>().user;
-    final int planId = user?.idPlan ?? 1;
-    int? limit;
-    if (planId <= 1) {
-      limit = 1; // Freemium
-    } else if (planId == 2) {
-      limit = 3; // B�sico
-    } else {
-      limit = 5; // Pro/Premium
-    }
-    if (_quizzes.isEmpty) return _quizzes;
-    return _quizzes.take(limit).toList();
-  }
-
   bool _isLoading = true;
   String? _errorMessage;
   List<Map<String, dynamic>> _quizzes = [];
@@ -177,13 +162,19 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                         builder: (context) {
                           final user = context.read<AuthProvider>().user;
                           final planId = user?.idPlan ?? 1;
+
+                          // Premium plan has no limit
+                          final isPremium = planId == 4;
+
                           int limit;
-                          if (planId <= 1) {
+                          if (isPremium) {
+                            limit = _quizzes.length; // No limit
+                          } else if (planId <= 1) {
                             limit = 1; // Freemium
                           } else if (planId == 2) {
                             limit = 3; // Básico
                           } else {
-                            limit = 5; // Pro/Premium
+                            limit = 5; // Pro
                           }
                           final display = _quizzes;
                           if (display.isEmpty) {
@@ -203,7 +194,7 @@ class _ActivityListScreenState extends State<ActivityListScreen> {
                                 const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final q = display[index];
-                              final locked = index >= limit;
+                              final locked = !isPremium && index >= limit;
                               return _buildActivityTile(q, locked: locked);
                             },
                           );
