@@ -78,14 +78,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             final isTeacher = (data['es_docente'] as bool?) ?? false;
             if (userId == null) {
               setState(() {
-                _errorMessage = 'Usuario no autenticado';
+                _errorMessage = 'User not authenticated';
                 _isLoading = false;
               });
               return;
             }
             if (!isTeacher) {
               setState(() {
-                _errorMessage = 'Este usuario no es docente';
+                _errorMessage = 'This user is not a teacher';
                 _isLoading = false;
               });
               return;
@@ -95,7 +95,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       }
       if (userId == null) {
         setState(() {
-          _errorMessage = 'Usuario no autenticado';
+          _errorMessage = 'User not authenticated';
           _isLoading = false;
         });
         return;
@@ -113,11 +113,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _pendingFeedbacks = await SupabaseTeacherService.getPendingFeedbacks();
       } else {
         _errorMessage =
-            'No se encontró información de docente para este usuario. '
-            'Por favor contacte al administrador para que lo registre como docente.';
+            'Teacher information not found for this user. '
+            'Please contact the administrator to register them as a teacher.';
       }
     } catch (e) {
-      _errorMessage = 'Error al cargar datos: $e';
+      _errorMessage = 'Error loading data: $e';
     } finally {
       if (mounted) {
         setState(() {
@@ -196,12 +196,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "¡Bienvenido!",
+                "Welcome!",
                 style: textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
               ),
               const SizedBox(height: 4),
               Text(
-                "Docente",
+                "Teacher",
                 style: GoogleFonts.ptSans(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -230,7 +230,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     Icon(Icons.logout, color: Color(0xFFD9232A)),
                     SizedBox(width: 8),
                     Text(
-                      "Cerrar Sesión",
+                      "Logout",
                       style: TextStyle(color: Color(0xFFD9232A)),
                     ),
                   ],
@@ -265,15 +265,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
-              'Módulos de Control',
+              'Control Modules',
               style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20),
             ),
           ),
         ),
         const SizedBox(height: 16),
         _skillTile(
-          title: 'Mis Cursos',
-          subtitle: 'Gestionar módulos y materiales',
+          title: 'My Courses',
+          subtitle: 'Manage modules and materials',
           icon: Icons.dashboard_customize_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
@@ -287,8 +287,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 12),
         _skillTile(
-          title: 'Revisión Manual',
-          subtitle: 'Ver envíos pendientes',
+          title: 'Manual Review',
+          subtitle: 'View pending submissions',
           icon: Icons.remove_red_eye_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
@@ -302,8 +302,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 12),
         _skillTile(
-          title: 'Lista de Estudiantes',
-          subtitle: 'Ver lista y progreso de estudiantes',
+          title: 'Student Roster',
+          subtitle: 'View student list and progress',
           icon: Icons.group_rounded,
           color: const Color(0xFFD9232A),
           onTap: () {
@@ -347,14 +347,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             child: Text(
-              'Estadísticas',
+              'Statistics',
               style: GoogleFonts.ptSans(color: Colors.white, fontSize: 20),
             ),
           ),
         ),
         const SizedBox(height: 16),
         _buildStatProgressBar(
-          label: 'Pendientes',
+          label: 'Pending',
           value: pendientes.toString(),
           percentage: pendientesPct,
           color: const Color(0xFFD9232A),
@@ -362,7 +362,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 16),
         _buildStatProgressBar(
-          label: 'Calificadas',
+          label: 'Graded',
           value: calificadas.toString(),
           percentage: calificadasPct,
           color: const Color(0xFF23408E),
@@ -370,7 +370,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 16),
         _buildStatProgressBar(
-          label: 'Promedio',
+          label: 'Average',
           value: promedio.toStringAsFixed(1),
           percentage: promedioPct,
           color: const Color(0xFFD9232A),
@@ -535,7 +535,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 backgroundColor: const Color(0xFFD9232A),
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Reintentar'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -557,7 +557,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       } else if (difference.inMinutes > 0) {
         return '${difference.inMinutes}m ago';
       } else {
-        return 'Ahora';
+        return 'Now';
       }
     } catch (e) {
       return dateStr;

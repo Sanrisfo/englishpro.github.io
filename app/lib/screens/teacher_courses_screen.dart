@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../config/supabase_config.dart';
 import 'teacher_skills_screen.dart';
 
-/// Listado de cursos para gestión docente.
+/// Course listing for teacher management.
 class TeacherCoursesScreen extends StatefulWidget {
   const TeacherCoursesScreen({Key? key}) : super(key: key);
 
@@ -57,7 +57,7 @@ class _TeacherCoursesScreenState extends State<TeacherCoursesScreen> {
     }
   }
 
-  //inicio del front
+  // Front-end start
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -74,7 +74,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     }
   }
 
-  //Comienzo del frontend
   @override
   Widget build(BuildContext context) {
     final filtered = _students.where((s) {
@@ -89,7 +88,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // Boton flotante para ir hacia atras
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context).pop(),
         backgroundColor: const Color(0xFFD9232A),
@@ -100,31 +98,27 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
 
       body: SafeArea(
         child: _isLoading
-            // Circulo de carga
             ? Center(
                 child: CircularProgressIndicator(
                   color: const Color(0xFFD9232A),
                   strokeWidth: 5.0,
                 ),
               )
-            // En caso no carga
             : _errorMessage != null
             ? _buildErrorView()
-            // Tdo lo que pasa dentro (cuando si carga)
             : Column(
                 children: [
-                  _buildSearchBar(), //metodo que llama a la barra de busqueda
-                  _buildPlanFilter(), //filtros
+                  _buildSearchBar(),
+                  _buildPlanFilter(),
 
                   const SizedBox(height: 8),
 
-                  // Lista de estudiantes
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: _load,
                       color: const Color(0xFFD9232A),
                       child: filtered.isEmpty
-                          ? _buildEmptyState() // cuando esta vacio se llama esto
+                          ? _buildEmptyState()
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0,
@@ -135,7 +129,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
                                 final u = filtered[index];
                                 return _buildStudentTile(
                                   u,
-                                ); //si tdo ta bien pasa la lista
+                                );
                               },
                             ),
                     ),
@@ -146,9 +140,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     );
   }
 
-  // METODOS QUE SE LLAMAN (widgets ui):
-
-  // Barra de busqueda
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 50, 24, 16),
@@ -251,7 +242,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     );
   }
 
-  // Lista de estudiantes
   Widget _buildStudentTile(Map<String, dynamic> u) {
     final int? idPlan = (u['id_plan'] as num?)?.toInt();
     final String code = _planCodeById(idPlan);
@@ -279,11 +269,10 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
         ),
         child: Row(
           children: [
-            // Icono
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF23408E).withOpacity(0.1), // Azul
+                color: const Color(0xFF23408E).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -294,13 +283,12 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
             ),
             const SizedBox(width: 16),
 
-            // Textos
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    u['nombre_completo'] as String? ?? 'Sin nombre',
+                    u['nombre_completo'] as String? ?? 'No name',
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -317,7 +305,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
             ),
             const SizedBox(width: 8),
 
-            // Acciones (Insignia y Copiar)
             Tooltip(
               message: _planNameById(idPlan) ?? 'Plan',
               child: Container(
@@ -375,7 +362,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     );
   }
 
-  // vacio
   Widget _buildEmptyState() {
     return Center(
       child: Container(
@@ -386,7 +372,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
           border: Border.all(color: Colors.grey[200]!, width: 1.5),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min, // Para que no ocupe toda la pantalla
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(12),
@@ -407,7 +393,6 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     );
   }
 
-  // vista de error
   Widget _buildErrorView() {
     return Center(
       child: Padding(
@@ -462,17 +447,16 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
     }
   }
 
-  // Colores de marca actualizados
   Color _planColor(String code) {
     switch (code) {
       case 'P+':
-        return const Color(0xFFA60F12); // rojo oscuro premium
+        return const Color(0xFFA60F12);
       case 'P':
-        return const Color(0xFFDC242B); // rojo claro pro
+        return const Color(0xFFDC242B);
       case 'B':
-        return const Color(0xFF23408E); // azul basico
+        return const Color(0xFF23408E);
       case 'F':
-        return const Color(0xFF7E7E81); // gris freemium
+        return const Color(0xFF7E7E81);
       default:
         return Colors.grey;
     }
@@ -482,7 +466,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
       BuildContext context, Map<String, dynamic> student) {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // user must tap button!
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirm Deletion'),

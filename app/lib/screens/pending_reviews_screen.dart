@@ -50,7 +50,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = 'Error al cargar pendientes: $e');
+        setState(() => _errorMessage = 'Error loading pending reviews: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -99,7 +99,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                           backgroundColor: const Color(0xFFD9232A),
                           foregroundColor: Colors.white,
                         ),
-                        child: const Text('Reintentar'),
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -155,7 +155,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                 const SizedBox(width: 16),
                 Flexible(
                   child: Text(
-                    'No hay envíos pendientes',
+                    'No pending submissions',
                     style: textTheme.bodyLarge?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -193,7 +193,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
     final color = isWriting ? const Color(0xFF23408E) : const Color(0xFFD9232A);
     final icon = isWriting ? Icons.text_snippet_rounded : Icons.mic_rounded;
     final breadcrumb = (feedback['path_breadcrumb'] as String?) ?? '';
-    final sent = 'Enviado: ${_formatDate(fechaRespuesta ?? '')}';
+    final sent = 'Submitted: ${_formatDate(fechaRespuesta ?? '')}';
 
     return InkWell(
       onTap: () => _navigateToGrading(feedback),
@@ -222,7 +222,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Revisión de $tipoRespuesta (#$preguntaId)',
+                    'Review of $tipoRespuesta (#$preguntaId)',
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -266,13 +266,13 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
       final difference = now.difference(date);
 
       if (difference.inDays > 0) {
-        return 'hace ${difference.inDays}d';
+        return '${difference.inDays}d ago';
       } else if (difference.inHours > 0) {
-        return 'hace ${difference.inHours}h';
+        return '${difference.inHours}h ago';
       } else if (difference.inMinutes > 0) {
-        return 'hace ${difference.inMinutes}m';
+        return '${difference.inMinutes}m ago';
       } else {
-        return 'Ahora';
+        return 'Now';
       }
     } catch (e) {
       return dateStr;
@@ -299,17 +299,17 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Confirmar Eliminación'),
-        content: const Text('¿Estás seguro de que deseas eliminar este envío? Esta acción no se puede deshacer.'),
+        title: const Text('Confirm Deletion'),
+        content: const Text('Are you sure you want to delete this submission? This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD9232A),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Eliminar'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -321,7 +321,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Envío eliminado correctamente.'),
+              content: Text('Submission deleted successfully.'),
               backgroundColor: Colors.green,
             ),
           );
@@ -331,7 +331,7 @@ class _PendingReviewsScreenState extends State<PendingReviewsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al eliminar el envío: $e'),
+              content: Text('Error deleting submission: $e'),
               backgroundColor: Colors.red,
             ),
           );

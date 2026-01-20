@@ -132,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Image.asset('assets/images/logo_completo.png', height: 120),
                 const SizedBox(height: 8),
                 const Text(
-                  '¡Bienvenido de vuelta!',
+                  'Welcome back!',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
@@ -149,10 +149,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Por favor, ingresa tu email';
+                      return 'Please enter your email';
                     }
                     if (!value.contains('@')) {
-                      return 'Por favor, ingresa un email válido';
+                      return 'Please enter a valid email';
                     }
                     return null;
                   },
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Contraseña',
+                    labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Por favor, ingresa tu contraseña';
+                      return 'Please enter your password';
                     }
                     return null;
                   },
@@ -208,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         )
                       : const Text(
-                          'Iniciar Sesión',
+                          'Login',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -219,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("¿No tienes una cuenta?"),
+                    const Text("Don't have an account?"),
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        'Regístrate',
+                        'Register',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E3A8A),
