@@ -39,7 +39,7 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
       var query = supabase
           .from('usuarios')
           .select(
-            'id_usuario, nombre_completo, email, rol, es_docente, id_plan',
+            'id_usuario, nombre_completo, email, rol, es_docente, id_plan, supabase_uid',
           )
           .eq('rol', 'Estudiante');
 
@@ -360,6 +360,15 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
                 );
               },
             ),
+            IconButton(
+              tooltip: 'Delete student',
+              icon: const Icon(
+                Icons.delete_outline,
+                color: Colors.red,
+                size: 20,
+              ),
+              onPressed: () => _confirmDeleteUser(context, u),
+            ),
           ],
         ),
       ),
@@ -466,6 +475,85 @@ class _StudentRosterScreenState extends State<StudentRosterScreen> {
         return const Color(0xFF7E7E81); // gris freemium
       default:
         return Colors.grey;
+    }
+  }
+
+  Future<void> _confirmDeleteUser(
+      BuildContext context, Map<String, dynamic> student) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(
+                    'Are you sure you want to delete student ${student['nombre_completo'] ?? ''}?'),
+                const Text('This action cannot be undone.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteUser(student);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteUser(Map<String, dynamic> student) async {
+    final supabaseUid = student['supabase_uid'] as String?;
+    if (supabaseUid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete user: Missing Supabase UID.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await supabase.rpc('delete_student', params: {'student_id': supabaseUid});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result as String? ?? 'Student deleted successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _load();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }
