@@ -302,6 +302,7 @@ class ApiService {
   /// @param descripcion La descripción del tipo de actividad (opcional).
   /// @param orden El orden del tipo de actividad (por defecto 1).
   /// @param activo Si el tipo de actividad está activo (por defecto `true`).
+  /// @param categoria La categoría para la UI ('mini_quiz' o 'practice_exam').
   /// @return Un mapa con los datos del tipo de actividad creado.
   static Future<Map<String, dynamic>> createActivityType({
     required int skillId,
@@ -309,6 +310,7 @@ class ApiService {
     String? descripcion,
     int orden = 1,
     bool activo = true,
+    String categoria = 'mini_quiz',
   }) async {
     try {
       final inserted = await supabase
@@ -320,6 +322,7 @@ class ApiService {
               'descripcion': descripcion,
             'orden': orden,
             'activo': activo,
+            'categoria': categoria,
           })
           .select()
           .single();
@@ -342,6 +345,7 @@ class ApiService {
   /// @param descripcion La nueva descripción del tipo de actividad (opcional).
   /// @param orden El nuevo orden del tipo de actividad (opcional).
   /// @param activo El nuevo estado de activación del tipo de actividad (opcional).
+  /// @param categoria La nueva categoría del tipo de actividad (opcional).
   /// @return Un mapa con los datos del tipo de actividad actualizado.
   static Future<Map<String, dynamic>> updateActivityType({
     required int id,
@@ -349,6 +353,7 @@ class ApiService {
     String? descripcion,
     int? orden,
     bool? activo,
+    String? categoria,
   }) async {
     try {
       final payload = <String, dynamic>{};
@@ -356,6 +361,7 @@ class ApiService {
       if (descripcion != null) payload['descripcion'] = descripcion;
       if (orden != null) payload['orden'] = orden;
       if (activo != null) payload['activo'] = activo;
+      if (categoria != null) payload['categoria'] = categoria;
 
       final updated = await supabase
           .from('tipos_actividad')

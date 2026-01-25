@@ -118,6 +118,7 @@ class _TeacherActivityTypesScreenState
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     int orden = (_types.length + 1);
+    String selectedCategory = 'mini_quiz';
 
     await showDialog(
       context: context,
@@ -125,87 +126,129 @@ class _TeacherActivityTypesScreenState
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(30),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!, width: 1.5),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Crear Tipo de Actividad',
-                style: GoogleFonts.ptSans(
-                  color: _mainBlue,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+        child: StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!, width: 1.5),
               ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: nameCtrl,
-                decoration: _dialogTextFieldDecoration('Nombre'),
-              ),
-              const SizedBox(height: 8),
-
-              TextField(
-                controller: descCtrl,
-                decoration: _dialogTextFieldDecoration('Descripción'),
-                maxLines: 3,
-              ),
-
-              const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextButton(
-                    style: _textButtonStyle,
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
+                  Text(
+                    'Crear Tipo de Actividad',
+                    style: GoogleFonts.ptSans(
+                      color: _mainBlue,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: _softButtonStyle,
-                    onPressed: () async {
-                      final nombre = nameCtrl.text.trim();
-                      if (nombre.isEmpty) return;
+                  const SizedBox(height: 12),
 
-                      final r = await ApiService.createActivityType(
-                        skillId: widget.skillId,
-                        nombre: nombre,
-                        descripcion: descCtrl.text.trim(),
-                        orden: orden,
-                      );
-
-                      if (!mounted) return;
-
-                      Navigator.pop(context);
-                      if (r['success'] == true) {
-                        await _load();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Tipo creado')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              r['message'] ?? 'Error al crear el tipo',
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text('Crear'),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: _dialogTextFieldDecoration('Nombre'),
                   ),
+                  const SizedBox(height: 8),
+
+                  TextField(
+                    controller: descCtrl,
+                    decoration: _dialogTextFieldDecoration('Descripción'),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Category Selector
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                       Text('Categoría (Pestaña):', style: TextStyle(color: _mainBlue, fontWeight: FontWeight.bold)),
+                       const SizedBox(height: 4),
+                       Container(
+                         width: double.infinity,
+                         decoration: BoxDecoration(
+                           color: _mainBlue.withOpacity(0.05),
+                           borderRadius: BorderRadius.circular(12),
+                         ),
+                         child: Column(
+                           children: [
+                             RadioListTile<String>(
+                               title: const Text('Mini Quiz'),
+                               subtitle: const Text('Ejercicios cortos de un solo tipo'),
+                               value: 'mini_quiz',
+                               groupValue: selectedCategory,
+                               activeColor: _mainBlue,
+                               onChanged: (v) => setStateDialog(() => selectedCategory = v!),
+                             ),
+                             RadioListTile<String>(
+                               title: const Text('Public Practice Exam'),
+                               subtitle: const Text('Simulacro de examen completo'),
+                               value: 'practice_exam',
+                               groupValue: selectedCategory,
+                               activeColor: _mainBlue,
+                               onChanged: (v) => setStateDialog(() => selectedCategory = v!),
+                             ),
+                           ],
+                         ),
+                       ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        style: _textButtonStyle,
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: _softButtonStyle,
+                        onPressed: () async {
+                          final nombre = nameCtrl.text.trim();
+                          if (nombre.isEmpty) return;
+
+                          final r = await ApiService.createActivityType(
+                            skillId: widget.skillId,
+                            nombre: nombre,
+                            descripcion: descCtrl.text.trim(),
+                            orden: orden,
+                            categoria: selectedCategory,
+                          );
+
+                          if (!mounted) return;
+
+                          Navigator.pop(context);
+                          if (r['success'] == true) {
+                            await _load();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Tipo creado')),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  r['message'] ?? 'Error al crear el tipo',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Crear'),
+                      ),
+                    ],
+                  )
                 ],
               ),
-            ],
-          ),
+            );
+          }
         ),
       ),
     );
@@ -214,12 +257,9 @@ class _TeacherActivityTypesScreenState
   /// Muestra un diálogo para renombrar un tipo de actividad existente.
   /// @param t El mapa de datos del tipo de actividad a editar.
   Future<void> _renameTypeDialog(Map<String, dynamic> t) async {
-    final nameCtrl = TextEditingController(
-      text: (t['nombre'] as String?) ?? '',
-    );
-    final descCtrl = TextEditingController(
-      text: (t['descripcion'] as String?) ?? '',
-    );
+    final nameCtrl = TextEditingController(text: (t['nombre'] as String?) ?? '');
+    final descCtrl = TextEditingController(text: (t['descripcion'] as String?) ?? '');
+     String selectedCategory = (t['categoria'] as String?) ?? 'mini_quiz';
 
     await showDialog(
       context: context,
@@ -227,84 +267,123 @@ class _TeacherActivityTypesScreenState
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(30),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!, width: 1.5),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Editar Tipo de Actividad',
-                style: GoogleFonts.ptSans(
-                  color: _mainBlue,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+        child: StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!, width: 1.5),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: nameCtrl,
-                decoration: _dialogTextFieldDecoration('Nombre'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: descCtrl,
-                decoration: _dialogTextFieldDecoration('Descripción'),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextButton(
-                    style: _textButtonStyle,
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
+                  Text(
+                    'Editar Tipo de Actividad',
+                    style: GoogleFonts.ptSans(
+                      color: _mainBlue,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    style: _softButtonStyle,
-                    onPressed: () async {
-                      final nombre = nameCtrl.text.trim();
-                      final id =
-                          (t['id'] as int?) ??
-                          (t['id_tipo_actividad'] as int? ?? 0);
-
-                      final r = await ApiService.updateActivityType(
-                        id: id,
-                        nombre: nombre.isEmpty ? null : nombre,
-                        descripcion: descCtrl.text.trim(),
-                      );
-
-                      if (!mounted) return;
-
-                      Navigator.pop(context);
-                      if (r['success'] == true) {
-                        await _load();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Tipo actualizado')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              r['message'] ?? 'Error al actualizar el tipo',
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: const Text('Guardar'),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: _dialogTextFieldDecoration('Nombre'),
                   ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: descCtrl,
+                    decoration: _dialogTextFieldDecoration('Descripción'),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 12),
+
+                   // Category Selector
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                       Text('Categoría (Pestaña):', style: TextStyle(color: _mainBlue, fontWeight: FontWeight.bold)),
+                       const SizedBox(height: 4),
+                       Container(
+                         width: double.infinity,
+                         decoration: BoxDecoration(
+                           color: _mainBlue.withOpacity(0.05),
+                           borderRadius: BorderRadius.circular(12),
+                         ),
+                         child: Column(
+                           children: [
+                             RadioListTile<String>(
+                               title: const Text('Mini Quiz'),
+                               subtitle: const Text('Ejercicios cortos de un solo tipo'),
+                               value: 'mini_quiz',
+                               groupValue: selectedCategory,
+                               activeColor: _mainBlue,
+                               onChanged: (v) => setStateDialog(() => selectedCategory = v!),
+                             ),
+                             RadioListTile<String>(
+                               title: const Text('Public Practice Exam'),
+                               subtitle: const Text('Simulacro de examen completo'),
+                               value: 'practice_exam',
+                               groupValue: selectedCategory,
+                               activeColor: _mainBlue,
+                               onChanged: (v) => setStateDialog(() => selectedCategory = v!),
+                             ),
+                           ],
+                         ),
+                       ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        style: _textButtonStyle,
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: _softButtonStyle,
+                        onPressed: () async {
+                          final nombre = nameCtrl.text.trim();
+                          final id = (t['id'] as int?) ?? (t['id_tipo_actividad'] as int? ?? 0);
+
+                          final r = await ApiService.updateActivityType(
+                            id: id,
+                            nombre: nombre.isEmpty ? null : nombre,
+                            descripcion: descCtrl.text.trim(),
+                            categoria: selectedCategory,
+                          );
+
+                          if (!mounted) return;
+
+                          Navigator.pop(context);
+                          if (r['success'] == true) {
+                            await _load();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Tipo actualizado')),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(r['message'] ?? 'Error al actualizar el tipo'),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Guardar'),
+                      ),
+                    ],
+                  )
                 ],
               ),
-            ],
-          ),
+            );
+          }
         ),
       ),
     );

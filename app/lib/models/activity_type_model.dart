@@ -29,6 +29,10 @@ class ActivityTypeModel {
   /// Corresponde a la columna `activo`.
   final bool activo;
 
+  /// Categoría del tipo de actividad para agrupación en UI (mini_quiz, practice_exam).
+  /// Corresponde a la columna `categoria`.
+  final String categoria;
+
   /// Crea una instancia de [ActivityTypeModel].
   ///
   /// Todos los parámetros son requeridos excepto [descripcion], [orden] y [activo],
@@ -40,6 +44,7 @@ class ActivityTypeModel {
     this.descripcion,
     this.orden = 1,
     this.activo = true,
+    this.categoria = 'mini_quiz',
   });
 
   /// Crea un [ActivityTypeModel] a partir de un mapa JSON.
@@ -75,6 +80,7 @@ class ActivityTypeModel {
           (json['descripcion'] as String?) ?? (json['Descripcion'] as String?),
       orden: toInt(json['orden'] ?? 1, d: 1),
       activo: (json['activo'] as bool?) ?? true,
+      categoria: (json['categoria'] as String?) ?? 'mini_quiz',
     );
   }
 
@@ -92,5 +98,6 @@ class ActivityTypeModel {
     'descripcion': descripcion,
     'orden': orden,
     'activo': activo,
+    'categoria': categoria,
   };
 }

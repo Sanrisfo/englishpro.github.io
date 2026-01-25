@@ -95,9 +95,105 @@ class _ActivityTypesScreenState extends State<ActivityTypesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final breadcrumb =
-        "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos";
+    final breadcrumb = "Mis Cursos > ${widget.courseName} > ${widget.skillName} > Tipos";
+    final isToefl = widget.courseName.toLowerCase().contains('toefl');
+    final isTargetSkill = ['reading', 'listening'].contains(widget.skillName.toLowerCase());
+    final showTabs = isToefl && isTargetSkill;
 
+    if (showTabs) {
+       // Filter activities by category
+       // Note: Since _types is a List<Map<String, dynamic>>, we access the key 'categoria' directly.
+       final practiceExams = _types.where((t) => (t['categoria'] as String? ?? 'mini_quiz') == 'practice_exam').toList();
+       final miniQuizzes = _types.where((t) => (t['categoria'] as String? ?? 'mini_quiz') != 'practice_exam').toList();
+
+      return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFFD9232A)),
+               onPressed: () => Navigator.of(context).pop(),
+            ),
+             title: Text(widget.skillName, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+             centerTitle: true,
+             bottom: TabBar(
+               labelColor: _courseColor,
+               unselectedLabelColor: Colors.grey,
+               indicatorColor: _courseColor,
+               tabs: const [
+                 Tab(text: "Mini Quizzes"),
+                 Tab(text: "Practice Exams"),
+               ],
+             ),
+          ),
+          body: SafeArea(
+            child: _loading
+                ? Center(child: CircularProgressIndicator(color: _courseColor, strokeWidth: 5.0))
+                : _error != null
+                    ? Center(child: Text(_error!))
+                    : TabBarView(
+                        children: [
+                          // Tab 1: Mini Quizzes
+                          miniQuizzes.isEmpty
+                              ? const Center(child: Text('No mini quizzes available'))
+                              : RefreshIndicator(
+                                  onRefresh: _load,
+                                  color: _courseColor,
+                                  child: ListView.separated(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: miniQuizzes.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final t = miniQuizzes[index];
+                                      return _buildTypeTile(t);
+                                    },
+                                  ),
+                                ),
+                          
+                          // Tab 2: Practice Exams
+                          practiceExams.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.assignment_turned_in_outlined, size: 64, color: Colors.grey[300]),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      "Practice Exams",
+                                      style: TextStyle(fontSize: 18, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "No practice exams yet.",
+                                      style: TextStyle(color: Colors.grey[500]),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : RefreshIndicator(
+                                  onRefresh: _load,
+                                  color: _courseColor,
+                                  child: ListView.separated(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: practiceExams.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final t = practiceExams[index];
+                                      return _buildTypeTile(t);
+                                    },
+                                  ),
+                                ),
+                        ],
+                      ),
+          ),
+        ),
+      );
+    }
+
+    // Default Layout for other skills/courses
     return Scaffold(
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
